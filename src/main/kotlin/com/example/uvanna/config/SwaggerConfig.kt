@@ -28,7 +28,7 @@ class SwaggerConfig {
                         .contact(Contact().email("denis.akhunov123@gmail.com").name("Akhunov Denis")
                         )
                     .description("Uvanna Application API")
-                    .version("v2")
+                    .version("v1")
                     .license(License().name("GPL 2.0").url("#"))
             )
     }

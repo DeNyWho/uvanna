@@ -1,6 +1,6 @@
 package com.example.uvanna.controller.products
 
-import com.example.uvanna.model.product.Rows
+import com.example.uvanna.model.product.Product
 import com.example.uvanna.model.product.folder.ProductFolder
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.ProductService
@@ -8,8 +8,8 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import javax.servlet.http.HttpServletResponse
 
@@ -32,9 +32,10 @@ class ProductsController {
 
     @GetMapping("getProductsByFolder")
     fun getProductsByFolder(
+        @RequestParam id: String,
         response: HttpServletResponse
-    ): ServiceResponse<ProductFolder> {
-        val data = productService.getProductFolder()
+    ): ServiceResponse<Product> {
+        val data = productService.getProductsByFolder(id)
         return ServiceResponse(data = data, HttpStatus.OK)
     }
 

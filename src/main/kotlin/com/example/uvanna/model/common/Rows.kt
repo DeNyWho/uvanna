@@ -1,11 +1,10 @@
-package com.example.uvanna.model.product
+package com.example.uvanna.model.common
 
-import com.example.uvanna.model.product.folder.ProductFolderDto
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class Rows(
+data class Rows<T>(
     @JsonProperty("rows")
-    val productFolder: List<ProductFolderDto>,
+    var rows: List<T>? = null,
 )

@@ -1,4 +1,4 @@
-package com.example.uvanna.model.product
+package com.example.uvanna.model.product.detail
 
 import com.example.uvanna.model.common.images.ImagesDto
 import com.example.uvanna.model.common.price.BuyPrice
@@ -8,23 +8,25 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class ProductDto(
-//    @JsonProperty
-//    val externalCode: String,
+data class ProductDetailDto(
+    @JsonProperty("id")
+    val id: String = "",
     @JsonProperty("images")
-    val imagesDto: ImagesDto,
+    val imagesDto: ImagesDto = ImagesDto(),
     @JsonProperty("updated")
-    val updated: String,
+    val updated: String = "",
     @JsonProperty("name")
-    val name: String,
+    val name: String = "",
+    @JsonProperty("description")
+    val description: String = "",
     @JsonProperty("pathName")
-    val group: String,
+    val group: String = "",
     @JsonProperty("minPrice")
-    val minPrice: MinPrice,
+    val minPrice: MinPrice = MinPrice(),
     @JsonProperty("salePrices")
-    val salePrices: List<SalePrices>,
+    val salePrices: List<SalePrices> = listOf(SalePrices()),
     @JsonProperty("buyPrice")
-    val buyPrice: BuyPrice,
+    val buyPrice: BuyPrice = BuyPrice(),
     @JsonProperty("stock")
-    val stock: String,
+    val stock: String = "",
 )

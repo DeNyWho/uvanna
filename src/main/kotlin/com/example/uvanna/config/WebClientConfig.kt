@@ -23,8 +23,6 @@ class WebClientConfig {
     @Value("\${token}")
     lateinit var token: String
 
-    var redirectUrl: String = ""
-
     @Bean
     fun webClient(builder: WebClient.Builder): WebClient {
         val json = Json {
@@ -48,9 +46,7 @@ class WebClientConfig {
             .baseUrl("https://online.moysklad.ru/api/remap/1.2/")
             .clientConnector(
                 ReactorClientHttpConnector(
-                    HttpClient.create().followRedirect(false) { redirectRequest ->
-                        redirectUrl = redirectRequest.uri()
-                    })
+                    HttpClient.create().followRedirect(false))
             )
             .filter(requestLoggerFilter())
             .filter(responseLoggerFilter())
@@ -58,12 +54,6 @@ class WebClientConfig {
             .exchangeStrategies(strategies)
             .build()
     }
-
-    @Bean
-    fun getRedirectLink() = redirectUrl
-
-
-
 
     fun requestLoggerFilter() = ExchangeFilterFunction.ofRequestProcessor {
         println("Logging request: ${it.method()} ${it.url()}")

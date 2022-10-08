@@ -4,5 +4,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class FolderMeta(
     @JsonProperty("href")
-    val href: String,
+    val href: String = "",
 )

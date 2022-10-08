@@ -8,7 +8,7 @@ data class ProductFolderDto(
     @JsonProperty("meta")
     val meta: FolderMeta,
     @JsonProperty("updated")
-    val updated: String,
+    val updated: String = "",
     @JsonProperty("name")
-    val name: String,
+    val name: String = "",
 )

@@ -4,5 +4,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class ImagesDto(
     @JsonProperty("meta")
-    val meta: ImagesMetaDto,
+    val meta: ImagesMetaDto = ImagesMetaDto()
 )

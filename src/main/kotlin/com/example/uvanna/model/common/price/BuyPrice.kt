@@ -4,5 +4,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class BuyPrice(
     @JsonProperty("value")
-    val value: String
+    val value: String = ""
 )

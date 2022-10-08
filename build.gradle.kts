@@ -38,7 +38,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.9.0")
     implementation("io.github.microutils:kotlin-logging-jvm:2.1.23")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("it.skrape:skrapeit:1.2.2")
+    implementation("it.skrape:skrapeit:1.3.0-alpha.1")
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-web")

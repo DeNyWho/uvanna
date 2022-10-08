@@ -10,21 +10,27 @@ import com.example.uvanna.model.product.folder.ProductFolderDto
 import com.example.uvanna.repository.ProductsRepository
 import com.example.uvanna.util.Constants.Groups
 import com.example.uvanna.util.Constants.ProductByGroup
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.core.io.buffer.DataBuffer
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.bodyToFlux
 import org.springframework.web.reactive.function.client.bodyToMono
-import reactor.core.publisher.Flux
-import java.nio.file.Files
-import java.nio.file.Paths
+
 
 @Service
 class ProductService: ProductsRepository {
 
     @Autowired
     lateinit var webClient: WebClient
+
+    @Autowired
+    lateinit var getRedirectLink: String
+
+    @Value("\${token}")
+    lateinit var token: String
 
     fun getProductFolder(): List<ProductFolder> {
         val data =  webClient
@@ -46,7 +52,7 @@ class ProductService: ProductsRepository {
         return list.toList()
     }
 
-    fun getProductsByFolder(id: String): List<Product>{
+    fun getProductsByFolder(id: String): List<Product> {
         val data = webClient
             .get()
             .uri("$ProductByGroup$id")
@@ -56,44 +62,44 @@ class ProductService: ProductsRepository {
 
         val list = mutableListOf<Product>()
         data?.rows?.forEach {
+            var images = "Empty"
+            if(getImageFromDownloadLink(it.imagesDto.meta.href).drop(41).length > 8) {
+                webClient
+                    .get()
+                    .uri(getImageFromDownloadLink(it.imagesDto.meta.href).drop(41))
+                    .exchange()
+                    .map {
+                        images = it.headers().header("Location")[0]
+                    }
+                    .block()
+            }
             list.add(
                 Product(
-                    image = getImageFromDownloadLink(it.imagesDto.meta.href),
+                    image = images,
                     updated = it.updated,
                     name = it.name,
                     group = it.group,
-                    minPrice = when(it.minPrice.value.length){
+                    minPrice = when (it.minPrice.value.length) {
                         3 -> it.minPrice.value.dropLast(2)
                         4 -> it.minPrice.value.dropLast(3)
-                        else -> it.minPrice.value.dropLast(4) }.toInt(),
-                    salePrice = when(it.salePrices[0].value.length){
+                        else -> it.minPrice.value.dropLast(4)
+                    }.toInt(),
+                    salePrice = when (it.salePrices[0].value.length) {
                         3 -> it.salePrices[0].value.dropLast(2)
                         4 -> it.salePrices[0].value.dropLast(3)
-                        else -> it.salePrices[0].value.dropLast(4) }.toInt(),
-                    buyPrice = when(it.buyPrice.value.length){
+                        else -> it.salePrices[0].value.dropLast(4)
+                    }.toInt(),
+                    buyPrice = when (it.buyPrice.value.length) {
                         3 -> it.buyPrice.value.dropLast(2)
                         4 -> it.buyPrice.value.dropLast(3)
-                        else -> it.buyPrice.value.dropLast(4) }.toInt(),
+                        else -> it.buyPrice.value.dropLast(4)
+                    }.toInt(),
                     stock = it.stock.dropLast(2).toInt(),
                 )
             )
         }
-        list.forEach {
-            val link = it.image
-            val file = webClient.get()
-                .uri(link)
-                .retrieve()
-                .bodyToFlux<DataBuffer>()
-            store(file)
-        }
 
         return list.toList()
-    }
-
-    fun store(file: Flux<DataBuffer>) {
-        val root = Paths.get("images")
-//        Files.copy()
-//        Files.copy(file.inputStream, root.resolve(file.originalFilename))
     }
 
     fun getImageFromDownloadLink(link: String): String {

@@ -10,14 +10,13 @@ import com.example.uvanna.model.product.folder.ProductFolderDto
 import com.example.uvanna.repository.ProductsRepository
 import com.example.uvanna.util.Constants.Groups
 import com.example.uvanna.util.Constants.ProductByGroup
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
+import javax.validation.constraints.Max
+import javax.validation.constraints.Min
 
 
 @Service
@@ -52,10 +51,14 @@ class ProductService: ProductsRepository {
         return list.toList()
     }
 
-    fun getProductsByFolder(id: String): List<Product> {
+    fun getProductsByFolder(
+        id: String,
+        pageNum: Int,
+        pageSize: Int
+    ): List<Product> {
         val data = webClient
             .get()
-            .uri("$ProductByGroup$id")
+            .uri("$ProductByGroup$id&limit=$pageSize&offset=$pageNum")
             .retrieve()
             .bodyToMono<Rows<ProductDto>>()
             .block()

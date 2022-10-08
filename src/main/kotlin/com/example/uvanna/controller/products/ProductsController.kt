@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import javax.servlet.http.HttpServletResponse
+import javax.validation.constraints.Max
+import javax.validation.constraints.Min
 
 
 @RestController
@@ -32,10 +34,12 @@ class ProductsController {
 
     @GetMapping("getProductsByFolder")
     fun getProductsByFolder(
+        @RequestParam(defaultValue = "0") pageNum: @Min(0) Int,
+        @RequestParam(defaultValue = "16") pageSize: @Min(1) @Max(48) Int,
         @RequestParam id: String,
         response: HttpServletResponse
     ): ServiceResponse<Product> {
-        val data = productService.getProductsByFolder(id)
+        val data = productService.getProductsByFolder(id, pageNum, pageSize)
         return ServiceResponse(data = data, HttpStatus.OK)
     }
 

@@ -1,9 +1,9 @@
 package com.example.uvanna.model.product.detail
 
 import com.example.uvanna.model.common.images.ImagesDto
-import com.example.uvanna.model.common.price.BuyPrice
-import com.example.uvanna.model.common.price.MinPrice
-import com.example.uvanna.model.common.price.SalePrices
+import com.example.uvanna.model.price.BuyPrice
+import com.example.uvanna.model.price.MinPrice
+import com.example.uvanna.model.price.SalePrices
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 

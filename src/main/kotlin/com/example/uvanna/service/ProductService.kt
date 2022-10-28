@@ -5,18 +5,29 @@ import com.example.uvanna.model.common.images.Images
 import com.example.uvanna.model.common.images.ImagesMeta
 import com.example.uvanna.model.product.detail.ProductDetail
 import com.example.uvanna.model.product.detail.ProductDetailDto
-import com.example.uvanna.model.product.main.Product
-import com.example.uvanna.model.product.main.ProductDto
 import com.example.uvanna.model.product.folder.ProductFolder
 import com.example.uvanna.model.product.folder.ProductFolderDto
+import com.example.uvanna.model.product.main.Product
+import com.example.uvanna.model.product.main.ProductDto
 import com.example.uvanna.repository.ProductsRepository
 import com.example.uvanna.util.Constants
 import com.example.uvanna.util.Constants.Groups
 import com.example.uvanna.util.Constants.ProductByGroup
+import com.example.uvanna.util.Constants.parserSuite
+import it.skrape.core.document
+import it.skrape.fetcher.HttpFetcher
+import it.skrape.fetcher.response
+import it.skrape.fetcher.skrape
+import it.skrape.selects.eachHref
+import it.skrape.selects.eachText
+import it.skrape.selects.html5.a
+import it.skrape.selects.html5.div
+import it.skrape.selects.html5.span
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
+import kotlin.math.absoluteValue
 
 
 @Service
@@ -25,60 +36,67 @@ class ProductService: ProductsRepository {
     @Autowired
     lateinit var webClient: WebClient
 
-    override fun getProduct(id: String): List<ProductDetail> {
-        println(webClient
-            .get()
-            .uri(Constants.ProductAssortment + id)
-            .retrieve()
-            .bodyToMono<String>()
-            .block())
+    override fun getProduct(id: String): List<Product> {
+
         val data = webClient
             .get()
             .uri(Constants.ProductAssortment + id)
             .retrieve()
-            .bodyToMono<Rows<ProductDetailDto>>()
+            .bodyToMono<Rows<ProductDto>>()
             .block()
 
-        val list = mutableListOf<ProductDetail>()
+        val list = mutableListOf<Product>()
         data?.rows?.forEach {
-            var images = "Empty"
-            if(getImageFromDownloadLink(it.imagesDto.meta.href).drop(41).length > 8) {
+            var images = mutableListOf<String>()
+            getImageFromDownloadLink(it.imagesDto.meta.href)?.forEach {
                 webClient
                     .get()
-                    .uri(getImageFromDownloadLink(it.imagesDto.meta.href).drop(41))
+                    .uri(it.meta.toString().drop(65) )
                     .exchange()
                     .map {
-                        images = it.headers().header("Location")[0]
+                        images.addAll(it.headers().header("Location") )
                     }
                     .block()
             }
             list.add(
-                ProductDetail(
+                Product(
                     id = it.id,
                     image = images,
                     updated = it.updated,
                     name = it.name,
-                    description = it.description,
                     group = it.group,
-                    minPrice = when (it.minPrice.value.length) {
-                        3 -> it.minPrice.value.dropLast(2)
-                        4 -> it.minPrice.value.dropLast(3)
-                        else -> it.minPrice.value.dropLast(4)
-                    }.toInt(),
-                    salePrice = when (it.salePrices[0].value.length) {
-                        3 -> it.salePrices[0].value.dropLast(2)
-                        4 -> it.salePrices[0].value.dropLast(3)
-                        else -> it.salePrices[0].value.dropLast(4)
-                    }.toInt(),
-                    buyPrice = when (it.buyPrice.value.length) {
-                        3 -> it.buyPrice.value.dropLast(2)
-                        4 -> it.buyPrice.value.dropLast(3)
-                        else -> it.buyPrice.value.dropLast(4)
-                    }.toInt(),
+                    minPrice = try {
+                        when (it.minPrice.value.length) {
+                            3 -> it.minPrice.value.dropLast(2)
+                            4 -> it.minPrice.value.dropLast(3)
+                            else -> it.minPrice.value.dropLast(4)
+                        }.toInt()
+                    } catch (e: Exception) {
+                        0
+                    },
+                    salePrice = try {
+                        when (it.salePrices[0].value.length) {
+                            3 -> it.salePrices[0].value.dropLast(2)
+                            4 -> it.salePrices[0].value.dropLast(3)
+                            else -> it.salePrices[0].value.dropLast(4)
+                        }.toInt()
+                    } catch (e: Exception) {
+                        0
+                    },
+                    buyPrice = try {
+                        when (it.buyPrice.value.length) {
+                            3 -> it.buyPrice.value.dropLast(2)
+                            4 -> it.buyPrice.value.dropLast(3)
+                            else -> it.buyPrice.value.dropLast(4)
+                        }.toInt()
+                    } catch (e: Exception) {
+                        0
+                    },
                     stock = it.stock.dropLast(2).toInt(),
                 )
             )
         }
+
 
         return list.toList()
     }
@@ -133,39 +151,51 @@ class ProductService: ProductsRepository {
 
         val list = mutableListOf<Product>()
         data?.rows?.forEach {
-            var images = "Empty"
-            if(getImageFromDownloadLink(it.imagesDto.meta.href).drop(41).length > 8) {
+            var images = mutableListOf<String>()
+            getImageFromDownloadLink(it.imagesDto.meta.href)?.forEach {
                 webClient
                     .get()
-                    .uri(getImageFromDownloadLink(it.imagesDto.meta.href).drop(41))
+                    .uri(it.meta.toString().drop(65) )
                     .exchange()
                     .map {
-                        images = it.headers().header("Location")[0]
+                        images.addAll(it.headers().header("Location") )
                     }
                     .block()
             }
             list.add(
                 Product(
                     id = it.id,
-                    image = images,
+                    image = images.take(3),
                     updated = it.updated,
                     name = it.name,
                     group = it.group,
-                    minPrice = when (it.minPrice.value.length) {
-                        3 -> it.minPrice.value.dropLast(2)
-                        4 -> it.minPrice.value.dropLast(3)
-                        else -> it.minPrice.value.dropLast(4)
-                    }.toInt(),
-                    salePrice = when (it.salePrices[0].value.length) {
-                        3 -> it.salePrices[0].value.dropLast(2)
-                        4 -> it.salePrices[0].value.dropLast(3)
-                        else -> it.salePrices[0].value.dropLast(4)
-                    }.toInt(),
-                    buyPrice = when (it.buyPrice.value.length) {
-                        3 -> it.buyPrice.value.dropLast(2)
-                        4 -> it.buyPrice.value.dropLast(3)
-                        else -> it.buyPrice.value.dropLast(4)
-                    }.toInt(),
+                    minPrice = try {
+                        when (it.minPrice.value.length) {
+                            3 -> it.minPrice.value.dropLast(2)
+                            4 -> it.minPrice.value.dropLast(3)
+                            else -> it.minPrice.value.dropLast(4)
+                        }.toInt()
+                    } catch (e: Exception) {
+                        0
+                    },
+                    salePrice = try {
+                        when (it.salePrices[0].value.length) {
+                            3 -> it.salePrices[0].value.dropLast(2)
+                            4 -> it.salePrices[0].value.dropLast(3)
+                            else -> it.salePrices[0].value.dropLast(4)
+                        }.toInt()
+                    } catch (e: Exception) {
+                        0
+                    },
+                    buyPrice = try {
+                        when (it.buyPrice.value.length) {
+                            3 -> it.buyPrice.value.dropLast(2)
+                            4 -> it.buyPrice.value.dropLast(3)
+                            else -> it.buyPrice.value.dropLast(4)
+                        }.toInt()
+                    } catch (e: Exception) {
+                        0
+                    },
                     stock = it.stock.dropLast(2).toInt(),
                 )
             )
@@ -174,7 +204,93 @@ class ProductService: ProductsRepository {
         return list.toList()
     }
 
-    fun getImageFromDownloadLink(link: String): String {
+    override fun parser(brand: String){
+        var maxId = 0
+        var pageSize = 0
+        val urls = mutableListOf<String>()
+        val images = mutableListOf<String>()
+        val titles = mutableListOf<String>()
+
+        skrape(HttpFetcher) {
+            request {
+                url = "$parserSuite$brand/"
+            }
+            response {
+                document.a {
+                    withClass = "img.pos_rel"
+                    urls.addAll(findAll { return@findAll eachHref }.map { "${parserSuite.dropLast(1)}$it" })
+                }
+            }
+        }
+        var pagesBoolean: Boolean
+
+        for (i in 0 until 1) {
+            val link = urls[i]
+            var price = 0
+            var title = ""
+            val characteristicNaming = mutableListOf<String>()
+            val characteristicValue = mutableListOf<String>()
+            println(link)
+            pagesBoolean = false
+            while (!pagesBoolean) {
+                try {
+                    skrape(HttpFetcher) {
+                        request {
+                            url = link
+                            timeout = 400_000
+                        }
+                        response {
+                            document.div {
+                                withClass = "price"
+                                price = findFirst { return@findFirst text }.dropLast(3).replace(" ", "").toInt()
+                            }
+                            document.div {
+                                withClass = "des.des1"
+                                val temp = findFirst { return@findFirst text }
+                                val from = temp.indexOf(".")
+                                title = temp.substring(0, from)
+                            }
+                            document.span {
+                                withClass = "left"
+                                characteristicNaming.addAll(findAll { return@findAll eachText })
+                            }
+                            document.div {
+                                withClass = "val"
+                                characteristicValue.addAll(findAll { return@findAll eachText })
+                            }
+                        }
+                    }
+
+                    println(characteristicNaming)
+                    println(characteristicNaming.distinct().toList().find { it == "Производитель:" })
+                    println(characteristicNaming.toList().filter {  it == "Производитель:" })
+                    println(characteristicNaming.distinct().toList().indexOf("Коллекция:"))
+                    println(characteristicNaming.distinct().toList().indexOf("Артикул:"))
+                    println(characteristicNaming.distinct().toList().indexOf("Цвет:"))
+                    println(characteristicNaming.distinct().toList().indexOf("Материал:"))
+                    println(characteristicNaming.distinct().toList().indexOf("Ширина:"))
+                    println(characteristicNaming.distinct().toList().indexOf("Высота:"))
+                    println(characteristicNaming.distinct().toList().indexOf("Длина:"))
+                    println(characteristicNaming.distinct().toList().indexOf("Глубина:"))
+                    println(characteristicNaming.distinct().toList().indexOf("Объем:"))
+                    println(characteristicNaming.distinct().toList().indexOf("Вес:"))
+                    println(characteristicNaming.distinct().toList().indexOf("Гарантийный срок:"))
+
+
+
+                    
+                    pagesBoolean = true
+                } catch (e: Exception) {
+                    println(e.message)
+                    pagesBoolean = false
+                }
+            }
+        }
+    }
+
+
+
+    fun getImageFromDownloadLink(link: String): List<Images>? {
         val image = webClient
             .get()
             .uri(link.drop(41))
@@ -184,7 +300,7 @@ class ProductService: ProductsRepository {
         if(image?.rows?.size!! < 1){
             image.rows = listOf(Images(meta = ImagesMeta("Empty")))
         }
-        return image.rows?.get(0)?.meta?.downloadHref ?: ""
+        return image.rows
     }
 
 }

@@ -10,5 +10,6 @@ interface ProductsRepository {
 
     fun getProductsByFolder(id: String, pageNum: Int, pageSize: Int): List<Product>
     fun getProductFolder(): List<ProductFolder>
-    fun getProduct(id: String): List<ProductDetail>
+    fun getProduct(id: String): List<Product>
+    fun parser(brand: String)
 }

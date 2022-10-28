@@ -2,7 +2,7 @@ package com.example.uvanna.model.product.detail
 
 data class ProductDetail(
     val id: String = "",
-    val image: String = "",
+    val image: List<String> = listOf(""),
     val updated: String = "",
     val name: String = "",
     val description: String = "",

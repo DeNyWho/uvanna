@@ -1,8 +1,8 @@
-package com.example.uvanna.model.common.price
+package com.example.uvanna.model.price
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
-data class BuyPrice(
+data class SalePrices(
     @JsonProperty("value")
     val value: String = ""
 )

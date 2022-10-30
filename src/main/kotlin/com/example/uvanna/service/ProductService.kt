@@ -1,18 +1,12 @@
 package com.example.uvanna.service
 
+import com.example.uvanna.jpa.Image
+import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.common.Rows
 import com.example.uvanna.model.common.images.Images
 import com.example.uvanna.model.common.images.ImagesMeta
-import com.example.uvanna.model.product.detail.ProductDetail
-import com.example.uvanna.model.product.detail.ProductDetailDto
-import com.example.uvanna.model.product.folder.ProductFolder
-import com.example.uvanna.model.product.folder.ProductFolderDto
-import com.example.uvanna.model.product.main.Product
-import com.example.uvanna.model.product.main.ProductDto
 import com.example.uvanna.repository.ProductsRepository
-import com.example.uvanna.util.Constants
-import com.example.uvanna.util.Constants.Groups
-import com.example.uvanna.util.Constants.ProductByGroup
+import com.example.uvanna.repository.ProductsRepositoryImpl
 import com.example.uvanna.util.Constants.parserSuite
 import it.skrape.core.document
 import it.skrape.fetcher.HttpFetcher
@@ -25,184 +19,200 @@ import it.skrape.selects.html5.div
 import it.skrape.selects.html5.span
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
-import kotlin.math.absoluteValue
 
 
 @Service
-class ProductService: ProductsRepository {
+class ProductService: ProductsRepositoryImpl {
+
+    @Autowired
+    lateinit var productsRepository: ProductsRepository
 
     @Autowired
     lateinit var webClient: WebClient
 
-    override fun getProduct(id: String): List<Product> {
+    override fun addProduct(): Product {
 
-        val data = webClient
-            .get()
-            .uri(Constants.ProductAssortment + id)
-            .retrieve()
-            .bodyToMono<Rows<ProductDto>>()
-            .block()
-
-        val list = mutableListOf<Product>()
-        data?.rows?.forEach {
-            var images = mutableListOf<String>()
-            getImageFromDownloadLink(it.imagesDto.meta.href)?.forEach {
-                webClient
-                    .get()
-                    .uri(it.meta.toString().drop(65) )
-                    .exchange()
-                    .map {
-                        images.addAll(it.headers().header("Location") )
-                    }
-                    .block()
-            }
-            list.add(
-                Product(
-                    id = it.id,
-                    image = images,
-                    updated = it.updated,
-                    name = it.name,
-                    group = it.group,
-                    minPrice = try {
-                        when (it.minPrice.value.length) {
-                            3 -> it.minPrice.value.dropLast(2)
-                            4 -> it.minPrice.value.dropLast(3)
-                            else -> it.minPrice.value.dropLast(4)
-                        }.toInt()
-                    } catch (e: Exception) {
-                        0
-                    },
-                    salePrice = try {
-                        when (it.salePrices[0].value.length) {
-                            3 -> it.salePrices[0].value.dropLast(2)
-                            4 -> it.salePrices[0].value.dropLast(3)
-                            else -> it.salePrices[0].value.dropLast(4)
-                        }.toInt()
-                    } catch (e: Exception) {
-                        0
-                    },
-                    buyPrice = try {
-                        when (it.buyPrice.value.length) {
-                            3 -> it.buyPrice.value.dropLast(2)
-                            4 -> it.buyPrice.value.dropLast(3)
-                            else -> it.buyPrice.value.dropLast(4)
-                        }.toInt()
-                    } catch (e: Exception) {
-                        0
-                    },
-                    stock = it.stock.dropLast(2).toInt(),
-                )
-            )
-        }
-
-
-        return list.toList()
     }
 
-
-    override fun getProductFolder(): List<ProductFolder> {
-        val data =  webClient
-            .get()
-            .uri(Groups)
-            .retrieve()
-            .bodyToMono<Rows<ProductFolderDto>>()
-            .block()
-        val list = mutableListOf<ProductFolder>()
-        data?.rows?.forEach {
-            var stock = 0
-            val temp = webClient
-                .get()
-                .uri("$ProductByGroup${it.meta.href.drop(62)}")
-                .retrieve()
-                .bodyToMono<Rows<ProductDto>>()
-                .block()
-
-            temp?.rows?.forEach {
-                if(it.stock.dropLast(2).toInt() > 0){
-                    stock += it.stock.dropLast(2).toInt()
-                }
-            }
-
-            list.add(
-                ProductFolder(
-                    id = it.meta.href.drop(62),
-                    updated = it.updated,
-                    name = it.name,
-                    stock = stock
-                )
-            )
-        }
-        return list.toList()
+    fun addImage(id: Long,file: MultipartFile){
+        val product = productsRepository.findById(id).orElseThrow()
+        val imageTemp = mutableListOf<Image>()
+        imageTemp.addAll(product.images)
+        imageTemp.add(Image(image = file.bytes))
+        product.images = imageTemp.toList()
+        productsRepository.save(product)
     }
 
-    override fun getProductsByFolder(
-        id: String,
-        pageNum: Int,
-        pageSize: Int
-    ): List<Product> {
-        val data = webClient
-            .get()
-            .uri("$ProductByGroup$id&limit=$pageSize&offset=$pageNum")
-            .retrieve()
-            .bodyToMono<Rows<ProductDto>>()
-            .block()
-
-        val list = mutableListOf<Product>()
-        data?.rows?.forEach {
-            var images = mutableListOf<String>()
-            getImageFromDownloadLink(it.imagesDto.meta.href)?.forEach {
-                webClient
-                    .get()
-                    .uri(it.meta.toString().drop(65) )
-                    .exchange()
-                    .map {
-                        images.addAll(it.headers().header("Location") )
-                    }
-                    .block()
-            }
-            list.add(
-                Product(
-                    id = it.id,
-                    image = images.take(3),
-                    updated = it.updated,
-                    name = it.name,
-                    group = it.group,
-                    minPrice = try {
-                        when (it.minPrice.value.length) {
-                            3 -> it.minPrice.value.dropLast(2)
-                            4 -> it.minPrice.value.dropLast(3)
-                            else -> it.minPrice.value.dropLast(4)
-                        }.toInt()
-                    } catch (e: Exception) {
-                        0
-                    },
-                    salePrice = try {
-                        when (it.salePrices[0].value.length) {
-                            3 -> it.salePrices[0].value.dropLast(2)
-                            4 -> it.salePrices[0].value.dropLast(3)
-                            else -> it.salePrices[0].value.dropLast(4)
-                        }.toInt()
-                    } catch (e: Exception) {
-                        0
-                    },
-                    buyPrice = try {
-                        when (it.buyPrice.value.length) {
-                            3 -> it.buyPrice.value.dropLast(2)
-                            4 -> it.buyPrice.value.dropLast(3)
-                            else -> it.buyPrice.value.dropLast(4)
-                        }.toInt()
-                    } catch (e: Exception) {
-                        0
-                    },
-                    stock = it.stock.dropLast(2).toInt(),
-                )
-            )
-        }
-
-        return list.toList()
-    }
+//    override fun getProduct(id: String): List<Product> {
+//
+//        val data = webClient
+//            .get()
+//            .uri(Constants.ProductAssortment + id)
+//            .retrieve()
+//            .bodyToMono<Rows<ProductDto>>()
+//            .block()
+//
+//        val list = mutableListOf<Product>()
+//        data?.rows?.forEach {
+//            var images = mutableListOf<String>()
+//            getImageFromDownloadLink(it.imagesDto.meta.href)?.forEach {
+//                webClient
+//                    .get()
+//                    .uri(it.meta.toString().drop(65) )
+//                    .exchange()
+//                    .map {
+//                        images.addAll(it.headers().header("Location") )
+//                    }
+//                    .block()
+//            }
+//            list.add(
+//                Product(
+//                    id = it.id,
+//                    image = images,
+//                    updated = it.updated,
+//                    name = it.name,
+//                    group = it.group,
+//                    minPrice = try {
+//                        when (it.minPrice.value.length) {
+//                            3 -> it.minPrice.value.dropLast(2)
+//                            4 -> it.minPrice.value.dropLast(3)
+//                            else -> it.minPrice.value.dropLast(4)
+//                        }.toInt()
+//                    } catch (e: Exception) {
+//                        0
+//                    },
+//                    salePrice = try {
+//                        when (it.salePrices[0].value.length) {
+//                            3 -> it.salePrices[0].value.dropLast(2)
+//                            4 -> it.salePrices[0].value.dropLast(3)
+//                            else -> it.salePrices[0].value.dropLast(4)
+//                        }.toInt()
+//                    } catch (e: Exception) {
+//                        0
+//                    },
+//                    buyPrice = try {
+//                        when (it.buyPrice.value.length) {
+//                            3 -> it.buyPrice.value.dropLast(2)
+//                            4 -> it.buyPrice.value.dropLast(3)
+//                            else -> it.buyPrice.value.dropLast(4)
+//                        }.toInt()
+//                    } catch (e: Exception) {
+//                        0
+//                    },
+//                    stock = it.stock.dropLast(2).toInt(),
+//                )
+//            )
+//        }
+//
+//
+//        return list.toList()
+//    }
+//
+//
+//    override fun getProductFolder(): List<ProductFolder> {
+//        val data =  webClient
+//            .get()
+//            .uri(Groups)
+//            .retrieve()
+//            .bodyToMono<Rows<ProductFolderDto>>()
+//            .block()
+//        val list = mutableListOf<ProductFolder>()
+//        data?.rows?.forEach {
+//            var stock = 0
+//            val temp = webClient
+//                .get()
+//                .uri("$ProductByGroup${it.meta.href.drop(62)}")
+//                .retrieve()
+//                .bodyToMono<Rows<ProductDto>>()
+//                .block()
+//
+//            temp?.rows?.forEach {
+//                if(it.stock.dropLast(2).toInt() > 0){
+//                    stock += it.stock.dropLast(2).toInt()
+//                }
+//            }
+//
+//            list.add(
+//                ProductFolder(
+//                    id = it.meta.href.drop(62),
+//                    updated = it.updated,
+//                    name = it.name,
+//                    stock = stock
+//                )
+//            )
+//        }
+//        return list.toList()
+//    }
+//
+//    override fun getProductsByFolder(
+//        id: String,
+//        pageNum: Int,
+//        pageSize: Int
+//    ): List<Product> {
+//        val data = webClient
+//            .get()
+//            .uri("$ProductByGroup$id&limit=$pageSize&offset=$pageNum")
+//            .retrieve()
+//            .bodyToMono<Rows<ProductDto>>()
+//            .block()
+//
+//        val list = mutableListOf<Product>()
+//        data?.rows?.forEach {
+//            var images = mutableListOf<String>()
+//            getImageFromDownloadLink(it.imagesDto.meta.href)?.forEach {
+//                webClient
+//                    .get()
+//                    .uri(it.meta.toString().drop(65) )
+//                    .exchange()
+//                    .map {
+//                        images.addAll(it.headers().header("Location") )
+//                    }
+//                    .block()
+//            }
+//            list.add(
+//                Product(
+//                    id = it.id,
+//                    image = images.take(3),
+//                    updated = it.updated,
+//                    name = it.name,
+//                    group = it.group,
+//                    minPrice = try {
+//                        when (it.minPrice.value.length) {
+//                            3 -> it.minPrice.value.dropLast(2)
+//                            4 -> it.minPrice.value.dropLast(3)
+//                            else -> it.minPrice.value.dropLast(4)
+//                        }.toInt()
+//                    } catch (e: Exception) {
+//                        0
+//                    },
+//                    salePrice = try {
+//                        when (it.salePrices[0].value.length) {
+//                            3 -> it.salePrices[0].value.dropLast(2)
+//                            4 -> it.salePrices[0].value.dropLast(3)
+//                            else -> it.salePrices[0].value.dropLast(4)
+//                        }.toInt()
+//                    } catch (e: Exception) {
+//                        0
+//                    },
+//                    buyPrice = try {
+//                        when (it.buyPrice.value.length) {
+//                            3 -> it.buyPrice.value.dropLast(2)
+//                            4 -> it.buyPrice.value.dropLast(3)
+//                            else -> it.buyPrice.value.dropLast(4)
+//                        }.toInt()
+//                    } catch (e: Exception) {
+//                        0
+//                    },
+//                    stock = it.stock.dropLast(2).toInt(),
+//                )
+//            )
+//        }
+//
+//        return list.toList()
+//    }
 
     override fun parser(brand: String){
         var maxId = 0

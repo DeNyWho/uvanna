@@ -1,15 +1,12 @@
 package com.example.uvanna.jpa
 
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.OneToMany
-import javax.persistence.Table
+import javax.persistence.*
 
 @Entity
 @Table(name = "product")
 data class Product(
     @Id
-    val id: Long? = 0,
+    val id: String? = "",
     @OneToMany
     var images: List<Image> = listOf(Image()),
     val updated: String = "",

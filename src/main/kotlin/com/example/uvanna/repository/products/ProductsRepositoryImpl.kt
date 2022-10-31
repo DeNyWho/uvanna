@@ -1,4 +1,4 @@
-package com.example.uvanna.repository
+package com.example.uvanna.repository.products
 
 import com.example.uvanna.jpa.Product
 import org.springframework.stereotype.Repository

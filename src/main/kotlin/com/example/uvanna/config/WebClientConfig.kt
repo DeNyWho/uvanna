@@ -23,38 +23,6 @@ class WebClientConfig {
     @Value("\${token}")
     lateinit var token: String
 
-    @Bean
-    fun webClient(builder: WebClient.Builder): WebClient {
-        val json = Json {
-            ignoreUnknownKeys = true
-            isLenient = true
-        }
-
-        val strategies = ExchangeStrategies
-            .builder()
-            .codecs { clientDefaultCodecsConfig ->
-                run {
-                    clientDefaultCodecsConfig.defaultCodecs()
-                        .kotlinSerializationJsonDecoder(KotlinSerializationJsonDecoder(json))
-                    clientDefaultCodecsConfig.defaultCodecs()
-                        .kotlinSerializationJsonEncoder(KotlinSerializationJsonEncoder(json))
-
-                }
-            }.build()
-
-        return builder
-            .baseUrl("https://online.moysklad.ru/api/remap/1.2/")
-            .clientConnector(
-                ReactorClientHttpConnector(
-                    HttpClient.create().followRedirect(false))
-            )
-            .filter(requestLoggerFilter())
-            .filter(responseLoggerFilter())
-            .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer $token")
-            .exchangeStrategies(strategies)
-            .build()
-    }
-
     fun requestLoggerFilter() = ExchangeFilterFunction.ofRequestProcessor {
         println("Logging request: ${it.method()} ${it.url()}")
         logger.info("Logging request: ${it.method()} ${it.url()}")

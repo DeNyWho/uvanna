@@ -2,7 +2,7 @@ package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Image
 import com.example.uvanna.jpa.Product
-import com.example.uvanna.repository.images.ImagesRepository
+import com.example.uvanna.repository.image.ImageRepository
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.products.ProductsRepositoryImpl
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,10 +18,7 @@ class ProductService: ProductsRepositoryImpl {
     lateinit var productsRepository: ProductsRepository
 
     @Autowired
-    lateinit var imagesRepository: ImagesRepository
-
-    @Autowired
-    lateinit var webClient: WebClient
+    lateinit var imageRepository: ImageRepository
 
     override fun addProduct(): Product {
 

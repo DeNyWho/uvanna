@@ -16,7 +16,7 @@ class SwaggerConfig {
     fun publicApiV1(): GroupedOpenApi {
         return GroupedOpenApi.builder()
             .group("uvanna-api")
-            .pathsToMatch("/api/**")
+            .pathsToMatch("/**")
             .build()
     }
 

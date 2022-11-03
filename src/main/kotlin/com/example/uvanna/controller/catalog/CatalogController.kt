@@ -1,12 +1,9 @@
 package com.example.uvanna.controller.catalog
 
-import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.CatalogService
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -28,9 +25,10 @@ class CatalogController {
         @RequestParam title: String,
         @RequestParam sub: List<String>,
         response: HttpServletResponse
-    ): ResponseEntity<ByteArray> {
+    ): String {
             return catalogService.addFirstLevel(file, title, sub)
 
 //            return ServiceResponse(data = listOf(data), status = HttpStatus.OK)
     }
+
 }

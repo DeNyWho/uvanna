@@ -1,11 +1,13 @@
 package com.example.uvanna.repository.catalog
 
-import org.springframework.http.ResponseEntity
+import com.example.uvanna.jpa.CatalogSecond
+import com.example.uvanna.jpa.CatalogThird
 import org.springframework.stereotype.Repository
 import org.springframework.web.multipart.MultipartFile
 
 @Repository
 interface CatalogRepositoryImpl {
 
-    fun addFirstLevel(file: MultipartFile, title: String, sub: List<String>): String
+    fun addLevel(id: String?, file: MultipartFile, title: String, option: String): Boolean
+    fun getLevels(id: String?): Any
 }

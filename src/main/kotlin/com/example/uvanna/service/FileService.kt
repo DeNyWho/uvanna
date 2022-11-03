@@ -26,7 +26,7 @@ class FileService {
             id = id,
             image = file.bytes
         ))
-        return "http://localhost:12500/files/$id"
+        return "http://localhost:12500/images/$id"
     }
 
     fun getFile(id: String): Optional<Image> {

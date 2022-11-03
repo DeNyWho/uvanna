@@ -8,8 +8,16 @@ data class CatalogSecond(
     @Id
     var id: String? = "",
     var title: String? = "",
-    @OneToMany
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        cascade = [CascadeType.DETACH, CascadeType.PERSIST, CascadeType.REFRESH]
+    )
     @Column(nullable = true)
-    var sub: List<CatalogThird> = listOf(),
-    val imageUrl: String? = null,
-)
+    var sub: MutableSet<CatalogThird> = mutableSetOf(),
+    val imageUrl: String? = null
+){
+    fun addToThirdLevel(catalog: CatalogThird): CatalogSecond {
+        sub.add(catalog)
+        return this
+    }
+}

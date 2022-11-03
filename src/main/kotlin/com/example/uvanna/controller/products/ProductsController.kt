@@ -33,7 +33,7 @@ class ProductsController {
     fun addProduct(
         @RequestParam file: MultipartFile,
         response: HttpServletResponse
-    ): ServiceResponse<Product>{
+    ): ServiceResponse<Product> {
         return try {
             val data = productService.addProduct()
 
@@ -42,47 +42,6 @@ class ProductsController {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
     }
-
-//    @GetMapping("getProductFolders")
-//    fun getProductFolders(
-//        response: HttpServletResponse
-//    ): ServiceResponse<ProductFolder> {
-//        return try {
-//            val data = productService.getProductFolder()
-//            return ServiceResponse(data = data, status = HttpStatus.OK)
-//        } catch (e: ChangeSetPersister.NotFoundException) {
-//            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-//        }
-//    }
-//
-//    @GetMapping("getProductsByFolder")
-//    fun getProductsByFolder(
-//        @RequestParam(defaultValue = "0") pageNum: @Min(0) Int,
-//        @RequestParam(defaultValue = "16") pageSize: @Min(1) @Max(48) Int,
-//        @RequestParam id: String,
-//
-//        response: HttpServletResponse
-//    ): ServiceResponse<Product> {
-//        return try {
-//            val data = productService.getProductsByFolder(id, pageNum, pageSize)
-//            return ServiceResponse(data = data, status = HttpStatus.OK)
-//        } catch (e: ChangeSetPersister.NotFoundException) {
-//            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-//        }
-//    }
-//
-//    @GetMapping("{id}")
-//    fun getProductDetail(
-//        @PathVariable id: String,
-//        response: HttpServletResponse
-//    ): ServiceResponse<Product> {
-//        return try {
-//        val data = productService.getProduct(id)
-//            return ServiceResponse(data = data, status = HttpStatus.OK)
-//        } catch (e: ChangeSetPersister.NotFoundException) {
-//            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-//        }
-//    }
 
     @GetMapping("parser")
     fun parseProducts(

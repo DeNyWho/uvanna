@@ -34,11 +34,11 @@ class CatalogService: CatalogRepositoryImpl {
 
     override fun getLevels(id: String?): Any {
         if(id != null) {
-            val firstCatalog = catalogRepository.findById(id).isEmpty
-            val secondCatalog = catalogSecondRepository.findById(id).isEmpty
-            val thirdCatalog = catalogThirdRepository.findById(id).isEmpty
+            val firstCatalog = catalogRepository.findById(id).isPresent
+            val secondCatalog = catalogSecondRepository.findById(id).isPresent
+            val thirdCatalog = catalogThirdRepository.findById(id).isPresent
 
-            if (!firstCatalog) {
+            if (firstCatalog) {
                 val catalog = catalogRepository.findById(id).get()
 
                 return CategoryFirst(
@@ -49,7 +49,7 @@ class CatalogService: CatalogRepositoryImpl {
                 )
             }
 
-            if (!secondCatalog) {
+            if (secondCatalog) {
                 val catalog = catalogSecondRepository.findById(id).get()
 
                 return CategorySecond(
@@ -60,7 +60,7 @@ class CatalogService: CatalogRepositoryImpl {
                 )
             }
 
-            if (!thirdCatalog) {
+            if (thirdCatalog) {
 
                 val catalog = catalogThirdRepository.findById(id).get()
 
@@ -93,11 +93,11 @@ class CatalogService: CatalogRepositoryImpl {
 
     fun addFirstLevel(file: MultipartFile, title: String) {
         var id = UUID.randomUUID().toString()
-        var catalog = catalogRepository.findById(id).isEmpty
+        var catalog = catalogRepository.findById(id).isPresent
 
         while (catalog){
             id = UUID.randomUUID().toString()
-            catalog = catalogRepository.findById(id).isEmpty
+            catalog = catalogRepository.findById(id).isPresent
         }
 
         catalogRepository.save(
@@ -124,7 +124,7 @@ class CatalogService: CatalogRepositoryImpl {
             )
         )
 
-        val b = catalogRepository.findById(id).orElseThrow().addToSecondLevel(
+        val b = catalogRepository.findById(id).get().addToSecondLevel(
             second
         )
         catalogRepository.save(b)
@@ -143,7 +143,7 @@ class CatalogService: CatalogRepositoryImpl {
             )
         )
 
-        val b = catalogSecondRepository.findById(id).orElseThrow().addToThirdLevel(
+        val b = catalogSecondRepository.findById(id).get().addToThirdLevel(
             third
         )
         catalogSecondRepository.save(b)

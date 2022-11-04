@@ -28,15 +28,6 @@ class ProductService: ProductsRepositoryImpl {
         return product
     }
 
-    fun addImage(id: Long,file: MultipartFile){
-        val product = productsRepository.findById(id).orElseThrow()
-        val imageTemp = mutableListOf<Image>()
-        imageTemp.addAll(product.images)
-        imageTemp.add(Image(image = file.bytes))
-        product.images = imageTemp.toList()
-        productsRepository.save(product)
-    }
-
 
     override fun parser(brand: String){
         val urls = mutableListOf<String>()

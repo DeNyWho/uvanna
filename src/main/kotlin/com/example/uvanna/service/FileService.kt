@@ -16,12 +16,7 @@ class FileService {
     private lateinit var imageRepository: ImageRepository
 
     fun save(file: MultipartFile): String {
-        var id = UUID.randomUUID().toString()
-        var catalog = imageRepository.findById(id).isEmpty
-        while (catalog){
-            id = UUID.randomUUID().toString()
-            catalog = imageRepository.findById(id).isPresent
-        }
+        val id = UUID.randomUUID().toString()
         imageRepository.save(Image(
             id = id,
             image = file.bytes

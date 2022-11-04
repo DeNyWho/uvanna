@@ -9,7 +9,7 @@ plugins {
 }
 
 springBoot {
-    mainClass.set("com.example.uvanna.UvannaApplication")
+    mainClass.set("com.example.uvanna.UvannaApplicationKt")
 }
 tasks.getByName<Jar>("jar") {
     enabled = false
@@ -18,10 +18,6 @@ tasks.getByName<Jar>("jar") {
 group = "com.example"
 version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_17
-
-repositories {
-    mavenCentral()
-}
 
 repositories {
     mavenCentral()

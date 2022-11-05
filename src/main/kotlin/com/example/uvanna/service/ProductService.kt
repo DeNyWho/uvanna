@@ -1,14 +1,11 @@
 package com.example.uvanna.service
 
-import com.example.uvanna.jpa.Image
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.repository.image.ImageRepository
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.products.ProductsRepositoryImpl
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import org.springframework.web.multipart.MultipartFile
-import org.springframework.web.reactive.function.client.WebClient
 
 
 @Service

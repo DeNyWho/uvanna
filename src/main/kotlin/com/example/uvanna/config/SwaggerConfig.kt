@@ -4,6 +4,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.info.License
+import io.swagger.v3.oas.models.security.SecurityRequirement
 import org.springdoc.core.GroupedOpenApi
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -23,8 +24,10 @@ class SwaggerConfig {
     @Bean
     fun aniFoxOpenAPI(): OpenAPI? {
         return OpenAPI()
+            .addSecurityItem(SecurityRequirement())
             .info(
-                Info().title("Uvanna official API")
+                Info()
+                    .title("Uvanna official API")
                         .contact(Contact().email("denis.akhunov123@gmail.com").name("Akhunov Denis")
                         )
                     .description("Uvanna Application API")

@@ -1,18 +1,24 @@
 package com.example.uvanna.jpa
 
+import com.example.uvanna.model.product.Characteristic
+import java.util.*
 import javax.persistence.*
 
 @Entity
 @Table(name = "product")
 data class Product(
     @Id
-    val id: String? = "",
+    var id: String = UUID.randomUUID().toString(),
+    @ElementCollection
+    var images: List<String> = listOf(),
+    var updated: String = "",
+    val title: String = "",
     @OneToMany
-    var images: List<Image> = listOf(Image()),
-    val updated: String = "",
-    val name: String = "",
-    val group: String = "",
-    val salePrice: Int = 0,
-    val buyPrice: Int = 0,
+    val characteristic: List<Characteristic> = listOf(),
+    val brand: String = "",
+    val firstSub: String = "",
+    val secondSub: String = "",
+    val thirdSub: String = "",
+    val price: Int = 0,
     val stock: Int = 0,
 )

@@ -24,6 +24,17 @@ class FileService {
         return "http://1083313-cp53143.tmweb.ru:12500/images/$id"
     }
 
+    fun saveBytes(file: ByteArray): String {
+        val id = UUID.randomUUID().toString()
+        imageRepository.save(
+            Image(
+                id = id,
+                image = file
+            )
+        )
+        return "http://1083313-cp53143.tmweb.ru:12500/images/$id"
+    }
+
     fun getFile(id: String): Optional<Image> {
         return imageRepository.findById(id)
     }

@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono
 @Configuration
 class WebClientConfig {
 
+
     private val logger = LoggerFactory.getLogger(WebClientConfig::class.java)
     @Value("\${token}")
     lateinit var token: String

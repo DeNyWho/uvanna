@@ -73,6 +73,38 @@ class CatalogService: CatalogRepositoryImpl {
         return false
     }
 
+    override fun deleteCategory(id: String) {
+        val catalogFirst = catalogRepository.findById(id).isPresent
+        val catalogSecond = catalogSecondRepository.findById(id).isPresent
+        val catalogThird = catalogThirdRepository.findById(id).isPresent
+
+         if(catalogFirst){
+             val catalog = catalogRepository.findById(id).get()
+             catalogRepository.deleteById(id)
+             catalog.sub.forEach { secondItem ->
+                 catalogSecondRepository.deleteById(secondItem.id!!)
+                 secondItem.sub.forEach { thirdItem ->
+                     catalogThirdRepository.deleteById(thirdItem.id!!)
+                 }
+             }
+         }
+
+        if(catalogSecond){
+            val catalog = catalogSecondRepository.findById(id).get()
+            catalogSecondRepository.deleteById(id)
+            catalog.sub.forEach { item ->
+                catalogThirdRepository.deleteById(item.id!!)
+            }
+        }
+
+        if(catalogThird){
+            catalogThirdRepository.deleteById(id)
+        }
+    }
+
+
+
+
     override fun addLevel(
         id: String?,
         file: MultipartFile,

@@ -1,14 +1,14 @@
 package com.example.uvanna.repository.products
 
 import com.example.uvanna.jpa.Product
+import com.example.uvanna.model.product.ProductRequest
 import org.springframework.stereotype.Repository
+import org.springframework.web.multipart.MultipartFile
 
 @Repository
 interface ProductsRepositoryImpl {
 
-    //    fun getProductsByFolder(id: String, pageNum: Int, pageSize: Int): List<Product>
-//    fun getProductFolder(): List<ProductFolder>
-//    fun getProduct(id: String): List<Product>
     fun parser(brand: String)
-    fun addProduct(): Product
+    fun deleteProduct(id: String)
+    fun addProduct(product: ProductRequest, files: List<MultipartFile>)
 }

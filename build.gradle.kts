@@ -34,7 +34,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10")
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("it.skrape:skrapeit:1.3.0-alpha.1")
+    implementation("it.skrape:skrapeit:1.2.2")
 
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")

@@ -21,7 +21,7 @@ class FileService {
             id = id,
             image = file.bytes
         ))
-        return "http://1083313-cp53143.tmweb.ru:12500/images/$id"
+        return "http://uvanna.store:12500/images/$id"
     }
 
     fun saveBytes(file: ByteArray): String {
@@ -32,7 +32,7 @@ class FileService {
                 image = file
             )
         )
-        return "http://1083313-cp53143.tmweb.ru:12500/images/$id"
+        return "http://uvanna.store:12500/images/$id"
     }
 
     fun getFile(id: String): Optional<Image> {

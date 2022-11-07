@@ -16,7 +16,6 @@ data class Product(
     @OneToMany
     val characteristic: List<Characteristic> = listOf(),
     val brand: String = "",
-    val firstSub: String = "",
     val secondSub: String = "",
     val thirdSub: String = "",
     val price: Int = 0,

@@ -51,7 +51,6 @@ class ProductService: ProductsRepositoryImpl {
         val item = Product(
             title = product.title,
             characteristic = charact,
-            firstSub = product.firstSub,
             secondSub = product.secondSub,
             thirdSub = product.thirdSub,
             stock = product.stock,
@@ -105,7 +104,6 @@ class ProductService: ProductsRepositoryImpl {
             val stock = 0
             var title = ""
             val characteristic = mutableListOf<Characteristic>()
-            var firstLevel = ""
             var secondLevel = ""
             var thirdLevel = ""
             val titleAbout = mutableListOf<String>()
@@ -162,7 +160,6 @@ class ProductService: ProductsRepositoryImpl {
                     title = title,
                     characteristic = characteristic,
                     brand = brand,
-                    firstSub = firstLevel,
                     secondSub = secondLevel,
                     thirdSub = thirdLevel,
                     price = price,

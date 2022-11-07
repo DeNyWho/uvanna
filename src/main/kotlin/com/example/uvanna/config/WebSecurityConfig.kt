@@ -8,6 +8,10 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.web.server.SecurityWebFilterChain
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.web.reactive.config.CorsRegistry
 
 
 @Configuration
@@ -18,8 +22,6 @@ class WebSecurityConfig : WebSecurityConfigurerAdapter() {
     @Bean
     fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain? {
         return http
-            .cors()
-            .and()
             .authorizeExchange()
             .pathMatchers(
                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/swagger-ui/**")
@@ -30,9 +32,22 @@ class WebSecurityConfig : WebSecurityConfigurerAdapter() {
             .build()
     }
 
+    @Bean
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val configuration = CorsConfiguration()
+        configuration.allowCredentials = false
+        configuration.allowedOrigins = listOf("http://localhost:3000", "https://uvanna.vercel.app/")
+        configuration.allowedMethods = listOf(CorsConfiguration.ALL)
+        configuration.allowedHeaders = listOf(CorsConfiguration.ALL)
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", configuration)
+        return source
+    }
+
     @Throws(Exception::class)
     override fun configure(web: WebSecurity) {
         web.ignoring().antMatchers("/api/**", "/images/**")
     }
 
 }
+

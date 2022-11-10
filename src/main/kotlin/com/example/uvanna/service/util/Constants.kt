@@ -1,4 +1,4 @@
-package com.example.uvanna.util
+package com.example.uvanna.service.util
 
 object Constants {
     const val parserSuiteBrands = "https://santehnika-online.ru/brands/"

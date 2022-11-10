@@ -12,8 +12,6 @@ class WebClientConfig {
 
 
     private val logger = LoggerFactory.getLogger(WebClientConfig::class.java)
-    @Value("\${token}")
-    lateinit var token: String
 
     fun requestLoggerFilter() = ExchangeFilterFunction.ofRequestProcessor {
         println("Logging request: ${it.method()} ${it.url()}")

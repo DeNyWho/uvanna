@@ -1,6 +1,5 @@
 package com.example.uvanna.controller.products
 
-import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.product.ProductRequest
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.ProductService
@@ -10,18 +9,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.crossstore.ChangeSetPersister
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
-import java.security.Provider.Service
 import javax.servlet.http.HttpServletResponse
 
 
 @RestController
+@CrossOrigin("*")
 @Tag(name = "ProductsApi", description = "All about products")
 @RequestMapping("/api/products/")
 class ProductsController {
@@ -33,12 +27,12 @@ class ProductsController {
 
     @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun addProduct(
-        @RequestParam files: List<MultipartFile>,
+        @RequestBody files: List<MultipartFile>,
         product: ProductRequest,
         response: HttpServletResponse
     ): ServiceResponse<String> {
         return try {
-            productService.addProduct(product, files)
+            productService.addProduct(product, files,product.charactTitle , product.charactData)
 
             return ServiceResponse(data = listOf("Success"), status = HttpStatus.OK)
         } catch (e: ChangeSetPersister.NotFoundException) {

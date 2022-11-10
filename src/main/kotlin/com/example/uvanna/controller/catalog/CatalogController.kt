@@ -18,9 +18,11 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
+import java.security.Provider.Service
 import javax.servlet.http.HttpServletResponse
 
 @RestController
+@CrossOrigin("*")
 @Tag(name = "CatalogApi", description = "All about catalog")
 @RequestMapping("/api/catalog/")
 class CatalogController {
@@ -71,29 +73,18 @@ class CatalogController {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    @GetMapping("upper/{id}")
+    fun getCatalogUpper(
+        @PathVariable id: String,
+        response: HttpServletResponse
+    ): ServiceResponse<Any> {
+        return try {
+            val data = catalogService.getUpperLevels(id)
+            return ServiceResponse(data = listOf(data), status = HttpStatus.OK)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
 
 
 

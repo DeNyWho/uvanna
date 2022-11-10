@@ -11,4 +11,5 @@ interface CatalogRepositoryImpl {
     fun addLevel(id: String?, file: MultipartFile, title: String, option: String): Boolean
     fun getLevels(id: String?): Any
     fun deleteCategory(id: String)
+    fun getUpperLevels(id: String): Any
 }

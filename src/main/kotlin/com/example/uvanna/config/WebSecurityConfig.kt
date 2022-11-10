@@ -24,7 +24,7 @@ class WebSecurityConfig : WebSecurityConfigurerAdapter() {
         return http
             .authorizeExchange()
             .pathMatchers(
-                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/swagger-ui/**")
+                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
             .permitAll()
             .anyExchange()
             .authenticated()
@@ -32,17 +32,17 @@ class WebSecurityConfig : WebSecurityConfigurerAdapter() {
             .build()
     }
 
-    @Bean
-    fun corsConfigurationSource(): CorsConfigurationSource {
-        val configuration = CorsConfiguration()
-        configuration.allowCredentials = false
-        configuration.allowedOrigins = listOf("http://localhost:3000", "https://uvanna.vercel.app/")
-        configuration.allowedMethods = listOf(CorsConfiguration.ALL)
-        configuration.allowedHeaders = listOf(CorsConfiguration.ALL)
-        val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", configuration)
-        return source
-    }
+//    @Bean
+//    fun corsConfigurationSource(): CorsConfigurationSource {
+//        val configuration = CorsConfiguration()
+//        configuration.allowCredentials = false
+//        configuration.allowedOrigins = listOf("http://localhost:3000", "https://uvanna.vercel.app/")
+//        configuration.allowedMethods = listOf(CorsConfiguration.ALL)
+//        configuration.allowedHeaders = listOf(CorsConfiguration.ALL)
+//        val source = UrlBasedCorsConfigurationSource()
+//        source.registerCorsConfiguration("/**", configuration)
+//        return source
+//    }
 
     @Throws(Exception::class)
     override fun configure(web: WebSecurity) {

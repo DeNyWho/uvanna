@@ -31,6 +31,34 @@ class CatalogService: CatalogRepositoryImpl {
     @Autowired
     private lateinit var fileService: FileService
 
+    override fun getUpperLevels(id: String): Any {
+        val firstCatalog = catalogRepository.findById(id).isPresent
+        val secondCatalog = catalogSecondRepository.findById(id).isPresent
+        val thirdCatalog = catalogThirdRepository.findById(id).isPresent
+        if (firstCatalog) {
+            val catalog = catalogRepository.findById(id).get()
+
+            return CategoryFirst(
+                id = catalog.id!!,
+                title = catalog.title!!,
+                sub = catalog.sub,
+                imageUrl = catalog.imageUrl
+            )
+        }
+
+        if (secondCatalog) {
+            val catalog = catalogSecondRepository.findById(id).get()
+            return catalogRepository.findUpper(catalog)
+        }
+
+        if(thirdCatalog) {
+            val catalog = catalogThirdRepository.findById(id).get()
+            return catalogSecondRepository.findUpper(catalog)
+        }
+
+        return false
+    }
+
 
     override fun getLevels(id: String?): Any {
         if(id != null) {
@@ -115,7 +143,7 @@ class CatalogService: CatalogRepositoryImpl {
             when (option) {
                 "first" -> addFirstLevel(file, title)
                 "second" -> addSecondLevel(id!!, file, title)
-                "third" -> addThirdLevel(id!!, title)
+                "third" -> addThirdLevel(id!!, title, file)
             }
             true
         } catch (e: Exception){
@@ -160,18 +188,19 @@ class CatalogService: CatalogRepositoryImpl {
             second
         )
         catalogRepository.save(b)
-        println("ZXC = ${catalogRepository.findById(id)}")
     }
     fun addThirdLevel(
         id: String,
-        title: String
-    ) {
+        title: String,
+        file: MultipartFile,
+    ){
         val thirdId = UUID.randomUUID().toString()
 
         val third = catalogThirdRepository.save(
             CatalogThird(
                 id = thirdId,
-                title = title
+                title = title,
+                imageUrl = fileService.save(file)
             )
         )
 

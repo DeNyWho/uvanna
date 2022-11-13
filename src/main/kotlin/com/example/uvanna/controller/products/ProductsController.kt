@@ -89,13 +89,13 @@ class ProductsController {
         response: HttpServletResponse
     ): ServiceResponse<String>{
         val start = System.currentTimeMillis()
-        productService.parser(brand)
+        val data = productService.parser(brand)
 
         val finish = System.currentTimeMillis()
         val elapsed = finish - start
         logger.info("time execution $elapsed")
 
-        return ServiceResponse(data = listOf(elapsed.toString()), status = HttpStatus.OK)
+        return ServiceResponse(data = data, status = HttpStatus.OK)
     }
 
 

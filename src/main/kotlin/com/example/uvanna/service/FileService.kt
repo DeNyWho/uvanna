@@ -2,7 +2,6 @@ package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Image
 import com.example.uvanna.repository.image.ImageRepository
-import org.htmlunit.org.apache.http.entity.FileEntity
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service

@@ -24,7 +24,6 @@ class SwaggerConfig {
     @Bean
     fun aniFoxOpenAPI(): OpenAPI? {
         return OpenAPI()
-            .addSecurityItem(SecurityRequirement())
             .info(
                 Info()
                     .title("Uvanna official API")

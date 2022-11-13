@@ -35,6 +35,7 @@ class CatalogService: CatalogRepositoryImpl {
         val firstCatalog = catalogRepository.findById(id).isPresent
         val secondCatalog = catalogSecondRepository.findById(id).isPresent
         val thirdCatalog = catalogThirdRepository.findById(id).isPresent
+
         if (firstCatalog) {
             val catalog = catalogRepository.findById(id).get()
 

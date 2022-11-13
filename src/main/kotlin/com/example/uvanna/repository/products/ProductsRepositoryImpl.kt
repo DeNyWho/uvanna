@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile
 @Repository
 interface ProductsRepositoryImpl {
 
-    fun parser(brand: String)
+    fun parser(brand: String): List<String>
     fun deleteProduct(id: String)
     fun addProduct(
         product: ProductRequest,

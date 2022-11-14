@@ -9,6 +9,7 @@ import com.example.uvanna.repository.products.ProductsRepositoryImpl
 import com.example.uvanna.util.OS.*
 import com.example.uvanna.util.getOSU
 import org.openqa.selenium.By
+import org.openqa.selenium.Proxy
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
@@ -158,10 +159,14 @@ class ProductService: ProductsRepositoryImpl {
             MAC -> "_mac64_101"
             else -> throw Exception("Unknown operating system!")
         }
+        val proxy = Proxy()
         System.setProperty("webdriver.chrome.driver", "driver/chromedriver$pathDriver");
         val options = ChromeOptions()
+        proxy.httpProxy = "192.168.0.44:8120"
+        options.setCapability("proxy", proxy)
         options.addArguments("--headless")
         val driver = ChromeDriver(options)
+        driver.manage().window().maximize()
         try {
             driver.get(url);
         } catch (e: Exception) {

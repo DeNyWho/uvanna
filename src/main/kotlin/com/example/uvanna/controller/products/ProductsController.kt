@@ -1,9 +1,11 @@
 package com.example.uvanna.controller.products
 
+import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.model.product.ProductRequest
 import com.example.uvanna.model.product.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.ProductService
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -47,10 +49,12 @@ class ProductsController {
     fun getProducts(
         @RequestParam(defaultValue = "1") pageNum: @Min(1) Int,
         @RequestParam(defaultValue = "48") pageSize: @Min(1) @Max(500) Int,
-        brand: String?,
+        brand: String? ,
         smallPrice: Int?,
         highPrice: Int?,
-        order: String?,
+        @Parameter(description = "Order = brand | characteristic | stockEmpty | stockFull") order: String?,
+        @Parameter(description = "Filter = expensive | cheap | new | old") filter: String?,
+        characteristic: List<Characteristic>?,
         response: HttpServletResponse
     ): ServiceResponse<ProductsLightResponse>{
         return try {
@@ -60,7 +64,9 @@ class ProductsController {
                 brand = brand,
                 smallPrice = smallPrice,
                 highPrice = highPrice,
-                sort = order
+                sort = order,
+                filter = filter,
+                characteristic = characteristic
             )
 
             return ServiceResponse(data = data, status = HttpStatus.OK)
@@ -82,6 +88,7 @@ class ProductsController {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
     }
+
 
     @GetMapping("parser")
     fun parseProducts(

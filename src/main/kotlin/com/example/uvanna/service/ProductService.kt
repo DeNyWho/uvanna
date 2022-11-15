@@ -77,40 +77,70 @@ class ProductService: ProductsRepositoryImpl {
         productsRepository.save(item)
     }
 
-    override fun getProducts(countCard: Int, page: Int, brand: String?, smallPrice: Int?, sort: String?, highPrice: Int?): List<ProductsLightResponse>{
+    override fun getProducts(
+        countCard: Int,
+        page: Int,
+        brand: String?,
+        smallPrice: Int?,
+        sort: String?,
+        filter: String?,
+        highPrice: Int?,
+        characteristic: List<Characteristic>?
+    ): List<ProductsLightResponse>{
         return sortQuery(
             page = page,
             countCard = countCard,
             brand = brand,
             smallPrice = smallPrice,
             highPrice = highPrice,
-            order = sort
+            order = sort,
+            filter = filter,
+            characteristic = characteristic
         )
     }
 
-    fun sortQuery(countCard: Int, page: Int, brand: String?, smallPrice: Int?, highPrice: Int?, order: String? ): List<ProductsLightResponse> {
-        val sort = when(order){
+    fun sortQuery(
+        countCard: Int,
+        page: Int,
+        brand: String?,
+        smallPrice: Int?,
+        highPrice: Int?,
+        order: String?,
+        filter: String?,
+        characteristic: List<Characteristic>?
+    ): List<ProductsLightResponse> {
+        val sort = when(filter){
             "expensive" -> Sort.by(
                 Sort.Order(Sort.Direction.DESC, "price"),
             )
             "cheap" -> Sort.by(
                 Sort.Order(Sort.Direction.ASC, "price")
             )
+            "new" -> Sort.by(
+                Sort.Order(Sort.Direction.DESC, "updated")
+            )
+            "old" -> Sort.by(
+                Sort.Order(Sort.Direction.ASC, "updated")
+            )
             else -> null
         }
 
         val pageable: Pageable = if(sort != null ) PageRequest.of(page, countCard, sort) else PageRequest.of(page, countCard)
         val statePage: Page<Product> = if(smallPrice != null && highPrice != null) {
-            if(brand != null) {
-                productsRepository.findPriceBetweenAndBrand(pageable, smallPrice, highPrice, brand)
-            } else {
-                productsRepository.findPriceBetween(pageable, smallPrice, highPrice)
+            when(order){
+                "brand" -> productsRepository.findPriceBetweenAndBrand(pageable, smallPrice, highPrice, brand!!)
+                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!)
+                "stockEmpty" -> productsRepository.findProductEmptyStock(pageable)
+                "stockFull" -> productsRepository.findProductFullStock(pageable)
+                else -> productsRepository.findAll(pageable)
             }
         } else {
-            if(brand != null) {
-                productsRepository.findProductByBrand(pageable, brand)
-            } else {
-                productsRepository.findAll(pageable)
+            when(order){
+                "brand" -> productsRepository.findProductByBrand(pageable, brand!!)
+                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!)
+                "stockEmpty" -> productsRepository.findProductEmptyStock(pageable)
+                "stockFull" -> productsRepository.findProductFullStock(pageable)
+                else -> productsRepository.findAll(pageable)
             }
         }
 

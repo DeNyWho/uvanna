@@ -1,7 +1,6 @@
 package com.example.uvanna.repository.products
 
-import com.example.uvanna.jpa.CatalogSecond
-import com.example.uvanna.jpa.CatalogThird
+import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -19,5 +18,13 @@ interface ProductsRepository: JpaRepository<Product, String> {
 
     fun findProductByBrand(pageable: Pageable, brand: String): Page<Product>
 
+    @Query("select m from Product m where :characteristic member of m.characteristic")
+    fun findProductByCharacteristic(pageable: Pageable, characteristic: List<Characteristic>): Page<Product>
+
+    @Query("select m from Product m where m.stock = 0")
+    fun findProductEmptyStock(pageable: Pageable): Page<Product>
+
+    @Query("select m from Product m where m.stock > 0")
+    fun findProductFullStock(pageable: Pageable): Page<Product>
 
 }

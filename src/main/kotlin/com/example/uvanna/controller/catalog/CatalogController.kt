@@ -1,7 +1,5 @@
 package com.example.uvanna.controller.catalog
 
-import com.example.uvanna.jpa.CatalogSecond
-import com.example.uvanna.jpa.CatalogThird
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.CatalogService
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -18,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
-import java.security.Provider.Service
 import javax.servlet.http.HttpServletResponse
 
 @RestController

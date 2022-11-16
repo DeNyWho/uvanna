@@ -3,6 +3,7 @@ package com.example.uvanna.service
 import com.example.uvanna.model.payment.*
 import com.example.uvanna.model.request.payment.PaymentRequest
 import com.example.uvanna.model.response.PaymentResponse
+import com.example.uvanna.repository.products.ProductsRepository
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -14,6 +15,7 @@ import io.ktor.http.HttpHeaders.Authorization
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
 import okhttp3.Credentials
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.UUID
@@ -28,6 +30,9 @@ class PaymentService {
     @Value("\${payment_shop}")
     lateinit var paymentShop: String
 
+    @Autowired
+    lateinit var productsRepository: ProductsRepository
+
     var c: PaymentResponse = PaymentResponse(
         id = "",
         status = "",
@@ -40,7 +45,7 @@ class PaymentService {
         refundable = ""
     )
 
-    fun createNewPayment(price: String): Any  {
+    fun createNewPayment(ids: List<String>): Any  {
         val client = HttpClient() {
             expectSuccess = false
 
@@ -56,6 +61,13 @@ class PaymentService {
             }
         }
 
+        var price = 0
+        ids.forEach {
+            price = price + productsRepository.findById(it).get().price
+        }
+
+        println(price)
+
         runBlocking {
             val f = client.post {
                 headers {
@@ -65,7 +77,7 @@ class PaymentService {
                 }
                 setBody(
                     PaymentRequest(
-                        amount = Amount(value = price, currency = "RUB"),
+                        amount = Amount(value = price.toString(), currency = "RUB"),
                         confirmation = Confirmation(type = "redirect", return_url = "https://uvanna.store/cart/history"),
                         capture = true,
                         test = true

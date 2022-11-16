@@ -4,6 +4,7 @@ import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.product.ProductRequest
 import com.example.uvanna.model.product.ProductsLightResponse
+import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.products.ProductsRepositoryImpl
 import com.example.uvanna.util.OS.*
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.multipart.MultipartFile
@@ -85,18 +87,36 @@ class ProductService: ProductsRepositoryImpl {
         sort: String?,
         filter: String?,
         highPrice: Int?,
-        characteristic: List<Characteristic>?
-    ): List<ProductsLightResponse>{
-        return sortQuery(
-            page = page,
-            countCard = countCard,
-            brand = brand,
-            smallPrice = smallPrice,
-            highPrice = highPrice,
-            order = sort,
-            filter = filter,
-            characteristic = characteristic
-        )
+        characteristic: List<Characteristic>?,
+        level: String?
+    ): ServiceResponse<ProductsLightResponse>? {
+        return try {
+            ServiceResponse(
+                data = sortQuery(
+                page = page,
+                countCard = countCard,
+                brand = brand,
+                smallPrice = smallPrice,
+                highPrice = highPrice,
+                order = sort,
+                filter = filter,
+                characteristic = characteristic,
+                level = level
+            ),
+                message = "",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun getCharactSort(level: String): List<Characteristic> {
+        return productsRepository.getThirdLevelSort(level)
     }
 
     fun sortQuery(
@@ -107,7 +127,8 @@ class ProductService: ProductsRepositoryImpl {
         highPrice: Int?,
         order: String?,
         filter: String?,
-        characteristic: List<Characteristic>?
+        characteristic: List<Characteristic>?,
+        level: String?
     ): List<ProductsLightResponse> {
         val sort = when(filter){
             "expensive" -> Sort.by(
@@ -129,7 +150,7 @@ class ProductService: ProductsRepositoryImpl {
         val statePage: Page<Product> = if(smallPrice != null && highPrice != null) {
             when(order){
                 "brand" -> productsRepository.findPriceBetweenAndBrand(pageable, smallPrice, highPrice, brand!!)
-                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!)
+                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!, level!!)
                 "stockEmpty" -> productsRepository.findProductEmptyStock(pageable)
                 "stockFull" -> productsRepository.findProductFullStock(pageable)
                 else -> productsRepository.findAll(pageable)
@@ -137,7 +158,7 @@ class ProductService: ProductsRepositoryImpl {
         } else {
             when(order){
                 "brand" -> productsRepository.findProductByBrand(pageable, brand!!)
-                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!)
+                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!, level!!)
                 "stockEmpty" -> productsRepository.findProductEmptyStock(pageable)
                 "stockFull" -> productsRepository.findProductFullStock(pageable)
                 else -> productsRepository.findAll(pageable)
@@ -164,8 +185,6 @@ class ProductService: ProductsRepositoryImpl {
     override fun deleteProduct(id: String) {
         productsRepository.deleteById(id)
     }
-
-
 
     override fun parser(brand: String): List<String> {
         val driver = setWebDriver("https://santehnika-online.ru/brands/$brand/")

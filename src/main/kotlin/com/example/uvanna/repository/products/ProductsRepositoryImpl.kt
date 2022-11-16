@@ -3,6 +3,7 @@ package com.example.uvanna.repository.products
 import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.model.product.ProductRequest
 import com.example.uvanna.model.product.ProductsLightResponse
+import com.example.uvanna.model.response.ServiceResponse
 import org.springframework.stereotype.Repository
 import org.springframework.web.multipart.MultipartFile
 
@@ -29,6 +30,9 @@ interface ProductsRepositoryImpl {
         sort: String?,
         filter: String?,
         highPrice: Int?,
-        characteristic: List<Characteristic>?
-    ): List<ProductsLightResponse>
+        characteristic: List<Characteristic>?,
+        level: String?
+    ): ServiceResponse<ProductsLightResponse>?
+
+    fun getCharactSort(level: String): List<Characteristic>
 }

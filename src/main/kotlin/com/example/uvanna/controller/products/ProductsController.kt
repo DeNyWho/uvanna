@@ -45,6 +45,20 @@ class ProductsController {
         }
     }
 
+    @GetMapping("character/{id}")
+    fun getCharacterSort(
+        @PathVariable id: String,
+        response: HttpServletResponse
+    ): ServiceResponse<Characteristic>{
+        return try {
+            val data = productService.getCharactSort(id)
+
+            return ServiceResponse(data = data, status = HttpStatus.OK)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
     @GetMapping
     fun getProducts(
         @RequestParam(defaultValue = "1") pageNum: @Min(1) Int,
@@ -55,10 +69,11 @@ class ProductsController {
         @Parameter(description = "Order = brand | characteristic | stockEmpty | stockFull") order: String?,
         @Parameter(description = "Filter = expensive | cheap | new | old") filter: String?,
         characteristic: List<Characteristic>?,
+        level: String?,
         response: HttpServletResponse
-    ): ServiceResponse<ProductsLightResponse>{
+    ): ServiceResponse<ProductsLightResponse>? {
         return try {
-            val data = productService.getProducts(
+            return productService.getProducts(
                 countCard = pageSize,
                 page = pageNum,
                 brand = brand,
@@ -66,10 +81,9 @@ class ProductsController {
                 highPrice = highPrice,
                 sort = order,
                 filter = filter,
-                characteristic = characteristic
+                characteristic = characteristic,
+                level = level
             )
-
-            return ServiceResponse(data = data, status = HttpStatus.OK)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

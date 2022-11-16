@@ -18,8 +18,11 @@ interface ProductsRepository: JpaRepository<Product, String> {
 
     fun findProductByBrand(pageable: Pageable, brand: String): Page<Product>
 
-    @Query("select m from Product m where :characteristic member of m.characteristic")
-    fun findProductByCharacteristic(pageable: Pageable, characteristic: List<Characteristic>): Page<Product>
+    @Query("select m from Product m where :characteristic member of m.characteristic and m.thirdSub = :level")
+    fun findProductByCharacteristic(pageable: Pageable, characteristic: List<Characteristic>, level: String): Page<Product>
+
+    @Query("select m from Product m where m.thirdSub = :level")
+    fun getThirdLevelSort(level: String): List<Characteristic>
 
     @Query("select m from Product m where m.stock = 0")
     fun findProductEmptyStock(pageable: Pageable): Page<Product>

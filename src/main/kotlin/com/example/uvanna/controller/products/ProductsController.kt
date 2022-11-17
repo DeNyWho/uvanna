@@ -1,6 +1,7 @@
 package com.example.uvanna.controller.products
 
 import com.example.uvanna.jpa.Characteristic
+import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.product.ProductRequest
 import com.example.uvanna.model.product.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse
@@ -37,9 +38,9 @@ class ProductsController {
         response: HttpServletResponse
     ): ServiceResponse<String> {
         return try {
-            productService.addProduct(product, files,product.charactTitle , product.charactData)
+            productService.addProduct(product, files, product.charactTitle, product.charactData)
 
-            return ServiceResponse(data = listOf("Success"), status = HttpStatus.OK)
+            return ServiceResponse(data = listOf("Product has been created"), status = HttpStatus.OK)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -49,11 +50,21 @@ class ProductsController {
     fun getCharacterSort(
         @PathVariable id: String,
         response: HttpServletResponse
-    ): ServiceResponse<Characteristic>{
+    ): ServiceResponse<Characteristic> {
         return try {
-            val data = productService.getCharactSort(id)
+            ServiceResponse(data = productService.getCharactSort(id), status = HttpStatus.OK)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
 
-            return ServiceResponse(data = data, status = HttpStatus.OK)
+    @GetMapping("{id}")
+    fun getProduct(
+        @PathVariable id: String,
+        response: HttpServletResponse
+    ): ServiceResponse<Product>? {
+        return try {
+            productService.getProduct(id)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -61,19 +72,19 @@ class ProductsController {
 
     @GetMapping
     fun getProducts(
-        @RequestParam(defaultValue = "1") pageNum: @Min(1) Int,
+        @RequestParam(defaultValue = "1") pageNum: @Min(1) @Max(500) Int,
         @RequestParam(defaultValue = "48") pageSize: @Min(1) @Max(500) Int,
         brand: String? ,
         smallPrice: Int?,
         highPrice: Int?,
         @Parameter(description = "Order = brand | characteristic | stockEmpty | stockFull") order: String?,
         @Parameter(description = "Filter = expensive | cheap | new | old") filter: String?,
-        characteristic: List<Characteristic>?,
         level: String?,
+        categoryId: String?,
         response: HttpServletResponse
     ): ServiceResponse<ProductsLightResponse>? {
         return try {
-            return productService.getProducts(
+            productService.getProducts(
                 countCard = pageSize,
                 page = pageNum,
                 brand = brand,
@@ -81,8 +92,8 @@ class ProductsController {
                 highPrice = highPrice,
                 sort = order,
                 filter = filter,
-                characteristic = characteristic,
-                level = level
+                level = level,
+                categoryId = categoryId
             )
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
@@ -97,7 +108,11 @@ class ProductsController {
         return try {
             productService.deleteProduct(id)
 
-            return ServiceResponse(data = listOf("Success"), status = HttpStatus.OK)
+            return ServiceResponse(
+                data = null,
+                message = "Product with id = $id has been deleted",
+                status = HttpStatus.OK
+            )
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

@@ -30,4 +30,7 @@ interface ProductsRepository: JpaRepository<Product, String> {
     @Query("select m from Product m where m.stock > 0")
     fun findProductFullStock(pageable: Pageable): Page<Product>
 
+    @Query("select m from Product m where m.secondSub = :category or m.thirdSub = :category")
+    fun findProductWithCategoryId(pageable: Pageable, category: String): Page<Product>
+
 }

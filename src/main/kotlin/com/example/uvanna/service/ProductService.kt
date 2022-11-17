@@ -79,6 +79,22 @@ class ProductService: ProductsRepositoryImpl {
         productsRepository.save(item)
     }
 
+    override fun getProduct(id: String): ServiceResponse<Product>? {
+        return try {
+            ServiceResponse(
+                data = listOf(productsRepository.getById(id)),
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
     override fun getProducts(
         countCard: Int,
         page: Int,
@@ -87,23 +103,23 @@ class ProductService: ProductsRepositoryImpl {
         sort: String?,
         filter: String?,
         highPrice: Int?,
-        characteristic: List<Characteristic>?,
-        level: String?
+        level: String?,
+        categoryId: String?
     ): ServiceResponse<ProductsLightResponse>? {
         return try {
             ServiceResponse(
                 data = sortQuery(
-                page = page,
-                countCard = countCard,
-                brand = brand,
-                smallPrice = smallPrice,
-                highPrice = highPrice,
-                order = sort,
-                filter = filter,
-                characteristic = characteristic,
-                level = level
+                    page = page,
+                    countCard = countCard,
+                    brand = brand,
+                    smallPrice = smallPrice,
+                    highPrice = highPrice,
+                    order = sort,
+                    filter = filter,
+                    level = level,
+                    categoryId = categoryId
             ),
-                message = "",
+                message = "Success",
                 status = HttpStatus.OK
             )
         } catch (e: Exception){
@@ -127,8 +143,8 @@ class ProductService: ProductsRepositoryImpl {
         highPrice: Int?,
         order: String?,
         filter: String?,
-        characteristic: List<Characteristic>?,
-        level: String?
+        level: String?,
+        categoryId: String?
     ): List<ProductsLightResponse> {
         val sort = when(filter){
             "expensive" -> Sort.by(
@@ -150,19 +166,25 @@ class ProductService: ProductsRepositoryImpl {
         val statePage: Page<Product> = if(smallPrice != null && highPrice != null) {
             when(order){
                 "brand" -> productsRepository.findPriceBetweenAndBrand(pageable, smallPrice, highPrice, brand!!)
-                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!, level!!)
+//                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!, level!!)
                 "stockEmpty" -> productsRepository.findProductEmptyStock(pageable)
                 "stockFull" -> productsRepository.findProductFullStock(pageable)
                 else -> productsRepository.findAll(pageable)
             }
+            if(categoryId != null){
+                productsRepository.findProductWithCategoryId(pageable, categoryId)
+            } else productsRepository.findAll(pageable)
         } else {
             when(order){
                 "brand" -> productsRepository.findProductByBrand(pageable, brand!!)
-                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!, level!!)
+//                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!, level!!)
                 "stockEmpty" -> productsRepository.findProductEmptyStock(pageable)
                 "stockFull" -> productsRepository.findProductFullStock(pageable)
                 else -> productsRepository.findAll(pageable)
             }
+            if(categoryId != null){
+                productsRepository.findProductWithCategoryId(pageable, categoryId)
+            } else productsRepository.findAll(pageable)
         }
 
         val light = mutableListOf<ProductsLightResponse>()

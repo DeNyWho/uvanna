@@ -28,9 +28,11 @@ class PaymentController {
         response: HttpServletResponse
     ): ServiceResponse<Any> {
         return try {
-            val data = paymentService.createNewPayment(ids)
-
-            return ServiceResponse(data = listOf(data), status = HttpStatus.OK)
+            ServiceResponse(
+                data = listOf(paymentService.createNewPayment(ids)),
+                message = "Payment has been created",
+                status = HttpStatus.OK
+            )
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

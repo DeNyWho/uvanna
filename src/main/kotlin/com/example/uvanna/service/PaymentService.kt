@@ -78,7 +78,7 @@ class PaymentService {
                 setBody(
                     PaymentRequest(
                         amount = Amount(value = price.toString(), currency = "RUB"),
-                        confirmation = Confirmation(type = "redirect", return_url = "https://uvanna.store/cart/history"),
+                        confirmation = Confirmation(type = "redirect", return_url = "https://uvanna.store/cart/order/orderCreated"),
                         capture = true,
                         test = true
                     )

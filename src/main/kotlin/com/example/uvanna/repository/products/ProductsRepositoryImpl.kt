@@ -1,6 +1,7 @@
 package com.example.uvanna.repository.products
 
 import com.example.uvanna.jpa.Characteristic
+import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.product.ProductRequest
 import com.example.uvanna.model.product.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse
@@ -21,7 +22,22 @@ interface ProductsRepositoryImpl {
         data: List<String>
     )
 
+//
+//    fun getProducts(
+//        countCard: Int,
+//        page: Int,
+//        brand: String?,
+//        smallPrice: Int?,
+//        sort: String?,
+//        filter: String?,
+//        highPrice: Int?,
+//        characteristic: List<Characteristic>?,
+//        level: String?
+//    ): ServiceResponse<ProductsLightResponse>?
 
+    fun getCharactSort(level: String): List<Characteristic>
+
+    fun getProduct(id: String): ServiceResponse<Product>?
     fun getProducts(
         countCard: Int,
         page: Int,
@@ -30,9 +46,7 @@ interface ProductsRepositoryImpl {
         sort: String?,
         filter: String?,
         highPrice: Int?,
-        characteristic: List<Characteristic>?,
-        level: String?
+        level: String?,
+        categoryId: String?
     ): ServiceResponse<ProductsLightResponse>?
-
-    fun getCharactSort(level: String): List<Characteristic>
 }

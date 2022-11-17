@@ -25,9 +25,11 @@ class OrdersController {
         response: HttpServletResponse
     ): ServiceResponse<Any> {
         return try {
-            val data = orderService.createNewOrder(orders)
-
-            return ServiceResponse(data = listOf(data), status = HttpStatus.OK)
+            ServiceResponse(
+                data = listOf(orderService.createNewOrder(orders)),
+                message = "Order has been created",
+                status = HttpStatus.OK
+            )
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

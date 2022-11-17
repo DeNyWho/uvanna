@@ -36,8 +36,11 @@ class CatalogController {
         response: HttpServletResponse
     ): ServiceResponse<Boolean> {
         return try {
-            val data = catalogService.addLevel(id, file, title, option)
-            return ServiceResponse(data = listOf(data), status = HttpStatus.OK)
+            return ServiceResponse(
+                data = listOf(catalogService.addLevel(id, file, title, option)),
+                message = "Category has been created",
+                status = HttpStatus.OK
+            )
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -50,7 +53,11 @@ class CatalogController {
     ): ServiceResponse<String> {
         return try {
             catalogService.deleteCategory(id)
-            return ServiceResponse(data = listOf("Success"), status = HttpStatus.OK)
+            return ServiceResponse(
+                data = null,
+                message = "Category with id = $id has been deleted",
+                status = HttpStatus.OK
+            )
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -63,8 +70,11 @@ class CatalogController {
         response: HttpServletResponse
     ): ServiceResponse<Any> {
         return try {
-            val data = catalogService.getLevels(id)
-            return ServiceResponse(data = listOf(data), status = HttpStatus.OK)
+            return ServiceResponse(
+                data = listOf(catalogService.getLevels(id)),
+                message = "Success",
+                status = HttpStatus.OK
+            )
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -76,8 +86,11 @@ class CatalogController {
         response: HttpServletResponse
     ): ServiceResponse<Any> {
         return try {
-            val data = catalogService.getUpperLevels(id)
-            return ServiceResponse(data = listOf(data), status = HttpStatus.OK)
+            return ServiceResponse(
+                data = listOf(catalogService.getUpperLevels(id)),
+                message = "Success",
+                status = HttpStatus.OK
+            )
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

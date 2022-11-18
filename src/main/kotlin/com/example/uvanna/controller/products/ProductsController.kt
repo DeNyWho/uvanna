@@ -4,6 +4,7 @@ import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.product.ProductRequest
 import com.example.uvanna.model.product.ProductsLightResponse
+import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.ProductService
 import io.swagger.v3.oas.annotations.Parameter
@@ -36,11 +37,9 @@ class ProductsController {
         @RequestBody files: List<MultipartFile>,
         product: ProductRequest,
         response: HttpServletResponse
-    ): ServiceResponse<String> {
+    ): ServiceResponse<Product>? {
         return try {
             productService.addProduct(product, files, product.charactTitle, product.charactData)
-
-            return ServiceResponse(data = listOf("Product has been created"), status = HttpStatus.OK)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -70,11 +69,23 @@ class ProductsController {
         }
     }
 
+    @GetMapping("brands")
+    fun getBrandsByCategory(
+        categoryId: String,
+        response: HttpServletResponse
+    ): ServiceResponse<String>? {
+        return try {
+            productService.getBrands(categoryId)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
     @GetMapping
     fun getProducts(
-        @RequestParam(defaultValue = "1") pageNum: @Min(1) @Max(500) Int,
+        @RequestParam(defaultValue = "0") pageNum: @Min(0) @Max(500) Int,
         @RequestParam(defaultValue = "48") pageSize: @Min(1) @Max(500) Int,
-        brand: String? ,
+        brand: String?,
         smallPrice: Int?,
         highPrice: Int?,
         @Parameter(description = "Order = brand | characteristic | stockEmpty | stockFull") order: String?,
@@ -82,7 +93,7 @@ class ProductsController {
         level: String?,
         categoryId: String?,
         response: HttpServletResponse
-    ): ServiceResponse<ProductsLightResponse>? {
+    ): PagingResponse<ProductsLightResponse>? {
         return try {
             productService.getProducts(
                 countCard = pageSize,
@@ -90,13 +101,13 @@ class ProductsController {
                 brand = brand,
                 smallPrice = smallPrice,
                 highPrice = highPrice,
-                sort = order,
+                order = order,
                 filter = filter,
                 level = level,
                 categoryId = categoryId
             )
         } catch (e: ChangeSetPersister.NotFoundException) {
-            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+            PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
     }
 
@@ -123,7 +134,7 @@ class ProductsController {
     fun parseProducts(
         @RequestParam brand: String,
         response: HttpServletResponse
-    ): ServiceResponse<String>{
+    ): ServiceResponse<String> {
         val start = System.currentTimeMillis()
         val data = productService.parser(brand)
 
@@ -133,8 +144,6 @@ class ProductsController {
 
         return ServiceResponse(data = data, status = HttpStatus.OK)
     }
-
-
 
 
 }

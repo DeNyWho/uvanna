@@ -33,4 +33,7 @@ interface ProductsRepository: JpaRepository<Product, String> {
     @Query("select m from Product m where m.secondSub = :category or m.thirdSub = :category")
     fun findProductWithCategoryId(pageable: Pageable, category: String): Page<Product>
 
+    @Query("select distinct m.brand from Product m where m.secondSub = :category or m.thirdSub = :category")
+    fun findBrands(category: String): List<String>
+
 }

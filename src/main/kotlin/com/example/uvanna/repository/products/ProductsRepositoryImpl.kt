@@ -4,6 +4,7 @@ import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.product.ProductRequest
 import com.example.uvanna.model.product.ProductsLightResponse
+import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import org.springframework.stereotype.Repository
 import org.springframework.web.multipart.MultipartFile
@@ -20,7 +21,7 @@ interface ProductsRepositoryImpl {
         files: List<MultipartFile>,
         characteristic: List<String>,
         data: List<String>
-    )
+    ): ServiceResponse<Product>?
 
 //
 //    fun getProducts(
@@ -38,15 +39,17 @@ interface ProductsRepositoryImpl {
     fun getCharactSort(level: String): List<Characteristic>
 
     fun getProduct(id: String): ServiceResponse<Product>?
+
+    fun getBrands(id: String): ServiceResponse<String>?
     fun getProducts(
         countCard: Int,
         page: Int,
         brand: String?,
         smallPrice: Int?,
-        sort: String?,
-        filter: String?,
         highPrice: Int?,
+        order: String?,
+        filter: String?,
         level: String?,
         categoryId: String?
-    ): ServiceResponse<ProductsLightResponse>?
+    ): PagingResponse<ProductsLightResponse>?
 }

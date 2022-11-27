@@ -1,7 +1,6 @@
 package com.example.uvanna.controller.products
 
 import com.example.uvanna.jpa.Characteristic
-import com.example.uvanna.jpa.Orders
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.request.product.ProductRequest
@@ -109,10 +108,12 @@ class ProductsController {
     @GetMapping("search")
     fun searchProduct(
         searchQuery: String,
+        @RequestParam(defaultValue = "0") pageNum: @Min(0) @Max(500) Int,
+        @RequestParam(defaultValue = "48") pageSize: @Min(1) @Max(500) Int,
         response: HttpServletResponse
     ): ServiceResponse<ProductLighterResponse>? {
         return try {
-            productService.findProduct(searchQuery)
+            productService.findProduct(searchQuery, pageNum, pageSize)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

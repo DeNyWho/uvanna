@@ -27,4 +27,5 @@ data class Orders(
     @OneToMany
     val products: List<OrdersProducts> = listOf(),
     val status: String = "",
+    val updated: String = ""
 )

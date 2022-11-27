@@ -19,7 +19,7 @@ interface ProductsRepository: JpaRepository<Product, String> {
     fun findBrand(pageable: Pageable, brand: List<String>):Page<Product>
 
     @Query("select v from Product v where upper(v.title) like concat('%', upper(?1), '%')")
-    fun findByTitleSearch(@Param("title") title: String): List<Product>
+    fun findByTitleSearch(pageable: Pageable, @Param("title") title: String): Page<Product>
 
 
     @Query("select m from Product m where (m.price between :firstPrice and :secondPrice)")

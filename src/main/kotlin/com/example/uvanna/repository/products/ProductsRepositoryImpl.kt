@@ -10,6 +10,8 @@ import com.example.uvanna.model.response.ProductLighterResponse
 import com.example.uvanna.model.response.ServiceResponse
 import org.springframework.stereotype.Repository
 import org.springframework.web.multipart.MultipartFile
+import javax.validation.constraints.Max
+import javax.validation.constraints.Min
 
 @Repository
 interface ProductsRepositoryImpl {
@@ -55,5 +57,9 @@ interface ProductsRepositoryImpl {
         categoryId: String?
     ): PagingResponse<ProductsLightResponse>?
 
-    fun findProduct(searchQuery: String): ServiceResponse<ProductLighterResponse>?
+    fun findProduct(
+        searchQuery: String,
+        pageNum: @Min(value = 0.toLong()) @Max(value = 500.toLong()) Int,
+        pageSize: @Min(value = 1.toLong()) @Max(value = 500.toLong()) Int
+    ): ServiceResponse<ProductLighterResponse>?
 }

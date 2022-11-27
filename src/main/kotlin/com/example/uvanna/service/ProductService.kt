@@ -29,6 +29,8 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.multipart.MultipartFile
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.validation.constraints.Max
+import javax.validation.constraints.Min
 
 
 @Service
@@ -188,11 +190,16 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
-    override fun findProduct(searchQuery: String): ServiceResponse<ProductLighterResponse>? {
+    override fun findProduct(
+        searchQuery: String,
+        pageNum: Int,
+        pageSize: Int
+    ): ServiceResponse<ProductLighterResponse>? {
         return try {
             val light = mutableListOf<ProductLighterResponse>()
+            val pageable: Pageable =PageRequest.of(pageNum, pageSize)
 
-            productsRepository.findByTitleSearch(searchQuery).forEach {
+            productsRepository.findByTitleSearch(pageable, searchQuery).forEach {
                 light.add(
                     ProductLighterResponse(
                         id = it.id,

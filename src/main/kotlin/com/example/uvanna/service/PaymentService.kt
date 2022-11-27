@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import java.text.SimpleDateFormat
 import java.util.*
 
 
@@ -136,6 +137,7 @@ class PaymentService: PaymentRepositoryImpl {
                             fullName = paymentDataRequest.fullname,
                             phone = paymentDataRequest.phone,
                             email = paymentDataRequest.email,
+                            updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
                             typeDelivery = paymentDataRequest.typeDelivery,
                             typePayment = paymentDataRequest.typePayment,
                             paymentID = c.id,
@@ -177,6 +179,7 @@ class PaymentService: PaymentRepositoryImpl {
                     typeDelivery = paymentDataRequest.typeDelivery,
                     typePayment = paymentDataRequest.typePayment,
                     code = v,
+                    updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
                     paymentID = null,
                     paymentSuccess = null,
                     products = orderProducts,

@@ -4,6 +4,7 @@ import com.example.uvanna.jpa.Orders
 import com.example.uvanna.model.payment.Amount
 import com.example.uvanna.model.payment.ConfirmationWithToken
 import com.example.uvanna.model.payment.Recipient
+import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.PaymentResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.orders.OrdersRepository
@@ -22,24 +23,18 @@ import kotlinx.coroutines.withContext
 import okhttp3.Credentials
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
-import java.util.*
 
 @Service
 class OrderService: OrdersRepositoryImpl {
 
     @Autowired
     lateinit var ordersRepository: OrdersRepository
-
-    override fun createNewOrder(order: Orders): String {
-        return try {
-            ordersRepository.save(order)
-            "Success"
-        } catch (e: Exception){
-             e.message.toString()
-        }
-    }
 
     override fun editOrder(id: String, order: Orders): String {
         return try {
@@ -69,6 +64,59 @@ class OrderService: OrdersRepositoryImpl {
         paid = "",
         refundable = ""
     )
+
+    override fun getOrdersList(
+        filter: String?,
+        pageNum: Int,
+        pageSize: Int
+    ): PagingResponse<Orders>? {
+        return try {
+            val sort = when (filter) {
+                "new" -> Sort.by(
+                    Sort.Order(Sort.Direction.DESC, "updated"),
+                )
+
+                "old" -> Sort.by(
+                    Sort.Order(Sort.Direction.ASC, "updated")
+                )
+
+                else -> null
+            }
+
+            val pageable: Pageable =
+                if (sort != null) PageRequest.of(pageNum, pageSize, sort) else PageRequest.of(pageNum, pageSize)
+
+            val statePage: Page<Orders> = when (filter) {
+                "paid" -> {
+                    ordersRepository.findByPaidStatus(pageable, "true")
+                }
+
+                "no paid" -> {
+                    ordersRepository.findByPaidStatus(pageable, "false")
+                }
+
+                else -> ordersRepository.findAll(pageable)
+            }
+            val temp = mutableListOf<Orders>()
+
+            statePage.content.forEach {
+                temp.add(it)
+            }
+            PagingResponse(
+                data = temp,
+                totalElements = statePage.totalElements,
+                totalPages = statePage.totalPages,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
+            PagingResponse(
+                data = null,
+                message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
 
     override fun getOrders(id: String): ServiceResponse<Orders>? {
         return try {

@@ -1,8 +1,19 @@
 package com.example.uvanna.service
 
-import com.example.uvanna.model.payment.*
+import com.example.uvanna.jpa.Orders
+import com.example.uvanna.jpa.Product
+import com.example.uvanna.model.OrdersProducts
+import com.example.uvanna.model.payment.Amount
+import com.example.uvanna.model.payment.Confirmation
+import com.example.uvanna.model.payment.ConfirmationWithToken
+import com.example.uvanna.model.payment.Recipient
+import com.example.uvanna.model.request.payment.PaymentDataRequest
+import com.example.uvanna.model.request.payment.PaymentProductRequest
 import com.example.uvanna.model.request.payment.PaymentRequest
 import com.example.uvanna.model.response.PaymentResponse
+import com.example.uvanna.model.response.ServiceResponse
+import com.example.uvanna.repository.orders.OrdersRepository
+import com.example.uvanna.repository.payment.PaymentRepositoryImpl
 import com.example.uvanna.repository.products.ProductsRepository
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -13,16 +24,19 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.HttpHeaders.Authorization
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import okhttp3.Credentials
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
-import java.util.UUID
+import java.util.*
 
 
 @Service
-class PaymentService {
+class PaymentService: PaymentRepositoryImpl {
 
     @Value("\${payment_key}")
     lateinit var paymentKey: String
@@ -32,6 +46,9 @@ class PaymentService {
 
     @Autowired
     lateinit var productsRepository: ProductsRepository
+
+    @Autowired
+    lateinit var ordersRepository: OrdersRepository
 
     var c: PaymentResponse = PaymentResponse(
         id = "",
@@ -45,52 +62,145 @@ class PaymentService {
         refundable = ""
     )
 
-    fun createNewPayment(ids: List<String>): Any  {
-        val client = HttpClient() {
-            expectSuccess = false
 
-            defaultRequest {
-                contentType(ContentType.Application.Json)
-            }
-            install(ContentNegotiation) {
-                json()
-            }
-            install(Logging) {
-                logger = Logger.DEFAULT
-                level = LogLevel.ALL
-            }
-        }
 
-        var price = 0
-        ids.forEach {
-            price = price + productsRepository.findById(it).get().price
-        }
+    override fun createNewPayment(ordersProducts: List<PaymentProductRequest>, paymentDataRequest: PaymentDataRequest): Any  {
+        if (paymentDataRequest.typePayment == "beznal") {
+            val client = HttpClient() {
+                expectSuccess = false
 
-        println(price)
-
-        runBlocking {
-            val f = client.post {
-                headers {
+                defaultRequest {
                     contentType(ContentType.Application.Json)
-                    append("Idempotence-Key", UUID.randomUUID().toString())
-                    append(Authorization, Credentials.basic(paymentShop,paymentKey))
                 }
-                setBody(
-                    PaymentRequest(
-                        amount = Amount(value = price.toString(), currency = "RUB"),
-                        confirmation = Confirmation(type = "redirect", return_url = "https://uvanna.store/cart/order/orderCreated"),
-                        capture = true,
-                        test = true
+                install(ContentNegotiation) {
+                    json()
+                }
+                install(Logging) {
+                    logger = Logger.DEFAULT
+                    level = LogLevel.ALL
+                }
+            }
+
+            var price = 0
+            ordersProducts.forEach {
+                price = price + productsRepository.findById(it.productID).get().price
+            }
+            var v =
+                "${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}-${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}"
+            while (ordersRepository.findByCode(v).isPresent) {
+                v =
+                    "${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}-${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}"
+            }
+
+            runBlocking {
+                val f = client.post {
+                    headers {
+                        contentType(ContentType.Application.Json)
+                        append("Idempotence-Key", UUID.randomUUID().toString())
+                        append(Authorization, Credentials.basic(paymentShop, paymentKey))
+                    }
+                    setBody(
+                        PaymentRequest(
+                            amount = Amount(value = price.toString(), currency = "RUB"),
+                            confirmation = Confirmation(
+                                type = "redirect",
+                                return_url = "https://uvanna.store/order/orderCreated?code=$v"
+                            ),
+                            capture = true,
+                            test = true
+                        )
+                    )
+                    url {
+                        protocol = URLProtocol.HTTPS
+                        host = "api.yookassa.ru/v3/payments"
+                    }
+                }
+                val orderProducts = mutableListOf<OrdersProducts>()
+                ordersProducts.forEach{
+                    orderProducts.add(
+                        OrdersProducts(
+                        productID = it.productID,
+                        count = it.count
+                    )
+                    )
+                }
+                c = f.body()
+                c.metadata = null
+                val id = UUID.randomUUID().toString()
+                withContext(Dispatchers.IO) {
+                    ordersRepository.save(
+                        Orders(
+                            id = id,
+                            city = paymentDataRequest.city,
+                            streetFull = paymentDataRequest.streetFull,
+                            fullName = paymentDataRequest.fullname,
+                            phone = paymentDataRequest.phone,
+                            email = paymentDataRequest.email,
+                            typeDelivery = paymentDataRequest.typeDelivery,
+                            typePayment = paymentDataRequest.typePayment,
+                            paymentID = c.id,
+                            code = v,
+                            products = orderProducts,
+                            status = "заказ требует оплаты"
+                        )
+                    )
+                }
+            }
+            return c
+        } else {
+            var v =
+                "${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}-${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}"
+            while (ordersRepository.findByCode(v).isPresent) {
+                v =
+                    "${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}-${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}"
+            }
+
+            val orderProducts = mutableListOf<OrdersProducts>()
+            ordersProducts.forEach{
+                orderProducts.add(
+                    OrdersProducts(
+                        productID = it.productID,
+                        count = it.count
                     )
                 )
-                url {
-                    protocol = URLProtocol.HTTPS
-                    host = "api.yookassa.ru/v3/payments"
-                }
             }
-            c = f.body()
-            c.metadata = null
+
+            val id = UUID.randomUUID().toString()
+            ordersRepository.save(
+                Orders(
+                    id = id,
+                    city = paymentDataRequest.city,
+                    streetFull = paymentDataRequest.streetFull,
+                    fullName = paymentDataRequest.fullname,
+                    phone = paymentDataRequest.phone,
+                    email = paymentDataRequest.email,
+                    typeDelivery = paymentDataRequest.typeDelivery,
+                    typePayment = paymentDataRequest.typePayment,
+                    code = v,
+                    paymentID = null,
+                    paymentSuccess = null,
+                    products = orderProducts,
+                    status = "Заказ будет оплачен наличными, если вы передумали, то можете оплатить безналичным расчетом."
+                )
+            )
+            return ordersRepository.findById(id)
         }
-        return c
     }
+
+    override fun getOrder(id: String): ServiceResponse<Orders>? {
+        return try {
+            ServiceResponse(
+                data = listOf(ordersRepository.getById(id)),
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
 }

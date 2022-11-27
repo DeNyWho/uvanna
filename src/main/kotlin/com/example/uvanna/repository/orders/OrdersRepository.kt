@@ -2,8 +2,13 @@ package com.example.uvanna.repository.orders
 
 import com.example.uvanna.jpa.Orders
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import java.util.Optional
 
 @Repository
 interface OrdersRepository: JpaRepository<Orders, String> {
+
+    @Query("select m from Orders m where m.code = :code")
+    fun findByCode(code: String): Optional<Orders>
 }

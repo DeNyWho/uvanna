@@ -1,10 +1,13 @@
 package com.example.uvanna.controller.products
 
 import com.example.uvanna.jpa.Characteristic
+import com.example.uvanna.jpa.Orders
 import com.example.uvanna.jpa.Product
-import com.example.uvanna.model.product.ProductRequest
-import com.example.uvanna.model.product.ProductsLightResponse
+import com.example.uvanna.model.product.Brands
+import com.example.uvanna.model.request.product.ProductRequest
+import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.PagingResponse
+import com.example.uvanna.model.response.ProductLighterResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.ProductService
 import io.swagger.v3.oas.annotations.Parameter
@@ -40,6 +43,28 @@ class ProductsController {
     ): ServiceResponse<Product>? {
         return try {
             productService.addProduct(product, files, product.charactTitle, product.charactData)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @PostMapping("edit/{id}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun editProducts(
+        @PathVariable id: String,
+        @RequestBody files: List<MultipartFile>,
+        product: ProductRequest,
+        characteristic: List<String>,
+        data: List<String>,
+        response: HttpServletResponse
+    ): ServiceResponse<Product>? {
+        return try {
+            productService.editProduct(
+                id = id,
+                product = product,
+                files = files,
+                characteristic = product.charactTitle,
+                data = product.charactData
+            )
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -81,11 +106,23 @@ class ProductsController {
         }
     }
 
+    @GetMapping("search")
+    fun searchProduct(
+        searchQuery: String,
+        response: HttpServletResponse
+    ): ServiceResponse<ProductLighterResponse>? {
+        return try {
+            productService.findProduct(searchQuery)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
     @GetMapping
     fun getProducts(
         @RequestParam(defaultValue = "0") pageNum: @Min(0) @Max(500) Int,
         @RequestParam(defaultValue = "48") pageSize: @Min(1) @Max(500) Int,
-        brand: String?,
+        brands: Brands?,
         smallPrice: Int?,
         highPrice: Int?,
         @Parameter(description = "Order = brand | characteristic | stockEmpty | stockFull") order: String?,
@@ -95,10 +132,10 @@ class ProductsController {
         response: HttpServletResponse
     ): PagingResponse<ProductsLightResponse>? {
         return try {
-            productService.getProducts(
+            productService.getProducts (
                 countCard = pageSize,
                 page = pageNum,
-                brand = brand,
+                brand = brands,
                 smallPrice = smallPrice,
                 highPrice = highPrice,
                 order = order,

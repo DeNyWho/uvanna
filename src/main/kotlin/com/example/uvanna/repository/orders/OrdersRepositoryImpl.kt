@@ -10,4 +10,5 @@ interface OrdersRepositoryImpl {
 
     fun createNewOrder(order: Orders): String
     fun getOrders(id: String): ServiceResponse<Orders>?
+    fun editOrder(id: String, order: Orders): String
 }

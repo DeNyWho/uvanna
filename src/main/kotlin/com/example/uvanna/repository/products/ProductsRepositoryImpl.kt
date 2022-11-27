@@ -2,9 +2,11 @@ package com.example.uvanna.repository.products
 
 import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
-import com.example.uvanna.model.product.ProductRequest
-import com.example.uvanna.model.product.ProductsLightResponse
+import com.example.uvanna.model.product.Brands
+import com.example.uvanna.model.request.product.ProductRequest
+import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.PagingResponse
+import com.example.uvanna.model.response.ProductLighterResponse
 import com.example.uvanna.model.response.ServiceResponse
 import org.springframework.stereotype.Repository
 import org.springframework.web.multipart.MultipartFile
@@ -44,7 +46,7 @@ interface ProductsRepositoryImpl {
     fun getProducts(
         countCard: Int,
         page: Int,
-        brand: String?,
+        brand: Brands?,
         smallPrice: Int?,
         highPrice: Int?,
         order: String?,
@@ -52,4 +54,6 @@ interface ProductsRepositoryImpl {
         level: String?,
         categoryId: String?
     ): PagingResponse<ProductsLightResponse>?
+
+    fun findProduct(searchQuery: String): ServiceResponse<ProductLighterResponse>?
 }

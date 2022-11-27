@@ -1,4 +1,4 @@
-package com.example.uvanna.model.product
+package com.example.uvanna.model.response
 
 data class ProductsLightResponse(
     val id: String,

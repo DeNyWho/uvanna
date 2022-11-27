@@ -1,9 +1,7 @@
 package com.example.uvanna.service
 
 import com.example.uvanna.jpa.MainBanner
-import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.Promo
-import com.example.uvanna.model.product.ProductsLightResponse
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.PromoLightResponse
 import com.example.uvanna.model.response.ServiceResponse
@@ -18,11 +16,8 @@ import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.*
-import javax.validation.constraints.Max
-import javax.validation.constraints.Min
 
 @Service
 class SiteService: SiteRepositoryImpl {

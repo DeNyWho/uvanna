@@ -2,9 +2,11 @@ package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
-import com.example.uvanna.model.product.ProductRequest
-import com.example.uvanna.model.product.ProductsLightResponse
+import com.example.uvanna.model.product.Brands
+import com.example.uvanna.model.request.product.ProductRequest
+import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.PagingResponse
+import com.example.uvanna.model.response.ProductLighterResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.products.ProductsRepositoryImpl
@@ -47,6 +49,61 @@ class ProductService: ProductsRepositoryImpl {
     }
 
     private var pagesBoolean = false
+
+
+    fun editProduct(
+        id: String,
+        characteristic: List<String>,
+        data: List<String>,
+        files: List<MultipartFile>,
+        product: ProductRequest
+    ): ServiceResponse<Product>? {
+        return try {
+            val charact = mutableListOf<Characteristic>()
+            characteristic.forEachIndexed { index, s ->
+                charact.add(
+                    Characteristic(
+                        id = UUID.randomUUID().toString(),
+                        title = characteristic[index],
+                        data = data[index]
+                    )
+                )
+            }
+
+            val imagesUrl = mutableListOf<String>()
+            files.forEach {
+                imagesUrl.add(fileService.save(it))
+            }
+
+            val item = Product(
+                id = UUID.randomUUID().toString(),
+                images = imagesUrl,
+                title = product.title,
+                updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
+                characteristic = charact,
+                secondSub = product.secondSub,
+                thirdSub = product.thirdSub,
+                stock = product.stock,
+                brand = product.brand,
+                price = product.price,
+            )
+
+            productsRepository.save(item)
+
+            ServiceResponse(
+                data = listOf(productsRepository.findById(item.id).get()),
+                message = "Product has been edited",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = "Something went wrong: ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
 
     override fun addProduct(
         product: ProductRequest,
@@ -131,6 +188,34 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
+    override fun findProduct(searchQuery: String): ServiceResponse<ProductLighterResponse>? {
+        return try {
+            val light = mutableListOf<ProductLighterResponse>()
+
+            productsRepository.findByTitleSearch(searchQuery).forEach {
+                light.add(
+                    ProductLighterResponse(
+                        id = it.id,
+                        title = it.title,
+                        imageUrls = it.images,
+                        price = it.price
+                    )
+                )
+            }
+            ServiceResponse(
+                data = light,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
+            ServiceResponse(
+                data = null,
+                message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
     override fun getCharactSort(level: String): List<Characteristic> {
         return productsRepository.getThirdLevelSort(level)
     }
@@ -138,7 +223,7 @@ class ProductService: ProductsRepositoryImpl {
     override fun getProducts(
         countCard: Int,
         page: Int,
-        brand: String?,
+        brand: Brands?,
         smallPrice: Int?,
         highPrice: Int?,
         order: String?,
@@ -151,19 +236,12 @@ class ProductService: ProductsRepositoryImpl {
                 "expensive" -> Sort.by(
                     Sort.Order(Sort.Direction.DESC, "price"),
                 )
-
                 "cheap" -> Sort.by(
                     Sort.Order(Sort.Direction.ASC, "price")
                 )
-
                 "new" -> Sort.by(
                     Sort.Order(Sort.Direction.DESC, "updated")
                 )
-
-                "old" -> Sort.by(
-                    Sort.Order(Sort.Direction.ASC, "updated")
-                )
-
                 else -> null
             }
 
@@ -171,18 +249,19 @@ class ProductService: ProductsRepositoryImpl {
                 if (sort != null) PageRequest.of(page, countCard, sort) else PageRequest.of(page, countCard)
             val statePage: Page<Product> = if (smallPrice != null && highPrice != null) {
                 when (order) {
-                    "brand" -> productsRepository.findPriceBetweenAndBrand(pageable, smallPrice, highPrice, brand!!)
+                    "brand" -> productsRepository.findBrand(pageable, brand!!.brand)
+//                    "brand" -> productsRepository.findPriceBetweenAndBrand(pageable, smallPrice, highPrice, brand!!.brand)
 //                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!, level!!)
-                    "stockEmpty" -> productsRepository.findProductEmptyStock(pageable)
-                    "stockFull" -> productsRepository.findProductFullStock(pageable)
-                    else -> productsRepository.findAll(pageable)
+                    "stockEmpty" -> productsRepository.findProductEmptyStockWithBetweenPrice(pageable, smallPrice, highPrice)
+                    "stockFull" -> productsRepository.findProductFullStockWithBetweenPrice(pageable, smallPrice, highPrice)
+                    else -> productsRepository.findPriceBetween(pageable, smallPrice, highPrice)
                 }
                 if (categoryId != null) {
-                    productsRepository.findProductWithCategoryId(pageable, categoryId)
-                } else productsRepository.findAll(pageable)
+                    productsRepository.findProductWithCategoryIdWithBetweenPrice(pageable, categoryId, smallPrice, highPrice)
+                } else productsRepository.findPriceBetween(pageable, smallPrice, highPrice)
             } else {
                 when (order) {
-                    "brand" -> productsRepository.findProductByBrand(pageable, brand!!)
+                    "brand" -> productsRepository.findProductByBrand(pageable, brand!!.brand)
 //                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!, level!!)
                     "stockEmpty" -> productsRepository.findProductEmptyStock(pageable)
                     "stockFull" -> productsRepository.findProductFullStock(pageable)
@@ -265,20 +344,6 @@ class ProductService: ProductsRepositoryImpl {
         }
         return driver
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

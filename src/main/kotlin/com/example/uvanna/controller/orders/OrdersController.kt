@@ -35,6 +35,23 @@ class OrdersController {
         }
     }
 
+    @PostMapping("edit/{id}")
+    fun editOrder(
+        @PathVariable id: String,
+        orders: Orders,
+        response: HttpServletResponse
+    ): ServiceResponse<Any> {
+        return try {
+            ServiceResponse(
+                data = listOf(orderService.editOrder(id, orders)),
+                message = "Order has been edited",
+                status = HttpStatus.OK
+            )
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
     @GetMapping("{id}")
     fun getOrder(
         @PathVariable id: String,

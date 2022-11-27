@@ -51,7 +51,6 @@ class SiteController {
     }
 
 
-
     @DeleteMapping("MainBanner")
     fun deleteMainBanner(
         @RequestParam id: String,

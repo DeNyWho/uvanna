@@ -15,6 +15,7 @@ data class CatalogFirst(
     @Column(nullable = true)
     var sub: MutableSet<CatalogSecond> = mutableSetOf(),
     val imageUrl: String = "",
+    val level: String = "first"
 ){
     fun addToSecondLevel(catalog: CatalogSecond): CatalogFirst {
         sub.add(catalog)

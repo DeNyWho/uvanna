@@ -8,5 +8,6 @@ data class CatalogThird(
     @Id
     var id: String? = "",
     var title: String? = "",
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val level: String = "third"
 )

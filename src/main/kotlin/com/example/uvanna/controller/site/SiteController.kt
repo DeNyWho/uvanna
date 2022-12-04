@@ -101,7 +101,7 @@ class SiteController {
         @RequestParam(defaultValue = "0") pageNum: @Min(0) @Max(500) Int,
         @RequestParam(defaultValue = "48") pageSize: @Min(1) @Max(500) Int,
         response: HttpServletResponse
-    ): PagingResponse<PromoLightResponse> {
+    ): PagingResponse<Promo> {
         return try {
             siteService.getPromos(pageNum = pageNum, pageSize = pageSize)
         } catch (e: ChangeSetPersister.NotFoundException) {

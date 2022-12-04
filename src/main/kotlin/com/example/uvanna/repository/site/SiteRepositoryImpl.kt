@@ -19,7 +19,7 @@ interface SiteRepositoryImpl {
     fun getPromos(
         pageSize: @Min(value = 1.toLong()) @Max(value = 500.toLong()) Int,
         pageNum: @Min(value = 0.toLong()) @Max(value = 500.toLong()) Int
-    ): PagingResponse<PromoLightResponse>
+    ): PagingResponse<Promo>
 
     fun getPromo(id: String): ServiceResponse<Promo>
 }

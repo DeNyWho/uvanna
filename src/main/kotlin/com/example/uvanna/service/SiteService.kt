@@ -120,7 +120,7 @@ class SiteService: SiteRepositoryImpl {
         }
     }
 
-    override fun getPromos(pageSize: Int, pageNum: Int): PagingResponse<PromoLightResponse> {
+    override fun getPromos(pageSize: Int, pageNum: Int): PagingResponse<Promo> {
         return try {
             val sort = Sort.by(
                 Sort.Order(Sort.Direction.DESC, "date"),
@@ -128,10 +128,14 @@ class SiteService: SiteRepositoryImpl {
             val pageable: Pageable = PageRequest.of(pageNum, pageSize, sort)
             val statePage: Page<Promo> = promoRepository.findAll(pageable)
 
-            val light = mutableListOf<PromoLightResponse>()
+            val light = mutableListOf<Promo>()
             statePage.content.forEach {
                 light.add(
-                    PromoLightResponse(
+                    Promo(
+                        id = it.id,
+                        title = it.title,
+                        description = it.description,
+                        date = it.date,
                         imageUrl = it.imageUrl,
                     )
                 )

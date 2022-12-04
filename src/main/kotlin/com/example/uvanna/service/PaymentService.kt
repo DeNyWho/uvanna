@@ -1,15 +1,14 @@
 package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Orders
-import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.OrdersProducts
 import com.example.uvanna.model.payment.Amount
 import com.example.uvanna.model.payment.Confirmation
 import com.example.uvanna.model.payment.ConfirmationWithToken
 import com.example.uvanna.model.payment.Recipient
 import com.example.uvanna.model.request.payment.PaymentDataRequest
-import com.example.uvanna.model.request.payment.PaymentProductRequest
 import com.example.uvanna.model.request.payment.PaymentRequest
+import com.example.uvanna.model.request.payment.ProductsRequestsing
 import com.example.uvanna.model.response.PaymentResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.orders.OrdersRepository
@@ -65,9 +64,9 @@ class PaymentService: PaymentRepositoryImpl {
 
 
 
-    override fun createNewPayment(ordersProducts: List<PaymentProductRequest>, paymentDataRequest: PaymentDataRequest): Any  {
+    override fun createNewPayment(ordersProducts: List<ProductsRequestsing>, paymentDataRequest: PaymentDataRequest): Any  {
         if (paymentDataRequest.typePayment == "beznal") {
-            val client = HttpClient() {
+            val client = HttpClient {
                 expectSuccess = false
 
                 defaultRequest {
@@ -84,7 +83,8 @@ class PaymentService: PaymentRepositoryImpl {
 
             var price = 0
             ordersProducts.forEach {
-                price = price + productsRepository.findById(it.productID).get().price
+                println("ZXC = ${productsRepository.findById(it.product).get().price}")
+                price = price + productsRepository.findById(it.product).get().price
             }
             var v =
                 "${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}-${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}"
@@ -120,8 +120,8 @@ class PaymentService: PaymentRepositoryImpl {
                 ordersProducts.forEach{
                     orderProducts.add(
                         OrdersProducts(
-                        productID = it.productID,
-                        count = it.count
+                        productID = it.product,
+                        count = it.count.toInt()
                     )
                     )
                 }
@@ -129,7 +129,7 @@ class PaymentService: PaymentRepositoryImpl {
                 c.metadata = null
                 val id = UUID.randomUUID().toString()
                 withContext(Dispatchers.IO) {
-                    ordersRepository.save(
+                   ordersRepository.save(
                         Orders(
                             id = id,
                             city = paymentDataRequest.city,
@@ -142,10 +142,17 @@ class PaymentService: PaymentRepositoryImpl {
                             typePayment = paymentDataRequest.typePayment,
                             paymentID = c.id,
                             code = v,
-                            products = orderProducts,
-                            status = "заказ требует оплаты"
+                            status = "Р·Р°РєР°Р· С‚СЂРµР±СѓРµС‚ РѕРїР»Р°С‚С‹"
                         )
                     )
+                    orderProducts.forEach {
+                        ordersRepository.findById(id).get().addProducts(
+                            OrdersProducts(
+                                productID = it.productID,
+                                count = it.count
+                            )
+                        )
+                    }
                 }
             }
             return c
@@ -161,31 +168,14 @@ class PaymentService: PaymentRepositoryImpl {
             ordersProducts.forEach{
                 orderProducts.add(
                     OrdersProducts(
-                        productID = it.productID,
+                        productID = it.product,
                         count = it.count
                     )
                 )
             }
 
             val id = UUID.randomUUID().toString()
-            ordersRepository.save(
-                Orders(
-                    id = id,
-                    city = paymentDataRequest.city,
-                    streetFull = paymentDataRequest.streetFull,
-                    fullName = paymentDataRequest.fullname,
-                    phone = paymentDataRequest.phone,
-                    email = paymentDataRequest.email,
-                    typeDelivery = paymentDataRequest.typeDelivery,
-                    typePayment = paymentDataRequest.typePayment,
-                    code = v,
-                    updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
-                    paymentID = null,
-                    paymentSuccess = null,
-                    products = orderProducts,
-                    status = "Заказ будет оплачен наличными, если вы передумали, то можете оплатить безналичным расчетом."
-                )
-            )
+
             return ordersRepository.findById(id)
         }
     }

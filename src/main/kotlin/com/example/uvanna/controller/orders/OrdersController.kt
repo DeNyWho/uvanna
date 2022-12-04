@@ -59,7 +59,6 @@ class OrdersController {
     @GetMapping("{id}")
     fun getOrder(
         @PathVariable id: String,
-        @RequestParam paymentDataRequest: PaymentDataRequest,
         response: HttpServletResponse
     ): ServiceResponse<Orders>? {
         return try {

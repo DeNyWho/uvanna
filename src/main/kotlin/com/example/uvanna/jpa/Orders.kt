@@ -1,17 +1,14 @@
 package com.example.uvanna.jpa
 
 import com.example.uvanna.model.OrdersProducts
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.OneToMany
-import javax.persistence.Table
+import java.util.*
+import javax.persistence.*
 
 @Entity
 @Table(name = "orders")
 data class Orders(
     @Id
-    var id: String = "",
+    var id: String = UUID.randomUUID().toString(),
     var city: String = "",
     var streetFull: String = "",
     var fullName: String = "",
@@ -24,8 +21,17 @@ data class Orders(
     val paymentID: String? = null,
     @Column(nullable = true)
     val paymentSuccess: String? = null,
-    @OneToMany
-    val products: List<OrdersProducts> = listOf(),
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        cascade = [CascadeType.DETACH, CascadeType.PERSIST, CascadeType.REFRESH]
+    )
+    @Column(nullable = true)
+    val products: MutableSet<OrdersProducts> = mutableSetOf<OrdersProducts>(),
     val status: String = "",
     val updated: String = ""
-)
+) {
+    fun addProducts(product: OrdersProducts): Orders {
+        products.add(product)
+        return this
+    }
+}

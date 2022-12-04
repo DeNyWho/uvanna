@@ -1,6 +1,7 @@
 package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Orders
+import com.example.uvanna.model.orders.OrderConverter
 import com.example.uvanna.model.payment.Amount
 import com.example.uvanna.model.payment.ConfirmationWithToken
 import com.example.uvanna.model.payment.Recipient
@@ -29,6 +30,8 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Service
 class OrderService: OrdersRepositoryImpl {
@@ -53,13 +56,12 @@ class OrderService: OrdersRepositoryImpl {
     @Value("\${payment_shop}")
     lateinit var paymentShop: String
 
-    var c: PaymentResponse = PaymentResponse(
+    var c: OrderConverter = OrderConverter(
         id = "",
         status = "",
         amount = Amount(),
         recipient = Recipient(),
         created_at = "",
-        confirmation = ConfirmationWithToken(),
         test = "",
         paid = "",
         refundable = ""
@@ -167,19 +169,20 @@ class OrderService: OrdersRepositoryImpl {
                             paymentSuccess = c.paid,
                             code = order.code,
                             products = order.products,
-                            status = if(c.paid == "false") "заказ требует оплаты" else { "Заказ успешно оплачен и уже обрабатывается!" }
+                            status = if(c.paid == "false") "заказ требует оплаты" else { "Заказ успешно оплачен и уже обрабатывается!" },
+                            updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString()
                         )
                     )
                 }
             }
             ServiceResponse(
-                data = listOf(),
+                data = listOf(ordersRepository.findByCode(code = id).get()),
                 message = "",
                 status = HttpStatus.OK
             )
         } catch (e: Exception){
             ServiceResponse(
-                data = listOf(ordersRepository.getById(id)),
+                data = listOf(ordersRepository.findByCode(id).get()),
                 message = e.message.toString(),
                 status = HttpStatus.BAD_GATEWAY
             )

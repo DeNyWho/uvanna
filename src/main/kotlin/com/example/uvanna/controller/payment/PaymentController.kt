@@ -1,9 +1,8 @@
 package com.example.uvanna.controller.payment
 
 import com.example.uvanna.jpa.Orders
-import com.example.uvanna.model.OrdersProducts
 import com.example.uvanna.model.request.payment.PaymentDataRequest
-import com.example.uvanna.model.request.payment.PaymentProductRequest
+import com.example.uvanna.model.request.payment.ProductsRequestsing
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.PaymentService
 import io.swagger.v3.oas.annotations.Parameter
@@ -25,14 +24,30 @@ class PaymentController {
 
     @PostMapping
     fun newPayment(
-        @RequestParam ids: List<PaymentProductRequest>,
-        @Parameter(description = "typePayment = nal | beznal typeDelivery poka tolko: pickup")
-        @RequestParam paymentDataRequest: PaymentDataRequest,
+        @RequestBody paymentProductRequest: List<ProductsRequestsing>,
+//        @Parameter(description = "typePayment = nal | beznal typeDelivery poka tolko: pickup")
+        city: String,
+        streetFull: String,
+        fullname: String,
+        phone: String,
+        email: String,
+        typePayment: String,
+        typeDelivery: String,
         response: HttpServletResponse
     ): ServiceResponse<Any> {
         return try {
+            println("ßÑÑ×ßÑß×")
+            val payment = PaymentDataRequest(
+                city = city,
+                streetFull = streetFull,
+                fullname = fullname,
+                phone = phone,
+                email = email,
+                typePayment = typePayment,
+                typeDelivery = typeDelivery,
+            )
             ServiceResponse(
-                data = listOf(paymentService.createNewPayment(ids, paymentDataRequest)),
+                data = listOf(paymentService.createNewPayment(paymentProductRequest, payment)),
                 message = "Payment has been created",
                 status = HttpStatus.OK
             )

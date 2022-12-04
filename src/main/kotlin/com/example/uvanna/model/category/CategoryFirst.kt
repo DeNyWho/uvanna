@@ -6,5 +6,6 @@ data class CategoryFirst(
     val id: String,
     val title: String,
     val sub: MutableSet<CatalogSecond>,
-    val imageUrl: String
+    val imageUrl: String,
+    val level: String
 )

@@ -43,7 +43,8 @@ class CatalogService: CatalogRepositoryImpl {
                 id = catalog.id!!,
                 title = catalog.title!!,
                 sub = catalog.sub,
-                imageUrl = catalog.imageUrl
+                imageUrl = catalog.imageUrl,
+                level = catalog.level
             )
         }
 
@@ -74,7 +75,8 @@ class CatalogService: CatalogRepositoryImpl {
                     id = catalog.id!!,
                     title = catalog.title!!,
                     sub = catalog.sub,
-                    imageUrl = catalog.imageUrl
+                    imageUrl = catalog.imageUrl,
+                    level = catalog.level
                 )
             }
 
@@ -85,7 +87,8 @@ class CatalogService: CatalogRepositoryImpl {
                     id = catalog.id!!,
                     title = catalog.title!!,
                     sub = catalog.sub,
-                    imageUrl = catalog.imageUrl
+                    imageUrl = catalog.imageUrl,
+                    level = catalog.level
                 )
             }
 
@@ -93,7 +96,7 @@ class CatalogService: CatalogRepositoryImpl {
 
                 val catalog = catalogThirdRepository.findById(id).get()
 
-                return CategoryThird(id = catalog.id!!, title = catalog.title!!)
+                return CategoryThird(id = catalog.id!!, title = catalog.title!!, level = catalog.level)
             }
         } else {
             return catalogRepository.findAll()

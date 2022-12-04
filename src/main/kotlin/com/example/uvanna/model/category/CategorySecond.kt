@@ -7,4 +7,5 @@ data class CategorySecond(
     val title: String,
     val sub: MutableSet<CatalogThird>,
     val imageUrl: String?,
+    val level: String
 )

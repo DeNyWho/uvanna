@@ -52,6 +52,7 @@ dependencies {
     implementation ("io.ktor:ktor-client-logging:2.1.3")
     implementation ("ch.qos.logback:logback-classic:1.2.10")
     implementation("it.skrape:skrapeit:1.2.2")
+
     // Chrome Driver for Selenium
     implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.2.1")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")

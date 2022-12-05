@@ -9,7 +9,7 @@ import javax.validation.constraints.Min
 
 @Repository
 interface OrdersRepositoryImpl {
-    fun getOrders(id: String): ServiceResponse<Orders>?
+    fun getOrders(id: String): Any
     fun editOrder(id: String, order: Orders): String
     fun getOrdersList(
         filter: String?,

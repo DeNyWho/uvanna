@@ -1,10 +1,9 @@
 package com.example.uvanna.model.orders
 
-import com.example.uvanna.model.payment.Amount
-import com.example.uvanna.model.payment.ConfirmationWithToken
-import com.example.uvanna.model.payment.Recipient
+import com.example.uvanna.model.payment.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import net.minidev.json.annotate.JsonIgnore
 
 @Serializable
 data class OrderConverter(
@@ -18,10 +17,11 @@ data class OrderConverter(
     val recipient: Recipient,
     @SerialName("created_at")
     val created_at: String,
-    val test: String,
+    @SerialName("confirmation")
+    val confirmation: ConfirmationRedirect,
+    val test: Boolean,
     @SerialName("paid")
-    val paid: String,
+    val paid: Boolean,
     @SerialName("refundable")
-    val refundable: String,
-    var metadata: Recipient? = null,
+    val refundable: Boolean,
 )

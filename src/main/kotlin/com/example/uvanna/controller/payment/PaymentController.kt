@@ -36,7 +36,6 @@ class PaymentController {
         response: HttpServletResponse
     ): ServiceResponse<Any> {
         return try {
-            println("ßÑÑ×ßÑß×")
             val payment = PaymentDataRequest(
                 city = city,
                 streetFull = streetFull,

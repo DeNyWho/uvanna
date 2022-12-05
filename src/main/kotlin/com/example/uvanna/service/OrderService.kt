@@ -3,10 +3,9 @@ package com.example.uvanna.service
 import com.example.uvanna.jpa.Orders
 import com.example.uvanna.model.orders.OrderConverter
 import com.example.uvanna.model.payment.Amount
-import com.example.uvanna.model.payment.ConfirmationWithToken
+import com.example.uvanna.model.payment.ConfirmationRedirect
 import com.example.uvanna.model.payment.Recipient
 import com.example.uvanna.model.response.PagingResponse
-import com.example.uvanna.model.response.PaymentResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.orders.OrdersRepository
 import com.example.uvanna.repository.orders.OrdersRepositoryImpl
@@ -16,11 +15,16 @@ import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.http.ContentType.Application.Json
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.cbor.Cbor
+import kotlinx.serialization.json.Json
 import okhttp3.Credentials
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -30,7 +34,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
-import java.text.SimpleDateFormat
 import java.util.*
 
 @Service
@@ -62,9 +65,10 @@ class OrderService: OrdersRepositoryImpl {
         amount = Amount(),
         recipient = Recipient(),
         created_at = "",
-        test = "",
-        paid = "",
-        refundable = ""
+        test = true,
+        paid = false,
+        refundable = false,
+        confirmation = ConfirmationRedirect()
     )
 
     override fun getOrdersList(
@@ -120,13 +124,13 @@ class OrderService: OrdersRepositoryImpl {
         }
     }
 
-    override fun getOrders(id: String): ServiceResponse<Orders>? {
-        return try {
+    override fun getOrders(id: String): Any {
+//        return try {
             val client = HttpClient() {
                 expectSuccess = false
 
                 defaultRequest {
-                    contentType(ContentType.Application.Json)
+                    contentType(Json)
                 }
                 install(ContentNegotiation) {
                     json()
@@ -136,14 +140,17 @@ class OrderService: OrdersRepositoryImpl {
                     level = LogLevel.ALL
                 }
             }
-
+        var zxc:  HttpResponse? = null
             runBlocking {
                 val order = withContext(Dispatchers.IO) {
                     ordersRepository.findByCode(id).get()
                 }
+                var v = 0
+
                 val f = client.get {
                     headers {
-                        contentType(ContentType.Application.Json)
+                        contentType(Json)
+                        append("Idempotence-Key", UUID.randomUUID().toString())
                         append(HttpHeaders.Authorization, Credentials.basic(paymentShop, paymentKey))
                     }
                     url {
@@ -152,40 +159,43 @@ class OrderService: OrdersRepositoryImpl {
                     }
                 }
                 c = f.body()
-                c.metadata = null
-
-                withContext(Dispatchers.IO) {
-                    ordersRepository.save(
-                        Orders(
-                            id = order.id,
-                            city = order.city,
-                            streetFull = order.streetFull,
-                            fullName = order.fullName,
-                            phone = order.phone,
-                            email = order.email,
-                            typeDelivery = order.typeDelivery,
-                            typePayment = order.typePayment,
-                            paymentID = order.id,
-                            paymentSuccess = c.paid,
-                            code = order.code,
-                            products = order.products,
-                            status = if(c.paid == "false") "заказ требует оплаты" else { "Заказ успешно оплачен и уже обрабатывается!" },
-                            updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString()
-                        )
-                    )
-                }
             }
-            ServiceResponse(
-                data = listOf(ordersRepository.findByCode(code = id).get()),
-                message = "",
-                status = HttpStatus.OK
-            )
-        } catch (e: Exception){
-            ServiceResponse(
-                data = listOf(ordersRepository.findByCode(id).get()),
-                message = e.message.toString(),
-                status = HttpStatus.BAD_GATEWAY
-            )
-        }
+            println(c)
+            return c
+
+//                c = f.body()
+
+//                withContext(Dispatchers.IO) {
+//                    ordersRepository.save(
+//                        Orders(
+//                            id = order.id,
+//                            city = order.city,
+//                            streetFull = order.streetFull,
+//                            fullName = order.fullName,
+//                            phone = order.phone,
+//                            email = order.email,
+//                            typeDelivery = order.typeDelivery,
+//                            typePayment = order.typePayment,
+//                            paymentID = order.id,
+//                            paymentSuccess = c.paid.toString(),
+//                            code = order.code,
+//                            products = order.products,
+//                            status = if(!c.paid) "заказ требует оплаты" else { "Заказ успешно оплачен и уже обрабатывается!" }
+//                        )
+//                    )
+//                }
+//            }
+//            ServiceResponse(
+//                data = listOf(ordersRepository.findByCode(code = id).get()),
+//                message = "",
+//                status = HttpStatus.OK
+//            )
+//        } catch (e: Exception){
+//            ServiceResponse(
+//                data = listOf(ordersRepository.findByCode(code = id).get()),
+//                message = e.message.toString(),
+//                status = HttpStatus.BAD_GATEWAY
+//            )
+//        }
     }
 }

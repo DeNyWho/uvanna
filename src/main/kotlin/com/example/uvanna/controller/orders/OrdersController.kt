@@ -56,15 +56,25 @@ class OrdersController {
         }
     }
 
-    @GetMapping("{id}")
+    @GetMapping("{code}")
     fun getOrder(
-        @PathVariable id: String,
+        @PathVariable code: String,
         response: HttpServletResponse
-    ): ServiceResponse<Orders>? {
-        return try {
-            return orderService.getOrders(id)
-        } catch (e: ChangeSetPersister.NotFoundException) {
-            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-        }
+    ): Any {
+            return orderService.getOrders(code)
+//            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+//        }
     }
+
+//    @GetMapping("{code}")
+//    fun getOrder(
+//        @PathVariable code: String,
+//        response: HttpServletResponse
+//    ): ServiceResponse<Orders>? {
+//        return try {
+//            return orderService.getOrders(code)
+//        } catch (e: ChangeSetPersister.NotFoundException) {
+//            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+//        }
+//    }
 }

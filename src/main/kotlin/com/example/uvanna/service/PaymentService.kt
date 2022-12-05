@@ -87,10 +87,10 @@ class PaymentService: PaymentRepositoryImpl {
                 price = price + productsRepository.findById(it.product).get().price
             }
             var v =
-                "${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}-${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}"
+                "${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}-${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}"
             while (ordersRepository.findByCode(v).isPresent) {
                 v =
-                    "${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}-${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}"
+                    "${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}-${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}"
             }
 
             runBlocking {
@@ -158,10 +158,10 @@ class PaymentService: PaymentRepositoryImpl {
             return c
         } else {
             var v =
-                "${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}-${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}"
+                "${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}-${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}"
             while (ordersRepository.findByCode(v).isPresent) {
                 v =
-                    "${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}-${(0..10).random()}${(0..10).random()}${(0..10).random()}${(0..10).random()}"
+                    "${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}-${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}"
             }
 
             val orderProducts = mutableListOf<OrdersProducts>()

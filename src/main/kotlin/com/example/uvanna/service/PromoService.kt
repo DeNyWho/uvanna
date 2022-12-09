@@ -4,6 +4,7 @@ import com.example.uvanna.repository.promo.PromoRepositoryImpl
 import com.example.uvanna.jpa.Promo
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
+import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.catalog.CatalogRepository
 import com.example.uvanna.repository.catalog.CatalogSecondRepository
 import com.example.uvanna.repository.promo.PromoRepository
@@ -22,6 +23,9 @@ import java.util.*
 class PromoService: PromoRepositoryImpl {
 
     @Autowired
+    lateinit var adminRepository: AdminRepository
+
+    @Autowired
     lateinit var promoRepository: PromoRepository
 
     @Autowired
@@ -33,35 +37,40 @@ class PromoService: PromoRepositoryImpl {
     @Autowired
     lateinit var fileService: FileService
 
-    fun addPromoWithProducts(title: String, description: String, file: MultipartFile, products: List<String>): ServiceResponse<Promo>{
+    override fun addPromoWithProducts(
+        title: String,
+        description: String,
+        file: MultipartFile,
+        products: List<String>,
+        token: String
+    ): ServiceResponse<Promo>{
         return try {
-            val imageUrl = fileService.save(file)
+            val check = checkToken(token)
 
-            val item = Promo(
-                id = UUID.randomUUID().toString(),
-                title = title,
-                description = description,
-                imageUrl = imageUrl,
-                date = LocalDate.now(),
-            )
+            if(check) {
+                val imageUrl = fileService.save(file)
 
+                val item = Promo(
+                    id = UUID.randomUUID().toString(),
+                    title = title,
+                    description = description,
+                    imageUrl = imageUrl,
+                    date = LocalDate.now(),
+                )
 
+                ServiceResponse(
+                    data = listOf(promoRepository.findById(item.id).get()),
+                    message = "Product has been created",
+                    status = HttpStatus.OK
+                )
+            } else {
+                ServiceResponse(
+                    data = null,
+                    message = "Unexpected token",
+                    status = HttpStatus.UNAUTHORIZED
+                )
+            }
 
-            val b = promoRepository.findById(id).get().addPromoProducts(
-                second
-            )
-            catalogRepository.save(b)
-
-            promoRepository.save(item)
-
-
-
-
-            ServiceResponse(
-                data = listOf(promoRepository.findById(item.id).get()),
-                message = "Product has been created",
-                status = HttpStatus.OK
-            )
         } catch (e: Exception){
             ServiceResponse(
                 data = null,
@@ -71,18 +80,38 @@ class PromoService: PromoRepositoryImpl {
         }
     }
 
-    override fun addPromoWithCategory(title: String, description: String, file: MultipartFile, category: String): ServiceResponse<Promo>{
-
-        val id = UUID.randomUUID().toString()
-
-
-
+    override fun addPromoWithCategory(
+        title: String,
+        description: String,
+        file: MultipartFile,
+        category: String,
+        token: String
+    ): ServiceResponse<Promo>{
         return try {
-            ServiceResponse(
-                data = listOf(promoRepository.findById(id).get()),
-                message = "Success",
-                status = HttpStatus.OK
-            )
+            val check = checkToken(token)
+            if(check) {
+                val imageUrl = fileService.save(file)
+
+                val item = Promo(
+                    id = UUID.randomUUID().toString(),
+                    title = title,
+                    description = description,
+                    imageUrl = imageUrl,
+                    date = LocalDate.now(),
+                )
+
+                ServiceResponse(
+                    data = listOf(promoRepository.findById(item.id).get()),
+                    message = "Promo has been created",
+                    status = HttpStatus.OK
+                )
+            } else {
+                ServiceResponse(
+                    data = null,
+                    message = "Unexpected token",
+                    status = HttpStatus.UNAUTHORIZED
+                )
+            }
         } catch (e: Exception){
             ServiceResponse(
                 data = null,
@@ -145,8 +174,36 @@ class PromoService: PromoRepositoryImpl {
         }
     }
 
-    fun deletePromo(id: String){
-        promoRepository.deleteById(id)
+    override fun deletePromo(id: String, token: String): ServiceResponse<String>{
+        val check = checkToken(token)
+        return if(check) {
+            return try {
+                promoRepository.deleteById(id)
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Promo with id = $id has been deleted",
+                    status = HttpStatus.OK
+                )
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Promo with id = $id not found",
+                    status = HttpStatus.NOT_FOUND
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+    }
+
+    fun checkToken(token: String): Boolean {
+        val token = adminRepository.findAdminTokenByToken(token)
+
+        return token != null
     }
 
 }

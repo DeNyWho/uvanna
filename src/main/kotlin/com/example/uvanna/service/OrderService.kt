@@ -7,8 +7,11 @@ import com.example.uvanna.model.payment.ConfirmationRedirect
 import com.example.uvanna.model.payment.Recipient
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
+import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.orders.OrdersRepository
 import com.example.uvanna.repository.orders.OrdersRepositoryImpl
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -18,13 +21,13 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.ContentType.Application.Json
+import io.ktor.serialization.kotlinx.cbor.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.cbor.Cbor
-import kotlinx.serialization.json.Json
 import okhttp3.Credentials
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -42,14 +45,42 @@ class OrderService: OrdersRepositoryImpl {
     @Autowired
     lateinit var ordersRepository: OrdersRepository
 
-    override fun editOrder(id: String, order: Orders): String {
+    @Autowired
+    lateinit var adminRepository: AdminRepository
+
+    override fun editOrder(id: String, order: Orders, token: String): ServiceResponse<Orders> {
         return try {
-            val orderTemp = ordersRepository.findById(id)
-            order.id = orderTemp.get().id
-            ordersRepository.save(order)
-            "Success"
+            val check = checkToken(token)
+            return if(check) {
+                return try {
+                    val orderTemp = ordersRepository.findById(id)
+                    order.id = orderTemp.get().id
+                    ordersRepository.save(order)
+                    ServiceResponse(
+                        data = listOf(),
+                        message = "Order with id = $id has been edited",
+                        status = HttpStatus.OK
+                    )
+                } catch (e: Exception) {
+                    ServiceResponse(
+                        data = listOf(),
+                        message = "Order with id = $id not found",
+                        status = HttpStatus.NOT_FOUND
+                    )
+                }
+            } else {
+                ServiceResponse(
+                    data = null,
+                    message = "Unexpected token",
+                    status = HttpStatus.UNAUTHORIZED
+                )
+            }
         } catch (e: Exception){
-             e.message.toString()
+            ServiceResponse(
+                data = null,
+                message = "Something went wrong: ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
         }
     }
 
@@ -124,78 +155,53 @@ class OrderService: OrdersRepositoryImpl {
         }
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     override fun getOrders(id: String): Any {
 //        return try {
-            val client = HttpClient() {
-                expectSuccess = false
+        val client = HttpClient() {
+            expectSuccess = false
 
-                defaultRequest {
+            defaultRequest {
+                contentType(Json)
+            }
+            install(ContentNegotiation) {
+                json(Json {
+                    prettyPrint = true
+                    isLenient = true
+                    ignoreUnknownKeys = true
+                })
+            }
+            install(Logging) {
+                logger = Logger.DEFAULT
+                level = LogLevel.ALL
+            }
+        }
+
+        runBlocking {
+            val order = withContext(Dispatchers.IO) {
+                ordersRepository.findByCode(id).get()
+            }
+
+            val f = client.get {
+                headers {
                     contentType(Json)
+                    append("Idempotence-Key", UUID.randomUUID().toString())
+                    append(HttpHeaders.Authorization, Credentials.basic(paymentShop, paymentKey))
                 }
-                install(ContentNegotiation) {
-                    json()
-                }
-                install(Logging) {
-                    logger = Logger.DEFAULT
-                    level = LogLevel.ALL
+                url {
+                    protocol = URLProtocol.HTTPS
+                    host = "api.yookassa.ru/v3/payments/${order.paymentID}"
                 }
             }
-        var zxc:  HttpResponse? = null
-            runBlocking {
-                val order = withContext(Dispatchers.IO) {
-                    ordersRepository.findByCode(id).get()
-                }
-                var v = 0
+            c = f.body()
+        }
+        println(c)
+        return c
+    }
 
-                val f = client.get {
-                    headers {
-                        contentType(Json)
-                        append("Idempotence-Key", UUID.randomUUID().toString())
-                        append(HttpHeaders.Authorization, Credentials.basic(paymentShop, paymentKey))
-                    }
-                    url {
-                        protocol = URLProtocol.HTTPS
-                        host = "api.yookassa.ru/v3/payments/${order.paymentID}"
-                    }
-                }
-                c = f.body()
-            }
-            println(c)
-            return c
+    fun checkToken(token: String): Boolean {
+        val token = adminRepository.findAdminTokenByToken(token)
 
-//                c = f.body()
-
-//                withContext(Dispatchers.IO) {
-//                    ordersRepository.save(
-//                        Orders(
-//                            id = order.id,
-//                            city = order.city,
-//                            streetFull = order.streetFull,
-//                            fullName = order.fullName,
-//                            phone = order.phone,
-//                            email = order.email,
-//                            typeDelivery = order.typeDelivery,
-//                            typePayment = order.typePayment,
-//                            paymentID = order.id,
-//                            paymentSuccess = c.paid.toString(),
-//                            code = order.code,
-//                            products = order.products,
-//                            status = if(!c.paid) "заказ требует оплаты" else { "Заказ успешно оплачен и уже обрабатывается!" }
-//                        )
-//                    )
-//                }
-//            }
-//            ServiceResponse(
-//                data = listOf(ordersRepository.findByCode(code = id).get()),
-//                message = "",
-//                status = HttpStatus.OK
-//            )
-//        } catch (e: Exception){
-//            ServiceResponse(
-//                data = listOf(ordersRepository.findByCode(code = id).get()),
-//                message = e.message.toString(),
-//                status = HttpStatus.BAD_GATEWAY
-//            )
-//        }
+        return token != null
     }
 }

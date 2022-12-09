@@ -7,13 +7,23 @@ import org.springframework.web.multipart.MultipartFile
 
 interface PromoRepositoryImpl {
 
-    fun addPromo(title: String, description: String, file: MultipartFile): ServiceResponse<Promo>
     fun getPromo(id: String): ServiceResponse<Promo>
     fun getPromos(pageSize: Int, pageNum: Int): PagingResponse<Promo>
     fun addPromoWithCategory(
         title: String,
         description: String,
         file: MultipartFile,
-        category: String
+        category: String,
+        token: String
     ): ServiceResponse<Promo>
+
+    fun addPromoWithProducts(
+        title: String,
+        description: String,
+        file: MultipartFile,
+        products: List<String>,
+        token: String
+    ): ServiceResponse<Promo>
+
+    fun deletePromo(id: String, token: String): ServiceResponse<String>
 }

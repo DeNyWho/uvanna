@@ -1,4 +1,4 @@
-package com.example.uvanna.controller
+package com.example.uvanna.controller.promo
 
 import com.example.uvanna.jpa.Promo
 import com.example.uvanna.model.response.PagingResponse
@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.crossstore.ChangeSetPersister
 import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import javax.servlet.http.HttpServletResponse
@@ -24,53 +23,37 @@ class PromoController {
     @Autowired
     lateinit var promoService: PromoService
 
-
-    @PostMapping("single", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun addPromoWithSingle(
-        @RequestBody file: MultipartFile,
-        title: String,
-        description: String,
-        productID: String,
-        response: HttpServletResponse
-    ): ServiceResponse<Promo> {
-        return try {
-            promoService.addPromo(title = title, description = description, file = file)
-        } catch (e: ChangeSetPersister.NotFoundException) {
-            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-        }
-    }
-
     @PostMapping("products")
     fun addPromoWithProducts(
         @RequestBody file: MultipartFile,
         title: String,
         description: String,
         productIDS: List<String>,
+        @RequestParam token: String,
         response: HttpServletResponse
     ): ServiceResponse<Promo> {
         return try {
-            promoService.addPromoWithProducts(title = title, description = description, file = file, products = productIDS)
+            promoService.addPromoWithProducts(token = token, title = title, description = description, file = file, products = productIDS)
         } catch (e: ChangeSetPersister.NotFoundException){
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
     }
 
-    @PostMapping("products")
+    @PostMapping("category")
     fun addPromoWithCategory(
         @RequestBody file: MultipartFile,
         title: String,
         description: String,
         category: String,
+        @RequestParam token: String,
         response: HttpServletResponse
     ): ServiceResponse<Promo> {
         return try {
-            promoService.addPromoWithCategory(title = title, description = description, file = file, category = category)
+            promoService.addPromoWithCategory(token = token, title = title, description = description, file = file, category = category)
         } catch (e: ChangeSetPersister.NotFoundException){
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
     }
-
-
 
     @GetMapping("/{id}")
     fun getPromo(
@@ -100,18 +83,12 @@ class PromoController {
 
     @DeleteMapping("/{id}")
     fun deletePromo(
-        token: String,
+        @RequestParam token: String,
         @PathVariable id: String,
         response: HttpServletResponse
     ): ServiceResponse<String> {
         return try {
-            promoService.deletePromo(id)
-
-            return ServiceResponse(
-                data = null,
-                message = "Promo with id = $id has been deleted",
-                status = HttpStatus.OK
-            )
+             promoService.deletePromo(token = token, id =  id)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

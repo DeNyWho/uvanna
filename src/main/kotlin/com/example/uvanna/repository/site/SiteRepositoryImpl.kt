@@ -13,6 +13,7 @@ import javax.validation.constraints.Min
 @Repository
 interface SiteRepositoryImpl {
 
-    fun addMainBanner(file: MultipartFile): ServiceResponse<MainBanner>
     fun getMainBanners(): ServiceResponse<MainBanner>
+    fun deleteMainBanner(token: String, id: String): ServiceResponse<String>
+    fun addMainBanner(file: MultipartFile, token: String): ServiceResponse<MainBanner>
 }

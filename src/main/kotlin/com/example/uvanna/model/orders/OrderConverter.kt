@@ -22,5 +22,5 @@ data class OrderConverter(
     @SerialName("paid")
     val paid: Boolean,
     @SerialName("refundable")
-    val refundable: Boolean
+    val refundable: Boolean,
 )

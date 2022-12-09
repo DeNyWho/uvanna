@@ -32,15 +32,12 @@ class CatalogController {
         @RequestParam file: MultipartFile,
         @RequestParam title: String,
         @RequestParam option: String,
-        id: String?,
+        @RequestParam id: String?,
+        @RequestParam token: String,
         response: HttpServletResponse
-    ): ServiceResponse<Boolean> {
+    ): ServiceResponse<String> {
         return try {
-            return ServiceResponse(
-                data = listOf(catalogService.addLevel(id, file, title, option)),
-                message = "Category has been created",
-                status = HttpStatus.OK
-            )
+            catalogService.addLevel(id = id, file = file, title = title, option = option, token = token)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -49,15 +46,11 @@ class CatalogController {
     @DeleteMapping
     fun deleteCategory(
         @RequestParam id: String,
+        @RequestParam token: String,
         response: HttpServletResponse
     ): ServiceResponse<String> {
         return try {
-            catalogService.deleteCategory(id)
-            return ServiceResponse(
-                data = null,
-                message = "Category with id = $id has been deleted",
-                status = HttpStatus.OK
-            )
+            catalogService.deleteCategory(id = id, token = token)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

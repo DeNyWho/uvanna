@@ -30,10 +30,11 @@ class SiteController {
     @PostMapping("MainBanner", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun addMainBanner(
         @RequestBody file: MultipartFile,
+        token: String,
         response: HttpServletResponse
     ): ServiceResponse<MainBanner>? {
         return try {
-            siteService.addMainBanner(file = file)
+            siteService.addMainBanner(file = file, token = token)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -54,16 +55,11 @@ class SiteController {
     @DeleteMapping("MainBanner")
     fun deleteMainBanner(
         @RequestParam id: String,
+        @RequestParam token: String,
         response: HttpServletResponse
     ): ServiceResponse<String> {
         return try {
-            siteService.deleteMainBanner(id)
-
-            return ServiceResponse(
-                data = null,
-                message = "MainBanner with id = $id has been deleted",
-                status = HttpStatus.OK
-            )
+            return siteService.deleteMainBanner(id = id, token = token)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

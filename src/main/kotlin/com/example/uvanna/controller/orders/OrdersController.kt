@@ -28,11 +28,12 @@ class OrdersController {
     fun editOrder(
         @PathVariable id: String,
         orders: Orders,
+        @RequestParam token: String,
         response: HttpServletResponse
     ): ServiceResponse<Any> {
         return try {
             ServiceResponse(
-                data = listOf(orderService.editOrder(id, orders)),
+                data = listOf(orderService.editOrder(id, orders, token = token)),
                 message = "Order has been edited",
                 status = HttpStatus.OK
             )

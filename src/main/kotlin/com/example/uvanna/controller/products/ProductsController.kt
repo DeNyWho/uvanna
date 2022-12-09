@@ -38,10 +38,11 @@ class ProductsController {
     fun addProduct(
         @RequestBody files: List<MultipartFile>,
         product: ProductRequest,
+        @RequestParam token: String,
         response: HttpServletResponse
     ): ServiceResponse<Product>? {
         return try {
-            productService.addProduct(product, files, product.charactTitle, product.charactData)
+            productService.addProduct(product = product, files = files, characteristic = product.charactTitle, data = product.charactData, token = token)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -54,6 +55,7 @@ class ProductsController {
         product: ProductRequest,
         characteristic: List<String>,
         data: List<String>,
+        @RequestParam token: String,
         response: HttpServletResponse
     ): ServiceResponse<Product>? {
         return try {
@@ -62,7 +64,8 @@ class ProductsController {
                 product = product,
                 files = files,
                 characteristic = product.charactTitle,
-                data = product.charactData
+                data = product.charactData,
+                token = token,
             )
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
@@ -152,16 +155,11 @@ class ProductsController {
     @DeleteMapping
     fun deleteProduct(
         @RequestParam id: String,
+        @RequestParam token: String,
         response: HttpServletResponse
     ): ServiceResponse<String> {
         return try {
-            productService.deleteProduct(id)
-
-            return ServiceResponse(
-                data = null,
-                message = "Product with id = $id has been deleted",
-                status = HttpStatus.OK
-            )
+            return productService.deleteProduct(id = id, token = token)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

@@ -8,6 +8,4 @@ import org.springframework.stereotype.Repository
 @Repository
 interface PromoRepository: JpaRepository<Promo, String> {
 
-    @Query("Select v from Promo ")
-    fun vv()
 }

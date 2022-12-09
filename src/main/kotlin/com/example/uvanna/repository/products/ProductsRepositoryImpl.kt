@@ -18,28 +18,6 @@ interface ProductsRepositoryImpl {
 
     fun parser(brand: String): List<String>
 
-    fun deleteProduct(id: String)
-
-    fun addProduct(
-        product: ProductRequest,
-        files: List<MultipartFile>,
-        characteristic: List<String>,
-        data: List<String>
-    ): ServiceResponse<Product>?
-
-//
-//    fun getProducts(
-//        countCard: Int,
-//        page: Int,
-//        brand: String?,
-//        smallPrice: Int?,
-//        sort: String?,
-//        filter: String?,
-//        highPrice: Int?,
-//        characteristic: List<Characteristic>?,
-//        level: String?
-//    ): ServiceResponse<ProductsLightResponse>?
-
     fun getCharactSort(level: String): List<Characteristic>
 
     fun getProduct(id: String): ServiceResponse<Product>?
@@ -62,4 +40,23 @@ interface ProductsRepositoryImpl {
         pageNum: @Min(value = 0.toLong()) @Max(value = 500.toLong()) Int,
         pageSize: @Min(value = 1.toLong()) @Max(value = 500.toLong()) Int
     ): ServiceResponse<ProductLighterResponse>?
+
+    fun editProduct(
+        id: String,
+        characteristic: List<String>,
+        data: List<String>,
+        files: List<MultipartFile>,
+        token: String,
+        product: ProductRequest
+    ): ServiceResponse<Product>?
+
+    fun addProduct(
+        product: ProductRequest,
+        files: List<MultipartFile>,
+        characteristic: List<String>,
+        token: String,
+        data: List<String>
+    ): ServiceResponse<Product>?
+
+    fun deleteProduct(token: String, id: String): ServiceResponse<String>
 }

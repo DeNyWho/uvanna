@@ -69,64 +69,6 @@ class SiteController {
         }
     }
 
-    @PostMapping("promo", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun addPromo(
-        @RequestBody file: MultipartFile,
-        title: String,
-        description: String,
-        response: HttpServletResponse
-    ): ServiceResponse<Promo> {
-        return try {
-            siteService.addPromo(title = title, description = description, file = file)
-        } catch (e: ChangeSetPersister.NotFoundException) {
-            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-        }
-    }
-
-    @GetMapping("promo/{id}")
-    fun getPromo(
-        @PathVariable id: String,
-        response: HttpServletResponse
-    ): ServiceResponse<Promo>? {
-        return try {
-            siteService.getPromo(id)
-        } catch (e: ChangeSetPersister.NotFoundException) {
-            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-        }
-    }
-
-
-    @GetMapping("promo/all")
-    fun getPromos(
-        @RequestParam(defaultValue = "0") pageNum: @Min(0) @Max(500) Int,
-        @RequestParam(defaultValue = "48") pageSize: @Min(1) @Max(500) Int,
-        response: HttpServletResponse
-    ): PagingResponse<Promo> {
-        return try {
-            siteService.getPromos(pageNum = pageNum, pageSize = pageSize)
-        } catch (e: ChangeSetPersister.NotFoundException) {
-            PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-        }
-    }
-
-    @DeleteMapping("promo/{id}")
-    fun deletePromo(
-        @PathVariable id: String,
-        response: HttpServletResponse
-    ): ServiceResponse<String> {
-        return try {
-            siteService.deletePromo(id)
-
-            return ServiceResponse(
-                data = null,
-                message = "Promo with id = $id has been deleted",
-                status = HttpStatus.OK
-            )
-        } catch (e: ChangeSetPersister.NotFoundException) {
-            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-        }
-    }
-
 
 
 }

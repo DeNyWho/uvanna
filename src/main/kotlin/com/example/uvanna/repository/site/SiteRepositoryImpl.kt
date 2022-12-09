@@ -14,12 +14,5 @@ import javax.validation.constraints.Min
 interface SiteRepositoryImpl {
 
     fun addMainBanner(file: MultipartFile): ServiceResponse<MainBanner>
-    fun addPromo(title: String, description: String, file: MultipartFile): ServiceResponse<Promo>
     fun getMainBanners(): ServiceResponse<MainBanner>
-    fun getPromos(
-        pageSize: @Min(value = 1.toLong()) @Max(value = 500.toLong()) Int,
-        pageNum: @Min(value = 0.toLong()) @Max(value = 500.toLong()) Int
-    ): PagingResponse<Promo>
-
-    fun getPromo(id: String): ServiceResponse<Promo>
 }

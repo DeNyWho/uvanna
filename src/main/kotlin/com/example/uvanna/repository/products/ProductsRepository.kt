@@ -53,7 +53,7 @@ interface ProductsRepository: JpaRepository<Product, String> {
     @Query("select m from Product m where (m.secondSub = :category or m.thirdSub = :category) and m.price between :firstPrice and :secondPrice")
     fun findProductWithCategoryIdWithBetweenPrice(pageable: Pageable, category: String, firstPrice: Int, secondPrice: Int): Page<Product>
 
-    @Query("select distinct m.brand from Product m where m.secondSub = :category or m.thirdSub = :category")
+    @Query("select distinct m.brand from Product m where m.secondSub = :category or m.thirdSub = :category ")
     fun findBrands(category: String): List<String>
 
 }

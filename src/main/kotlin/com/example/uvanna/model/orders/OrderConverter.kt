@@ -3,9 +3,8 @@ package com.example.uvanna.model.orders
 import com.example.uvanna.model.payment.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.minidev.json.annotate.JsonIgnore
 
-@Serializable
+@Serializable()
 data class OrderConverter(
     @SerialName("id")
     val id: String,
@@ -23,5 +22,5 @@ data class OrderConverter(
     @SerialName("paid")
     val paid: Boolean,
     @SerialName("refundable")
-    val refundable: Boolean,
+    val refundable: Boolean
 )

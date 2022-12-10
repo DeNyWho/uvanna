@@ -7,6 +7,7 @@ import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.catalog.CatalogRepository
 import com.example.uvanna.repository.catalog.CatalogSecondRepository
+import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.promo.PromoRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
@@ -24,6 +25,9 @@ class PromoService: PromoRepositoryImpl {
 
     @Autowired
     lateinit var adminRepository: AdminRepository
+
+    @Autowired
+    lateinit var productRepository: ProductsRepository
 
     @Autowired
     lateinit var promoRepository: PromoRepository
@@ -49,14 +53,21 @@ class PromoService: PromoRepositoryImpl {
 
             if(check) {
                 val imageUrl = fileService.save(file)
+                val id = UUID.randomUUID().toString()
 
                 val item = Promo(
-                    id = UUID.randomUUID().toString(),
+                    id = id,
                     title = title,
                     description = description,
                     imageUrl = imageUrl,
                     date = LocalDate.now(),
                 )
+
+                val temp = promoRepository.findById(id).get()
+
+                products.forEach {
+                    temp.addPromoProducts(productRepository.findById(it).get())
+                }
 
                 ServiceResponse(
                     data = listOf(promoRepository.findById(item.id).get()),

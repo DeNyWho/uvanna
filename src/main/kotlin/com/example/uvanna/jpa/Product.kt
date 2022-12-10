@@ -18,5 +18,7 @@ data class Product(
     val secondSub: String = "",
     val thirdSub: String = "",
     val price: Int = 0,
+    @Column(nullable = true)
+    val sellPrice: Int? = 0,
     val stock: Int = 0,
 )

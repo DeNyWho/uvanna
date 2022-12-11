@@ -19,4 +19,8 @@ data class Product(
     val thirdSub: String = "",
     val price: Int = 0,
     val stock: Int = 0,
+    @Column(nullable = true)
+    var sellPrice: Int? = null,
+    @Column(nullable = true)
+    var percent: Int? = null,
 )

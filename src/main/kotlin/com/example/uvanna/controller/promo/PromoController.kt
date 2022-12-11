@@ -1,6 +1,7 @@
 package com.example.uvanna.controller.promo
 
 import com.example.uvanna.jpa.Promo
+import com.example.uvanna.model.request.promo.PromoProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.PromoService
@@ -28,29 +29,25 @@ class PromoController {
         @RequestBody file: MultipartFile,
         title: String,
         description: String,
-        productIDS: List<String>,
-        @RequestParam token: String,
+        productRequest: List<PromoProductRequest>,
+        percent: Int,
+        number: Int,
+        @RequestParam dateExpired: String,
+        @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<Promo> {
         return try {
-            promoService.addPromoWithProducts(token = token, title = title, description = description, file = file, products = productIDS)
-        } catch (e: ChangeSetPersister.NotFoundException){
-            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-        }
-    }
-
-    @PostMapping("category")
-    fun addPromoWithCategory(
-        @RequestBody file: MultipartFile,
-        title: String,
-        description: String,
-        category: String,
-        @RequestParam token: String,
-        response: HttpServletResponse
-    ): ServiceResponse<Promo> {
-        return try {
-            promoService.addPromoWithCategory(token = token, title = title, description = description, file = file, category = category)
-        } catch (e: ChangeSetPersister.NotFoundException){
+            promoService.addPromoWithProducts(
+                token = token,
+                title = title,
+                description = description,
+                file = file,
+                products = productRequest,
+                number = number,
+                percent = percent,
+                dateExpired = dateExpired
+            )
+        } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
     }
@@ -83,7 +80,7 @@ class PromoController {
 
     @DeleteMapping("/{id}")
     fun deletePromo(
-        @RequestParam token: String,
+        @RequestHeader (value = "Authorization") token: String,
         @PathVariable id: String,
         response: HttpServletResponse
     ): ServiceResponse<String> {

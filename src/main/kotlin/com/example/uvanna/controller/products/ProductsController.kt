@@ -38,7 +38,7 @@ class ProductsController {
     fun addProduct(
         @RequestBody files: List<MultipartFile>,
         product: ProductRequest,
-        @RequestParam token: String,
+        @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<Product>? {
         return try {
@@ -55,7 +55,7 @@ class ProductsController {
         product: ProductRequest,
         characteristic: List<String>,
         data: List<String>,
-        @RequestParam token: String,
+        @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<Product>? {
         return try {
@@ -155,7 +155,7 @@ class ProductsController {
     @DeleteMapping
     fun deleteProduct(
         @RequestParam id: String,
-        @RequestParam token: String,
+        @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<String> {
         return try {
@@ -166,20 +166,20 @@ class ProductsController {
     }
 
 
-    @GetMapping("parser")
-    fun parseProducts(
-        @RequestParam brand: String,
-        response: HttpServletResponse
-    ): ServiceResponse<String> {
-        val start = System.currentTimeMillis()
-        val data = productService.parser(brand)
-
-        val finish = System.currentTimeMillis()
-        val elapsed = finish - start
-        logger.info("time execution $elapsed")
-
-        return ServiceResponse(data = data, status = HttpStatus.OK)
-    }
+//    @GetMapping("parser")
+//    fun parseProducts(
+//        @RequestParam brand: String,
+//        response: HttpServletResponse
+//    ): ServiceResponse<String> {
+//        val start = System.currentTimeMillis()
+//        val data = productService.parser(brand)
+//
+//        val finish = System.currentTimeMillis()
+//        val elapsed = finish - start
+//        logger.info("time execution $elapsed")
+//
+//        return ServiceResponse(data = data, status = HttpStatus.OK)
+//    }
 
 
 }

@@ -28,7 +28,7 @@ class OrdersController {
     fun editOrder(
         @PathVariable id: String,
         orders: Orders,
-        @RequestParam token: String,
+        @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<Any> {
         return try {

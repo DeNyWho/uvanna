@@ -25,7 +25,6 @@ class PaymentController {
     @PostMapping
     fun newPayment(
         @RequestBody paymentProductRequest: List<ProductsRequestsing>,
-//        @Parameter(description = "typePayment = nal | beznal typeDelivery poka tolko: pickup")
         city: String,
         streetFull: String,
         fullname: String,

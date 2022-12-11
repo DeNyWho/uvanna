@@ -30,7 +30,7 @@ class SiteController {
     @PostMapping("MainBanner", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun addMainBanner(
         @RequestBody file: MultipartFile,
-        token: String,
+        @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<MainBanner>? {
         return try {
@@ -51,11 +51,10 @@ class SiteController {
         }
     }
 
-
     @DeleteMapping("MainBanner")
     fun deleteMainBanner(
         @RequestParam id: String,
-        @RequestParam token: String,
+        @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<String> {
         return try {

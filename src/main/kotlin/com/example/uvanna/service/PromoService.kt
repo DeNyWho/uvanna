@@ -2,11 +2,11 @@ package com.example.uvanna.service
 
 import com.example.uvanna.repository.promo.PromoRepositoryImpl
 import com.example.uvanna.jpa.Promo
+import com.example.uvanna.model.request.promo.PromoProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.admin.AdminRepository
-import com.example.uvanna.repository.catalog.CatalogRepository
-import com.example.uvanna.repository.catalog.CatalogSecondRepository
+import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.promo.PromoRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
@@ -29,10 +29,7 @@ class PromoService: PromoRepositoryImpl {
     lateinit var promoRepository: PromoRepository
 
     @Autowired
-    lateinit var catalogRepository: CatalogRepository
-
-    @Autowired
-    lateinit var catalogSecondRepository: CatalogSecondRepository
+    lateinit var productsRepository: ProductsRepository
 
     @Autowired
     lateinit var fileService: FileService
@@ -41,8 +38,11 @@ class PromoService: PromoRepositoryImpl {
         title: String,
         description: String,
         file: MultipartFile,
-        products: List<String>,
-        token: String
+        products: List<PromoProductRequest>,
+        token: String,
+        number: Int?,
+        percent: Int?,
+        dateExpired: String
     ): ServiceResponse<Promo>{
         return try {
             val check = checkToken(token)
@@ -50,17 +50,36 @@ class PromoService: PromoRepositoryImpl {
             if(check) {
                 val imageUrl = fileService.save(file)
 
+                val id = UUID.randomUUID().toString()
+
                 val item = Promo(
-                    id = UUID.randomUUID().toString(),
+                    id = id,
                     title = title,
                     description = description,
                     imageUrl = imageUrl,
-                    date = LocalDate.now(),
+                    dateExpired = dateExpired,
+                    dateCreated = LocalDate.now(),
                 )
+
+                products.forEach {
+                    val product = productsRepository.findById(it.productId).get()
+                    val calculatedPercent = if(percent == null) {
+                        val temp = (( product.price - number!! ) / product.price ).toString()
+                        "${temp[2]}${temp[3]}".toInt()
+                    } else {
+                        null
+                    }
+                    product.percent = if(percent != null ) it.percent else calculatedPercent
+                    product.sellPrice = if(percent == null) product.price - number!! else product.price * (percent/100)
+                    productsRepository.save(product)
+                    item.addPromoProducts(productsRepository.findById(it.productId).get())
+                }
+
+                promoRepository.save(item)
 
                 ServiceResponse(
                     data = listOf(promoRepository.findById(item.id).get()),
-                    message = "Product has been created",
+                    message = "Promo has been created",
                     status = HttpStatus.OK
                 )
             } else {
@@ -80,51 +99,11 @@ class PromoService: PromoRepositoryImpl {
         }
     }
 
-    override fun addPromoWithCategory(
-        title: String,
-        description: String,
-        file: MultipartFile,
-        category: String,
-        token: String
-    ): ServiceResponse<Promo>{
-        return try {
-            val check = checkToken(token)
-            if(check) {
-                val imageUrl = fileService.save(file)
-
-                val item = Promo(
-                    id = UUID.randomUUID().toString(),
-                    title = title,
-                    description = description,
-                    imageUrl = imageUrl,
-                    date = LocalDate.now(),
-                )
-
-                ServiceResponse(
-                    data = listOf(promoRepository.findById(item.id).get()),
-                    message = "Promo has been created",
-                    status = HttpStatus.OK
-                )
-            } else {
-                ServiceResponse(
-                    data = null,
-                    message = "Unexpected token",
-                    status = HttpStatus.UNAUTHORIZED
-                )
-            }
-        } catch (e: Exception){
-            ServiceResponse(
-                data = null,
-                message = e.message.toString(),
-                status = HttpStatus.BAD_REQUEST
-            )
-        }
-    }
 
     override fun getPromo(id: String): ServiceResponse<Promo>{
         return try {
             ServiceResponse(
-                data = listOf(promoRepository.getById(id)),
+                data = listOf(promoRepository.findById(id).get()),
                 message = "Success",
                 status = HttpStatus.OK
             )
@@ -152,7 +131,7 @@ class PromoService: PromoRepositoryImpl {
                         id = it.id,
                         title = it.title,
                         description = it.description,
-                        date = it.date,
+                        dateExpired = it.dateExpired,
                         imageUrl = it.imageUrl,
                     )
                 )

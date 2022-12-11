@@ -155,9 +155,7 @@ class OrderService: OrdersRepositoryImpl {
         }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override fun getOrders(id: String): Any {
-//        return try {
         val client = HttpClient() {
             expectSuccess = false
 

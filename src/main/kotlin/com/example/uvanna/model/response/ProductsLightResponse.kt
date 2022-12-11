@@ -5,5 +5,6 @@ data class ProductsLightResponse(
     val title: String,
     val imageUrls: List<String>,
     val price: Int,
-    val stock: Int
+    val stock: Int,
+    val sellPrice: Int?
 )

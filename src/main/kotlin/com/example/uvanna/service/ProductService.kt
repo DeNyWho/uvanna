@@ -165,6 +165,7 @@ class ProductService: ProductsRepositoryImpl {
                         stock = product.stock,
                         brand = product.brand,
                         price = product.price,
+                        sellPrice = null
                     )
 
                     productsRepository.save(item)
@@ -244,7 +245,8 @@ class ProductService: ProductsRepositoryImpl {
                         id = it.id,
                         title = it.title,
                         imageUrls = it.images,
-                        price = it.price
+                        price = it.price,
+                        sellPrice = it.sellPrice
                     )
                 )
             }
@@ -327,7 +329,8 @@ class ProductService: ProductsRepositoryImpl {
                         title = it.title,
                         imageUrls = it.images,
                         price = it.price,
-                        stock = it.stock
+                        stock = it.stock,
+                        sellPrice = it.sellPrice
                     )
                 )
             }

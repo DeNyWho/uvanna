@@ -90,4 +90,19 @@ class PromoController {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
     }
+
+    @DeleteMapping("/{id}/products")
+    fun deleteProductPromo(
+        @RequestHeader (value = "Authorization") token: String,
+        @PathVariable id: String,
+        response: HttpServletResponse
+    ): ServiceResponse<String> {
+        return try {
+             promoService.deletePromo(token = token, id =  id)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+
 }

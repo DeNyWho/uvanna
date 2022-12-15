@@ -56,6 +56,7 @@ dependencies {
     // Chrome Driver for Selenium
     implementation("org.seleniumhq.selenium:selenium-chrome-driver:4.2.1")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
 //    implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-web")

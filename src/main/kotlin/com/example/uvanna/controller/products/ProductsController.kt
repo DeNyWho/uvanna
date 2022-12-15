@@ -166,20 +166,4 @@ class ProductsController {
     }
 
 
-//    @GetMapping("parser")
-//    fun parseProducts(
-//        @RequestParam brand: String,
-//        response: HttpServletResponse
-//    ): ServiceResponse<String> {
-//        val start = System.currentTimeMillis()
-//        val data = productService.parser(brand)
-//
-//        val finish = System.currentTimeMillis()
-//        val elapsed = finish - start
-//        logger.info("time execution $elapsed")
-//
-//        return ServiceResponse(data = data, status = HttpStatus.OK)
-//    }
-
-
 }

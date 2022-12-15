@@ -16,7 +16,6 @@ import javax.validation.constraints.Min
 @Repository
 interface ProductsRepositoryImpl {
 
-    fun parser(brand: String): List<String>
 
     fun getCharactSort(level: String): List<Characteristic>
 

@@ -10,5 +10,6 @@ data class Calls(
     @Id
     val id: String = "",
     val name: String = "",
-    val phone: String = ""
+    val phone: String = "",
+    val date: String = ""
 )

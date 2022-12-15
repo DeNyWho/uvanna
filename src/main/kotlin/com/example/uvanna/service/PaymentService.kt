@@ -50,6 +50,9 @@ class PaymentService: PaymentRepositoryImpl {
     @Autowired
     lateinit var ordersRepository: OrdersRepository
 
+    @Autowired
+    lateinit var emailService: EmailService
+
     var c: PaymentResponse = PaymentResponse(
         id = "",
         status = "",
@@ -92,6 +95,7 @@ class PaymentService: PaymentRepositoryImpl {
                 v =
                     "${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}-${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}"
             }
+            val id = UUID.randomUUID().toString()
 
             runBlocking {
                 val f = client.post {
@@ -127,7 +131,6 @@ class PaymentService: PaymentRepositoryImpl {
                 }
                 c = f.body()
                 c.metadata = null
-                val id = UUID.randomUUID().toString()
                 withContext(Dispatchers.IO) {
                    ordersRepository.save(
                         Orders(
@@ -155,6 +158,10 @@ class PaymentService: PaymentRepositoryImpl {
                     }
                 }
             }
+
+            val order = ordersRepository.findById(id).get()
+
+            emailService.sendNewOrderMessage(paymentInfo = order)
             return c
         } else {
             var v =
@@ -163,6 +170,7 @@ class PaymentService: PaymentRepositoryImpl {
                 v =
                     "${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}-${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}"
             }
+            val id = UUID.randomUUID().toString()
 
             val orderProducts = mutableListOf<OrdersProducts>()
             ordersProducts.forEach{
@@ -173,8 +181,34 @@ class PaymentService: PaymentRepositoryImpl {
                     )
                 )
             }
+            ordersRepository.save(
+                Orders(
+                    id = id,
+                    city = paymentDataRequest.city,
+                    streetFull = paymentDataRequest.streetFull,
+                    fullName = paymentDataRequest.fullname,
+                    phone = paymentDataRequest.phone,
+                    email = paymentDataRequest.email,
+                    updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
+                    typeDelivery = paymentDataRequest.typeDelivery,
+                    typePayment = paymentDataRequest.typePayment,
+                    paymentID = c.id,
+                    code = v,
+                    status = "Заказ сформирован"
+                )
+            )
+            orderProducts.forEach {
+                ordersRepository.findById(id).get().addProducts(
+                    OrdersProducts(
+                        productID = it.productID,
+                        count = it.count
+                    )
+                )
+            }
 
-            val id = UUID.randomUUID().toString()
+            val order = ordersRepository.findById(id).get()
+
+            emailService.sendNewOrderMessage(paymentInfo = order)
 
             return ordersRepository.findById(id)
         }

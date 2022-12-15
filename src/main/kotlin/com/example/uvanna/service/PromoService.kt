@@ -119,7 +119,7 @@ class PromoService: PromoRepositoryImpl {
     override fun getPromos(pageSize: Int, pageNum: Int): PagingResponse<Promo> {
         return try {
             val sort = Sort.by(
-                Sort.Order(Sort.Direction.DESC, "date"),
+                Sort.Order(Sort.Direction.ASC, "dateExpired"),
             )
             val pageable: Pageable = PageRequest.of(pageNum, pageSize, sort)
             val statePage: Page<Promo> = promoRepository.findAll(pageable)

@@ -5,6 +5,7 @@ import com.example.uvanna.model.orders.OrderConverter
 import com.example.uvanna.model.payment.Amount
 import com.example.uvanna.model.payment.ConfirmationRedirect
 import com.example.uvanna.model.payment.Recipient
+import com.example.uvanna.model.response.OrderFullResponse
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.admin.AdminRepository
@@ -37,6 +38,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.util.*
 
 @Service
@@ -47,6 +49,12 @@ class OrderService: OrdersRepositoryImpl {
 
     @Autowired
     lateinit var adminRepository: AdminRepository
+
+    @Value("\${payment_key}")
+    lateinit var paymentKey: String
+
+    @Value("\${payment_shop}")
+    lateinit var paymentShop: String
 
     override fun editOrder(id: String, order: Orders, token: String): ServiceResponse<Orders> {
         return try {
@@ -84,12 +92,6 @@ class OrderService: OrdersRepositoryImpl {
         }
     }
 
-    @Value("\${payment_key}")
-    lateinit var paymentKey: String
-
-    @Value("\${payment_shop}")
-    lateinit var paymentShop: String
-
     var c: OrderConverter = OrderConverter(
         id = "",
         status = "",
@@ -124,6 +126,7 @@ class OrderService: OrdersRepositoryImpl {
                 if (sort != null) PageRequest.of(pageNum, pageSize, sort) else PageRequest.of(pageNum, pageSize)
 
             val statePage: Page<Orders> = when (filter) {
+
                 "paid" -> {
                     ordersRepository.findByPaidStatus(pageable, "true")
                 }
@@ -156,45 +159,68 @@ class OrderService: OrdersRepositoryImpl {
     }
 
     override fun getOrders(id: String): Any {
-        val client = HttpClient() {
-            expectSuccess = false
+        return try {
+            val order = ordersRepository.findByCode(id).get()
+            val client = HttpClient() {
+                expectSuccess = false
 
-            defaultRequest {
-                contentType(Json)
-            }
-            install(ContentNegotiation) {
-                json(Json {
-                    prettyPrint = true
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                })
-            }
-            install(Logging) {
-                logger = Logger.DEFAULT
-                level = LogLevel.ALL
-            }
-        }
-
-        runBlocking {
-            val order = withContext(Dispatchers.IO) {
-                ordersRepository.findByCode(id).get()
-            }
-
-            val f = client.get {
-                headers {
+                defaultRequest {
                     contentType(Json)
-                    append("Idempotence-Key", UUID.randomUUID().toString())
-                    append(HttpHeaders.Authorization, Credentials.basic(paymentShop, paymentKey))
                 }
-                url {
-                    protocol = URLProtocol.HTTPS
-                    host = "api.yookassa.ru/v3/payments/${order.paymentID}"
+                install(ContentNegotiation) {
+                    json(Json {
+                        prettyPrint = true
+                        isLenient = true
+                        ignoreUnknownKeys = true
+                    })
+                }
+                install(Logging) {
+                    logger = Logger.DEFAULT
+                    level = LogLevel.ALL
                 }
             }
-            c = f.body()
+
+            runBlocking {
+                val f = client.get {
+                    headers {
+                        contentType(Json)
+                        append("Idempotence-Key", UUID.randomUUID().toString())
+                        append(HttpHeaders.Authorization, Credentials.basic(paymentShop, paymentKey))
+                    }
+                    url {
+                        protocol = URLProtocol.HTTPS
+                        host = "api.yookassa.ru/v3/payments/${order.paymentID}"
+                    }
+                }
+                c = f.body()
+            }
+            println(c)
+            OrderFullResponse(
+                order = Orders(
+                    id = order.id,
+                    city = order.city,
+                    streetFull = order.city,
+                    fullName = order.fullName,
+                    phone = order.phone,
+                    email = order.email,
+                    typePayment = order.typePayment,
+                    typeDelivery = order.typeDelivery,
+                    code = order.code,
+                    paymentID = order.paymentID,
+                    paymentSuccess = c.paid.toString(),
+                    products = order.products,
+                    status = if(c.paid) "Заказ успешно оплачен" else "Заказ требует оплаты",
+                    updated = LocalDate.now().toString()
+                ),
+                orderConverter = c
+            )
+        } catch (e: Exception) {
+            ServiceResponse<Any>(
+                data = listOf(),
+                message = "Order with code = $id not found",
+                status = HttpStatus.NOT_FOUND
+            )
         }
-        println(c)
-        return c
     }
 
     fun checkToken(token: String): Boolean {

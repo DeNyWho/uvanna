@@ -31,4 +31,17 @@ class AdminController {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
     }
+
+    @GetMapping("checkToken")
+    fun checkToken(
+        @RequestParam token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<String>{
+        return try {
+            adminService.checkToken(token)
+
+        } catch (e: ChangeSetPersister.NotFoundException){
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
 }

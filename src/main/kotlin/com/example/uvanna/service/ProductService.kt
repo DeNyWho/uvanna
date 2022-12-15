@@ -376,47 +376,6 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
-    override fun parser(brand: String): List<String> {
-        val driver = setWebDriver("https://santehnika-online.ru/brands/$brand/")
-        val urls = mutableListOf<String>()
-        println(driver.pageSource)
-        val tempUrls = driver.findElements(By.xpath("//*[@class=\"AeMeQv_tStmde8Cdk9QF text--sm\"]"))
-        println(tempUrls.size)
-        tempUrls.forEach {
-            println(it)
-            urls.add(it.findElement(By.tagName("a")).getAttribute("href"))
-        }
-        println(urls)
-        return urls
-    }
-
-    fun setWebDriver(url: String): WebDriver {
-        val pathDriver: String = when (getOSU()) {
-            // Loaded from here https://chromedriver.storage.googleapis.com/index.html?path=101.0.4951.41/
-            WINDOWS -> "_win32_101.exe"
-            LINUX -> "_linux64_101"
-            MAC -> "_mac64_101"
-            else -> throw Exception("Unknown operating system!")
-        }
-        val proxy = Proxy()
-        System.setProperty("webdriver.chrome.driver", "driver/chromedriver$pathDriver");
-        val options = ChromeOptions()
-        proxy.httpProxy = "192.168.0.44:8120"
-        options.setCapability("proxy", proxy)
-        options.addArguments("--headless")
-        val driver = ChromeDriver(options)
-        driver.manage().window().maximize()
-        try {
-            driver.get(url);
-        } catch (e: Exception) {
-            println(e.message)
-
-            throw Exception(e.localizedMessage)
-        }
-        return driver
-    }
-
-
     fun checkToken(token: String): Boolean {
         val token = adminRepository.findAdminTokenByToken(token)
 

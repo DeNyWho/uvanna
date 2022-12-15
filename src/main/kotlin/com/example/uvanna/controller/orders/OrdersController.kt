@@ -1,19 +1,31 @@
 package com.example.uvanna.controller.orders
 
 import com.example.uvanna.jpa.Orders
-import com.example.uvanna.model.request.payment.PaymentDataRequest
+import com.example.uvanna.jpa.Product
+import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
+import com.example.uvanna.service.FileService
 import com.example.uvanna.service.OrderService
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.crossstore.ChangeSetPersister
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.mail.MailException
+import org.springframework.mail.javamail.JavaMailSender
+import org.springframework.mail.javamail.MimeMessageHelper
+import org.springframework.mail.javamail.MimeMessagePreparator
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
+import javax.mail.Message
+import javax.mail.internet.InternetAddress
 import javax.servlet.http.HttpServletResponse
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
+
 
 @RestController
 @CrossOrigin("*")
@@ -42,6 +54,7 @@ class OrdersController {
         }
     }
 
+
     @GetMapping()
     fun getOrders(
         @Parameter(description = "filter = new | old | paid | no paid ")
@@ -63,19 +76,6 @@ class OrdersController {
         response: HttpServletResponse
     ): Any {
             return orderService.getOrders(code)
-//            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-//        }
     }
 
-//    @GetMapping("{code}")
-//    fun getOrder(
-//        @PathVariable code: String,
-//        response: HttpServletResponse
-//    ): ServiceResponse<Orders>? {
-//        return try {
-//            return orderService.getOrders(code)
-//        } catch (e: ChangeSetPersister.NotFoundException) {
-//            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-//        }
-//    }
 }

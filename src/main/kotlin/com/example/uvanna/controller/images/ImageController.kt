@@ -2,7 +2,9 @@ package com.example.uvanna.controller.images
 
 import com.example.uvanna.jpa.Image
 import com.example.uvanna.model.response.ServiceResponse
+import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.service.FileService
+import com.example.uvanna.service.ImageService
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.crossstore.ChangeSetPersister
@@ -22,17 +24,19 @@ import javax.servlet.http.HttpServletResponse
 class ImageController {
 
     @Autowired
+    lateinit var imageService: ImageService
+
+    @Autowired
     lateinit var fileService: FileService
 
     @PostMapping("loadImage" ,consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun loadImage(
-        @RequestBody files: MultipartFile,
+        @RequestBody file: MultipartFile,
         @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<String> {
         return try {
-            val v = if(token != "vzxcxzasfdadfa") "vv" else fileService.save(files)
-            ServiceResponse(data = listOf(v),status = HttpStatus.NOT_FOUND, message = "")
+            imageService.loadImage(token, file)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

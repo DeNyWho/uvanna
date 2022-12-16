@@ -3,6 +3,7 @@ package com.example.uvanna.controller.promo
 import com.example.uvanna.jpa.Promo
 import com.example.uvanna.model.request.promo.PromoProductRequest
 import com.example.uvanna.model.response.PagingResponse
+import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.PromoService
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -24,14 +25,13 @@ class PromoController {
     @Autowired
     lateinit var promoService: PromoService
 
-    @PostMapping("products")
+    @PostMapping("/products")
     fun addPromoWithProducts(
         @RequestBody file: MultipartFile,
         title: String,
         description: String,
         productRequest: List<PromoProductRequest>,
         percent: Int,
-        number: Int,
         @RequestParam dateExpired: String,
         @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
@@ -43,7 +43,6 @@ class PromoController {
                 description = description,
                 file = file,
                 products = productRequest,
-                number = number,
                 percent = percent,
                 dateExpired = dateExpired
             )
@@ -91,16 +90,45 @@ class PromoController {
         }
     }
 
-    @DeleteMapping("/{id}/products")
-    fun deleteProductPromo(
+    @PostMapping("/{id}/products/edit")
+    fun editProductPromo(
         @RequestHeader (value = "Authorization") token: String,
         @PathVariable id: String,
+        @RequestBody file: MultipartFile,
+        title: String,
+        description: String,
+        productRequest: List<PromoProductRequest>,
+        percent: Int,
+        @RequestParam dateExpired: String,
         response: HttpServletResponse
-    ): ServiceResponse<String> {
+    ): ServiceResponse<Promo> {
         return try {
-             promoService.deletePromo(token = token, id =  id)
+            promoService.editPromoWithProducts(
+                id = id,
+                token = token,
+                title = title,
+                description = description,
+                file = file,
+                products = productRequest,
+                percent = percent,
+                dateExpired = dateExpired
+            )
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @GetMapping("/{id}/products")
+    fun getProductPromo(
+        @RequestParam(defaultValue = "0") pageNum: @Min(0) @Max(500) Int,
+        @RequestParam(defaultValue = "48") pageSize: @Min(1) @Max(500) Int,
+        @PathVariable id: String,
+        response: HttpServletResponse
+    ): PagingResponse<ProductsLightResponse> {
+        return try {
+             promoService.getProductPromo(id =  id, page = pageNum, countCard = pageSize)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
     }
 

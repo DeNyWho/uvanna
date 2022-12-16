@@ -65,8 +65,6 @@ class PaymentService: PaymentRepositoryImpl {
         refundable = ""
     )
 
-
-
     override fun createNewPayment(ordersProducts: List<ProductsRequestsing>, paymentDataRequest: PaymentDataRequest): Any  {
         if (paymentDataRequest.typePayment == "beznal") {
             val client = HttpClient {
@@ -86,7 +84,6 @@ class PaymentService: PaymentRepositoryImpl {
 
             var price = 0
             ordersProducts.forEach {
-                println("ZXC = ${productsRepository.findById(it.product).get().price}")
                 price = price + productsRepository.findById(it.product).get().price
             }
             var v =
@@ -140,6 +137,8 @@ class PaymentService: PaymentRepositoryImpl {
                             fullName = paymentDataRequest.fullname,
                             phone = paymentDataRequest.phone,
                             email = paymentDataRequest.email,
+                            paymentSuccess = false.toString(),
+                            price = price,
                             updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
                             typeDelivery = paymentDataRequest.typeDelivery,
                             typePayment = paymentDataRequest.typePayment,
@@ -181,6 +180,12 @@ class PaymentService: PaymentRepositoryImpl {
                     )
                 )
             }
+
+            var price = 0
+            ordersProducts.forEach {
+                price = price + productsRepository.findById(it.product).get().price
+            }
+
             ordersRepository.save(
                 Orders(
                     id = id,
@@ -189,6 +194,8 @@ class PaymentService: PaymentRepositoryImpl {
                     fullName = paymentDataRequest.fullname,
                     phone = paymentDataRequest.phone,
                     email = paymentDataRequest.email,
+                    price = price,
+                    paymentSuccess = false.toString(),
                     updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
                     typeDelivery = paymentDataRequest.typeDelivery,
                     typePayment = paymentDataRequest.typePayment,

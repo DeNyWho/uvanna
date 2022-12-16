@@ -6,13 +6,12 @@ import com.example.uvanna.model.payment.Amount
 import com.example.uvanna.model.payment.ConfirmationRedirect
 import com.example.uvanna.model.payment.Recipient
 import com.example.uvanna.model.response.OrderFullResponse
+import com.example.uvanna.model.response.OrderSmallResponse
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.orders.OrdersRepository
 import com.example.uvanna.repository.orders.OrdersRepositoryImpl
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -24,11 +23,8 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.Application.Json
 import io.ktor.serialization.kotlinx.cbor.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.cbor.Cbor
+import kotlinx.serialization.json.Json
 import okhttp3.Credentials
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -161,59 +157,81 @@ class OrderService: OrdersRepositoryImpl {
     override fun getOrders(id: String): Any {
         return try {
             val order = ordersRepository.findByCode(id).get()
-            val client = HttpClient() {
-                expectSuccess = false
+            if(order.typePayment == "beznal") {
+                val client = HttpClient() {
+                    expectSuccess = false
 
-                defaultRequest {
-                    contentType(Json)
-                }
-                install(ContentNegotiation) {
-                    json(Json {
-                        prettyPrint = true
-                        isLenient = true
-                        ignoreUnknownKeys = true
-                    })
-                }
-                install(Logging) {
-                    logger = Logger.DEFAULT
-                    level = LogLevel.ALL
-                }
-            }
-
-            runBlocking {
-                val f = client.get {
-                    headers {
+                    defaultRequest {
                         contentType(Json)
-                        append("Idempotence-Key", UUID.randomUUID().toString())
-                        append(HttpHeaders.Authorization, Credentials.basic(paymentShop, paymentKey))
                     }
-                    url {
-                        protocol = URLProtocol.HTTPS
-                        host = "api.yookassa.ru/v3/payments/${order.paymentID}"
+                    install(ContentNegotiation) {
+                        json(Json {
+                            prettyPrint = true
+                            isLenient = true
+                            ignoreUnknownKeys = true
+                        })
+                    }
+                    install(Logging) {
+                        logger = Logger.DEFAULT
+                        level = LogLevel.ALL
                     }
                 }
-                c = f.body()
+
+                runBlocking {
+                    val f = client.get {
+                        headers {
+                            contentType(Json)
+                            append("Idempotence-Key", UUID.randomUUID().toString())
+                            append(HttpHeaders.Authorization, Credentials.basic(paymentShop, paymentKey))
+                        }
+                        url {
+                            protocol = URLProtocol.HTTPS
+                            host = "api.yookassa.ru/v3/payments/${order.paymentID}"
+                        }
+                    }
+                    c = f.body()
+                }
+
+                println(c)
+                OrderFullResponse(
+                    order = Orders(
+                        id = order.id,
+                        city = order.city,
+                        streetFull = order.city,
+                        fullName = order.fullName,
+                        phone = order.phone,
+                        email = order.email,
+                        typePayment = order.typePayment,
+                        typeDelivery = order.typeDelivery,
+                        code = order.code,
+                        paymentID = order.paymentID,
+                        paymentSuccess = c.paid.toString(),
+                        products = order.products,
+                        status = if(c.paid) "Заказ успешно оплачен" else "Заказ требует оплаты",
+                        updated = LocalDate.now().toString()
+                    ),
+                    orderConverter = c
+                )
+            } else {
+                OrderSmallResponse(
+                    order = Orders(
+                        id = order.id,
+                        city = order.city,
+                        streetFull = order.city,
+                        fullName = order.fullName,
+                        phone = order.phone,
+                        email = order.email,
+                        typePayment = order.typePayment,
+                        typeDelivery = order.typeDelivery,
+                        code = order.code,
+                        paymentID = order.paymentID,
+                        paymentSuccess = order.typePayment,
+                        products = order.products,
+                        status = "Заказ сформирован",
+                        updated = LocalDate.now().toString()
+                    )
+                )
             }
-            println(c)
-            OrderFullResponse(
-                order = Orders(
-                    id = order.id,
-                    city = order.city,
-                    streetFull = order.city,
-                    fullName = order.fullName,
-                    phone = order.phone,
-                    email = order.email,
-                    typePayment = order.typePayment,
-                    typeDelivery = order.typeDelivery,
-                    code = order.code,
-                    paymentID = order.paymentID,
-                    paymentSuccess = c.paid.toString(),
-                    products = order.products,
-                    status = if(c.paid) "Заказ успешно оплачен" else "Заказ требует оплаты",
-                    updated = LocalDate.now().toString()
-                ),
-                orderConverter = c
-            )
         } catch (e: Exception) {
             ServiceResponse<Any>(
                 data = listOf(),

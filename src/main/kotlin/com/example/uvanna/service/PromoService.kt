@@ -1,13 +1,14 @@
 package com.example.uvanna.service
 
-import com.example.uvanna.repository.promo.PromoRepositoryImpl
 import com.example.uvanna.jpa.Promo
 import com.example.uvanna.model.request.promo.PromoProductRequest
 import com.example.uvanna.model.response.PagingResponse
+import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.promo.PromoRepository
+import com.example.uvanna.repository.promo.PromoRepositoryImpl
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -40,7 +41,6 @@ class PromoService: PromoRepositoryImpl {
         file: MultipartFile,
         products: List<PromoProductRequest>,
         token: String,
-        number: Int?,
         percent: Int?,
         dateExpired: String
     ): ServiceResponse<Promo>{
@@ -63,14 +63,8 @@ class PromoService: PromoRepositoryImpl {
 
                 products.forEach {
                     val product = productsRepository.findById(it.productId).get()
-                    val calculatedPercent = if(percent == null) {
-                        val temp = (( product.price - number!! ) / product.price ).toString()
-                        "${temp[2]}${temp[3]}".toInt()
-                    } else {
-                        null
-                    }
-                    product.percent = if(percent != null ) it.percent else calculatedPercent
-                    product.sellPrice = if(percent == null) product.price - number!! else product.price * (percent/100)
+                    product.percent = it.percent
+                    product.sellPrice = product.price * (percent!!/100)
                     productsRepository.save(product)
                     item.addPromoProducts(productsRepository.findById(it.productId).get())
                 }
@@ -98,6 +92,64 @@ class PromoService: PromoRepositoryImpl {
             )
         }
     }
+
+    override fun editPromoWithProducts(
+        id: String,
+        title: String,
+        description: String,
+        file: MultipartFile,
+        products: List<PromoProductRequest>,
+        token: String,
+        percent: Int?,
+        dateExpired: String
+    ): ServiceResponse<Promo>{
+        return try {
+            val check = checkToken(token)
+
+            if(check) {
+                val imageUrl = fileService.save(file)
+
+                val item = Promo(
+                    id = id,
+                    title = title,
+                    description = description,
+                    imageUrl = imageUrl,
+                    dateExpired = dateExpired,
+                    dateCreated = LocalDate.now(),
+                )
+
+                products.forEach {
+                    val product = productsRepository.findById(it.productId).get()
+                    product.percent = it.percent
+                    product.sellPrice = product.price * (percent!!/100)
+                    productsRepository.save(product)
+                    item.addPromoProducts(productsRepository.findById(it.productId).get())
+                }
+
+                promoRepository.save(item)
+
+                ServiceResponse(
+                    data = listOf(promoRepository.findById(item.id).get()),
+                    message = "Promo has been edited",
+                    status = HttpStatus.OK
+                )
+            } else {
+                ServiceResponse(
+                    data = null,
+                    message = "Unexpected token",
+                    status = HttpStatus.UNAUTHORIZED
+                )
+            }
+
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = "Something went wrong: ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
 
 
     override fun getPromo(id: String): ServiceResponse<Promo>{
@@ -153,6 +205,44 @@ class PromoService: PromoRepositoryImpl {
         }
     }
 
+    override fun addProductPromo(id: String, token: String, productsIds: List<PromoProductRequest>): ServiceResponse<Any> {
+        val check = checkToken(token)
+        return if(check) {
+            return try {
+                val promo = promoRepository.findById(id).get()
+                promo.deleteAllPromoProducts()
+
+                productsIds.forEach {
+                    val product = productsRepository.findById(it.productId).get()
+                    product.percent = it.percent
+                    product.sellPrice = product.price * (it.percent/100)
+                    productsRepository.save(product)
+                    promo.addPromoProducts(productsRepository.findById(it.productId).get())
+                }
+                promoRepository.save(promo)
+
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Products promo has been edited",
+                    status = HttpStatus.OK
+                )
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Promo with id = $id not found",
+                    status = HttpStatus.NOT_FOUND
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+
+    }
+
     override fun deletePromo(id: String, token: String): ServiceResponse<String>{
         val check = checkToken(token)
         return if(check) {
@@ -175,6 +265,40 @@ class PromoService: PromoRepositoryImpl {
                 data = null,
                 message = "Unexpected token",
                 status = HttpStatus.UNAUTHORIZED
+            )
+        }
+    }
+
+    override fun getProductPromo(page: Int, countCard: Int, id: String): PagingResponse<ProductsLightResponse> {
+        return try {
+            val pageable: Pageable = PageRequest.of(page, countCard)
+            val statePage = promoRepository.getProducts(id, pageable)
+            val light = mutableListOf<ProductsLightResponse>()
+
+            statePage.content.forEach {
+                light.add(
+                    ProductsLightResponse(
+                        id = it.id,
+                        title = it.title,
+                        imageUrls = it.images,
+                        price = it.price,
+                        stock = it.stock,
+                        sellPrice = it.sellPrice
+                    )
+                )
+            }
+            PagingResponse(
+                data = light,
+                totalElements = statePage.totalElements,
+                totalPages = statePage.totalPages,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception){
+            PagingResponse(
+                data = null,
+                message = "Something went wrong: ${e.message}",
+                status = HttpStatus.BAD_REQUEST
             )
         }
     }

@@ -5,7 +5,6 @@ import com.example.uvanna.model.request.payment.PaymentDataRequest
 import com.example.uvanna.model.request.payment.ProductsRequestsing
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.PaymentService
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.crossstore.ChangeSetPersister

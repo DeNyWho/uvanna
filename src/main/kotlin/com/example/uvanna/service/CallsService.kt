@@ -1,8 +1,6 @@
 package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Calls
-import com.example.uvanna.jpa.Product
-import com.example.uvanna.jpa.Promo
 import com.example.uvanna.model.request.call.CallRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
@@ -15,7 +13,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
-import java.time.LocalDate
 import java.util.*
 
 @Service
@@ -26,37 +23,25 @@ class CallsService {
     @Autowired
     private lateinit var adminRepository: AdminRepository
 
-    fun addCall(token: String, call: CallRequest): ServiceResponse<Calls>{
+    fun addCall(call: CallRequest): ServiceResponse<Calls> {
         return try {
-            val check = checkToken(token)
 
-            if(check) {
+            val id = UUID.randomUUID().toString()
 
-                val id = UUID.randomUUID().toString()
-
-                callsRepository.save(
-                    Calls(
-                        id = id,
-                        name = call.name,
-                        date = call.date,
-                        phone = call.phone
-                    )
+            callsRepository.save(
+                Calls(
+                    id = id,
+                    name = call.name,
+                    date = call.date,
+                    phone = call.phone
                 )
-
-                ServiceResponse(
-                    data = listOf(callsRepository.findById(id).get()),
-                    message = "Call has been created",
-                    status = HttpStatus.OK
-                )
-            } else {
-                ServiceResponse(
-                    data = null,
-                    message = "Unexpected token",
-                    status = HttpStatus.UNAUTHORIZED
-                )
-            }
-
-        } catch (e: Exception){
+            )
+            ServiceResponse(
+                data = listOf(callsRepository.findById(id).get()),
+                message = "Call has been created",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
             ServiceResponse(
                 data = null,
                 message = "Something went wrong: ${e.message}",

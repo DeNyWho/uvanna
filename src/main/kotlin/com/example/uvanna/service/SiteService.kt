@@ -1,22 +1,14 @@
 package com.example.uvanna.service
 
 import com.example.uvanna.jpa.MainBanner
-import com.example.uvanna.jpa.Promo
-import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.admin.AdminRepository
-import com.example.uvanna.repository.site.mainBanner.MainBannerRepository
 import com.example.uvanna.repository.site.SiteRepositoryImpl
-import com.example.uvanna.repository.promo.PromoRepository
+import com.example.uvanna.repository.site.mainBanner.MainBannerRepository
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import java.time.LocalDate
 import java.util.*
 
 @Service

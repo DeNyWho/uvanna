@@ -4,8 +4,8 @@ import com.example.uvanna.jpa.Calls
 import com.example.uvanna.model.request.call.CallRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
-import com.example.uvanna.service.AdminService
 import com.example.uvanna.service.CallsService
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.crossstore.ChangeSetPersister
@@ -24,21 +24,20 @@ class CallsController {
 
     @PostMapping("")
     fun addCall(
-        @RequestParam token: String,
         call: CallRequest,
         response: HttpServletResponse
     ): ServiceResponse<Calls> {
         return try {
-            callsService.addCall(token, call)
+            callsService.addCall(call)
 
         } catch (e: ChangeSetPersister.NotFoundException){
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
     }
 
-    @PostMapping("")
+    @DeleteMapping("")
     fun deleteCall(
-        @RequestParam token: String,
+        @RequestHeader (value = "Authorization") token: String,
         callId: String,
         response: HttpServletResponse
     ): ServiceResponse<Any> {
@@ -50,10 +49,11 @@ class CallsController {
         }
     }
 
-    @PostMapping("")
+    @GetMapping("")
     fun getCalls(
         countCard: Int,
         page: Int,
+        @Parameter(description = "filter = new | old")
         filter: String,
         response: HttpServletResponse
     ): PagingResponse<Any> {

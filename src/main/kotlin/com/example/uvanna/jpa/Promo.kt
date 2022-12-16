@@ -20,8 +20,17 @@ data class Promo(
     @Column(nullable = true)
     var productsPromo: MutableSet<Product> = mutableSetOf()
 ) {
+    fun deleteAllPromoProducts(): Promo {
+        productsPromo.clear()
+        return this
+    }
     fun addPromoProducts(products: Product): Promo {
         productsPromo.add(products)
+        return this
+    }
+
+    fun deletePromoProducts(product: Product): Promo {
+        productsPromo.remove(product)
         return this
     }
 }

@@ -1,10 +1,6 @@
 package com.example.uvanna.controller.site
 
 import com.example.uvanna.jpa.MainBanner
-import com.example.uvanna.jpa.Product
-import com.example.uvanna.jpa.Promo
-import com.example.uvanna.model.response.PagingResponse
-import com.example.uvanna.model.response.PromoLightResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.SiteService
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -15,8 +11,6 @@ import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import javax.servlet.http.HttpServletResponse
-import javax.validation.constraints.Max
-import javax.validation.constraints.Min
 
 @RestController
 @CrossOrigin("*")

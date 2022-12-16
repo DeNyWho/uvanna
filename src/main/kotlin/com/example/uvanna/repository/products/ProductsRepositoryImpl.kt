@@ -4,9 +4,9 @@ import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.request.product.ProductRequest
-import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductLighterResponse
+import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse
 import org.springframework.stereotype.Repository
 import org.springframework.web.multipart.MultipartFile
@@ -22,17 +22,6 @@ interface ProductsRepositoryImpl {
     fun getProduct(id: String): ServiceResponse<Product>?
 
     fun getBrands(id: String): ServiceResponse<String>?
-    fun getProducts(
-        countCard: Int,
-        page: Int,
-        brand: Brands?,
-        smallPrice: Int?,
-        highPrice: Int?,
-        order: String?,
-        filter: String?,
-        level: String?,
-        categoryId: String?
-    ): PagingResponse<ProductsLightResponse>?
 
     fun findProduct(
         searchQuery: String,
@@ -58,4 +47,24 @@ interface ProductsRepositoryImpl {
     ): ServiceResponse<Product>?
 
     fun deleteProduct(token: String, id: String): ServiceResponse<String>
+
+    fun getProducts(
+        countCard: Int,
+        page: Int,
+        brand: Brands?,
+        smallPrice: Int?,
+        highPrice: Int?,
+        filter: String?,
+        categoryId: String?,
+        stockEmpty: Boolean?,
+        stockFull: Boolean?,
+        isSellByPromo: Boolean?
+    ): PagingResponse<ProductsLightResponse>?
+
+    fun getProductRandom(
+        countCard: Int,
+        page: Int,
+        filter: String?,
+        productId: String?
+    ): PagingResponse<ProductsLightResponse>?
 }

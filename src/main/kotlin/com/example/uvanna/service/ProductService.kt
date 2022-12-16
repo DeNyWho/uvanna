@@ -4,20 +4,14 @@ import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.request.product.ProductRequest
-import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductLighterResponse
+import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.products.ProductsRepositoryImpl
-import com.example.uvanna.util.OS.*
-import com.example.uvanna.util.getOSU
-import org.openqa.selenium.By
-import org.openqa.selenium.Proxy
-import org.openqa.selenium.WebDriver
-import org.openqa.selenium.chrome.ChromeDriver
-import org.openqa.selenium.chrome.ChromeOptions
+import com.example.uvanna.repository.promo.PromoRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.data.domain.Page
@@ -30,8 +24,6 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.multipart.MultipartFile
 import java.text.SimpleDateFormat
 import java.util.*
-import javax.validation.constraints.Max
-import javax.validation.constraints.Min
 
 
 @Service
@@ -42,6 +34,9 @@ class ProductService: ProductsRepositoryImpl {
 
     @Autowired
     lateinit var productsRepository: ProductsRepository
+
+    @Autowired
+    lateinit var promoRepository: PromoRepository
 
     @Autowired
     private lateinit var fileService: FileService
@@ -274,51 +269,41 @@ class ProductService: ProductsRepositoryImpl {
         brand: Brands?,
         smallPrice: Int?,
         highPrice: Int?,
-        order: String?,
         filter: String?,
-        level: String?,
-        categoryId: String?
+        categoryId: String?,
+        stockEmpty: Boolean?,
+        stockFull: Boolean?,
+        isSellByPromo: Boolean?,
     ): PagingResponse<ProductsLightResponse>? {
         return try {
             val sort = when (filter) {
                 "expensive" -> Sort.by(
                     Sort.Order(Sort.Direction.DESC, "price"),
                 )
+
                 "cheap" -> Sort.by(
                     Sort.Order(Sort.Direction.ASC, "price")
                 )
+
                 "new" -> Sort.by(
                     Sort.Order(Sort.Direction.DESC, "updated")
                 )
+
                 else -> null
             }
 
             val pageable: Pageable =
                 if (sort != null) PageRequest.of(page, countCard, sort) else PageRequest.of(page, countCard)
-            val statePage: Page<Product> = if (smallPrice != null && highPrice != null) {
-                when (order) {
-                    "brand" -> productsRepository.findBrand(pageable, brand!!.brand)
-//                    "brand" -> productsRepository.findPriceBetweenAndBrand(pageable, smallPrice, highPrice, brand!!.brand)
-//                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!, level!!)
-                    "stockEmpty" -> productsRepository.findProductEmptyStockWithBetweenPrice(pageable, smallPrice, highPrice)
-                    "stockFull" -> productsRepository.findProductFullStockWithBetweenPrice(pageable, smallPrice, highPrice)
-                    else -> productsRepository.findPriceBetween(pageable, smallPrice, highPrice)
-                }
-                if (categoryId != null) {
-                    productsRepository.findProductWithCategoryIdWithBetweenPrice(pageable, categoryId, smallPrice, highPrice)
-                } else productsRepository.findPriceBetween(pageable, smallPrice, highPrice)
-            } else {
-                when (order) {
-                    "brand" -> productsRepository.findProductByBrand(pageable, brand!!.brand)
-//                "characteristic" -> productsRepository.findProductByCharacteristic(pageable, characteristic!!, level!!)
-                    "stockEmpty" -> productsRepository.findProductEmptyStock(pageable)
-                    "stockFull" -> productsRepository.findProductFullStock(pageable)
-                    else -> productsRepository.findAll(pageable)
-                }
-                if (categoryId != null) {
-                    productsRepository.findProductWithCategoryId(pageable, categoryId)
-                } else productsRepository.findAll(pageable)
-            }
+            val statePage: Page<Product> = productsRepository.findAllBy(
+                pageable = pageable,
+                brand = if(brand?.brand?.size!! > 0) null else brand.brand,
+                firstPrice = smallPrice,
+                secondPrice = highPrice,
+                stockEmpty = stockEmpty,
+                stockFull = stockFull,
+                categoryId = categoryId,
+                isSell = isSellByPromo
+            )
 
             val light = mutableListOf<ProductsLightResponse>()
 
@@ -341,7 +326,64 @@ class ProductService: ProductsRepositoryImpl {
                 message = "Success",
                 status = HttpStatus.OK
             )
-        } catch (e: Exception){
+        } catch (e: Exception) {
+            PagingResponse(
+                data = null,
+                message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun getProductRandom(
+        countCard: Int,
+        page: Int,
+        filter: String?,
+        productId: String?,
+    ): PagingResponse<ProductsLightResponse>? {
+        return try {
+            val sort = when (filter) {
+                "expensive" -> Sort.by(
+                    Sort.Order(Sort.Direction.DESC, "price"),
+                )
+
+                "cheap" -> Sort.by(
+                    Sort.Order(Sort.Direction.ASC, "price")
+                )
+
+                "new" -> Sort.by(
+                    Sort.Order(Sort.Direction.DESC, "updated")
+                )
+
+                else -> null
+            }
+
+            val pageable: Pageable =
+                if (sort != null) PageRequest.of(page, countCard, sort) else PageRequest.of(page, countCard)
+            val statePage: Page<Product> = productsRepository.findProductsByRandom(pageable, productId!!)
+
+            val light = mutableListOf<ProductsLightResponse>()
+
+            statePage.content.forEach {
+                light.add(
+                    ProductsLightResponse(
+                        id = it.id,
+                        title = it.title,
+                        imageUrls = it.images,
+                        price = it.price,
+                        stock = it.stock,
+                        sellPrice = it.sellPrice
+                    )
+                )
+            }
+            PagingResponse(
+                data = light,
+                totalElements = statePage.totalElements,
+                totalPages = statePage.totalPages,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
             PagingResponse(
                 data = null,
                 message = e.message.toString(),

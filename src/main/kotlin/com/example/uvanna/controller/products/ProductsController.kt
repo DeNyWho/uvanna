@@ -4,14 +4,13 @@ import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.request.product.ProductRequest
-import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductLighterResponse
+import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.ProductService
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.crossstore.ChangeSetPersister
 import org.springframework.http.HttpStatus
@@ -29,7 +28,6 @@ import javax.validation.constraints.Min
 @RequestMapping("/api/products/")
 class ProductsController {
 
-    private val logger = LoggerFactory.getLogger(ProductsController::class.java)
 
     @Autowired
     lateinit var productService: ProductService
@@ -122,17 +120,20 @@ class ProductsController {
         }
     }
 
-    @GetMapping
+    @GetMapping()
     fun getProducts(
         @RequestParam(defaultValue = "0") pageNum: @Min(0) @Max(500) Int,
         @RequestParam(defaultValue = "48") pageSize: @Min(1) @Max(500) Int,
         brands: Brands?,
         smallPrice: Int?,
         highPrice: Int?,
-        @Parameter(description = "Order = brand | characteristic | stockEmpty | stockFull") order: String?,
+        stockEmpty: Boolean?,
+        stockFull: Boolean?,
+        isSell: Boolean?,
+        promoId: String?,
         @Parameter(description = "Filter = expensive | cheap | new | old") filter: String?,
-        level: String?,
         categoryId: String?,
+        productId: String?,
         response: HttpServletResponse
     ): PagingResponse<ProductsLightResponse>? {
         return try {
@@ -142,10 +143,31 @@ class ProductsController {
                 brand = brands,
                 smallPrice = smallPrice,
                 highPrice = highPrice,
-                order = order,
                 filter = filter,
-                level = level,
-                categoryId = categoryId
+                stockEmpty = stockEmpty,
+                stockFull = stockFull,
+                categoryId = categoryId,
+                isSellByPromo = isSell
+            )
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @GetMapping("random")
+    fun getProductsRandom(
+        @RequestParam(defaultValue = "0") pageNum: @Min(0) @Max(500) Int,
+        @RequestParam(defaultValue = "48") pageSize: @Min(1) @Max(500) Int,
+        @Parameter(description = "Filter = expensive | cheap | new | old") filter: String?,
+        productId: String?,
+        response: HttpServletResponse
+    ): PagingResponse<ProductsLightResponse>? {
+        return try {
+            productService.getProductRandom(
+                countCard = pageSize,
+                page = pageNum,
+                filter = filter,
+                productId = productId
             )
         } catch (e: ChangeSetPersister.NotFoundException) {
             PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)

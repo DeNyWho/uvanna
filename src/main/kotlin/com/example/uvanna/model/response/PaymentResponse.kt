@@ -3,7 +3,6 @@ package com.example.uvanna.model.response
 import com.example.uvanna.model.payment.Amount
 import com.example.uvanna.model.payment.ConfirmationWithToken
 import com.example.uvanna.model.payment.Recipient
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable

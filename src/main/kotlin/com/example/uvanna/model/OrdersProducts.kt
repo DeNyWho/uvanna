@@ -1,6 +1,6 @@
 package com.example.uvanna.model
 
-import java.util.UUID
+import java.util.*
 import javax.persistence.Entity
 import javax.persistence.Id
 import javax.persistence.Table

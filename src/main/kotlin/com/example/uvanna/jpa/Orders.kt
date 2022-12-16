@@ -17,6 +17,7 @@ data class Orders(
     val typePayment: String = "",
     val typeDelivery: String = "",
     val code: String = "",
+    val price: Int = 0,
     @Column(nullable = true)
     val paymentID: String? = null,
     @Column(nullable = true)

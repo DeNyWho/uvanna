@@ -51,8 +51,6 @@ class ProductsController {
         @PathVariable id: String,
         @RequestBody files: List<MultipartFile>,
         product: ProductRequest,
-        characteristic: List<String>,
-        data: List<String>,
         @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<Product>? {

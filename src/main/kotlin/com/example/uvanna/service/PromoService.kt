@@ -41,7 +41,6 @@ class PromoService: PromoRepositoryImpl {
         file: MultipartFile,
         products: List<PromoProductRequest>,
         token: String,
-        percent: Int?,
         dateExpired: String
     ): ServiceResponse<Promo>{
         return try {
@@ -64,7 +63,7 @@ class PromoService: PromoRepositoryImpl {
                 products.forEach {
                     val product = productsRepository.findById(it.productId).get()
                     product.percent = it.percent
-                    product.sellPrice = product.price * (percent!!/100)
+                    product.sellPrice = product.price * (it.percent /100)
                     productsRepository.save(product)
                     item.addPromoProducts(productsRepository.findById(it.productId).get())
                 }
@@ -100,7 +99,6 @@ class PromoService: PromoRepositoryImpl {
         file: MultipartFile,
         products: List<PromoProductRequest>,
         token: String,
-        percent: Int?,
         dateExpired: String
     ): ServiceResponse<Promo>{
         return try {
@@ -121,7 +119,7 @@ class PromoService: PromoRepositoryImpl {
                 products.forEach {
                     val product = productsRepository.findById(it.productId).get()
                     product.percent = it.percent
-                    product.sellPrice = product.price * (percent!!/100)
+                    product.sellPrice = product.price * (it.percent /100)
                     productsRepository.save(product)
                     item.addPromoProducts(productsRepository.findById(it.productId).get())
                 }

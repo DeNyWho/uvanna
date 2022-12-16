@@ -31,7 +31,6 @@ class PromoController {
         title: String,
         description: String,
         productRequest: List<PromoProductRequest>,
-        percent: Int,
         @RequestParam dateExpired: String,
         @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
@@ -43,7 +42,6 @@ class PromoController {
                 description = description,
                 file = file,
                 products = productRequest,
-                percent = percent,
                 dateExpired = dateExpired
             )
         } catch (e: ChangeSetPersister.NotFoundException) {
@@ -98,7 +96,6 @@ class PromoController {
         title: String,
         description: String,
         productRequest: List<PromoProductRequest>,
-        percent: Int,
         @RequestParam dateExpired: String,
         response: HttpServletResponse
     ): ServiceResponse<Promo> {
@@ -110,7 +107,6 @@ class PromoController {
                 description = description,
                 file = file,
                 products = productRequest,
-                percent = percent,
                 dateExpired = dateExpired
             )
         } catch (e: ChangeSetPersister.NotFoundException) {

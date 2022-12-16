@@ -296,7 +296,7 @@ class ProductService: ProductsRepositoryImpl {
                 if (sort != null) PageRequest.of(page, countCard, sort) else PageRequest.of(page, countCard)
             val statePage: Page<Product> = productsRepository.findAllBy(
                 pageable = pageable,
-                brand = if(brand?.brand?.size!! > 0) null else brand.brand,
+                brand = if(brand?.brand?.size!! > 0) brand.brand else null,
                 firstPrice = smallPrice,
                 secondPrice = highPrice,
                 stockEmpty = stockEmpty,

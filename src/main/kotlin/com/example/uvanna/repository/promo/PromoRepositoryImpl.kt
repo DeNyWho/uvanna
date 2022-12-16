@@ -16,16 +16,8 @@ interface PromoRepositoryImpl {
 
 //    fun deleteProductPromo(id: String, token: String, productsIds: List<String>): Any
     fun addProductPromo(id: String, token: String, productsIds: List<PromoProductRequest>): ServiceResponse<Any>
-    fun addPromoWithProducts(
-        title: String,
-        description: String,
-        file: MultipartFile,
-        products: List<PromoProductRequest>,
-        token: String,
-        percent: Int?,
-        dateExpired: String
-    ): ServiceResponse<Promo>
     fun getProductPromo(page: Int, countCard: Int, id: String): PagingResponse<ProductsLightResponse>
+
     fun editPromoWithProducts(
         id: String,
         title: String,
@@ -33,7 +25,15 @@ interface PromoRepositoryImpl {
         file: MultipartFile,
         products: List<PromoProductRequest>,
         token: String,
-        percent: Int?,
+        dateExpired: String
+    ): ServiceResponse<Promo>
+
+    fun addPromoWithProducts(
+        title: String,
+        description: String,
+        file: MultipartFile,
+        products: List<PromoProductRequest>,
+        token: String,
         dateExpired: String
     ): ServiceResponse<Promo>
 }

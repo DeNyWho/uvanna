@@ -15,7 +15,7 @@ interface ProductsRepository: JpaRepository<Product, String> {
 //    @Query("select m from Product m where m.brand in :brand")
 //    fun findPriceBetweenAndBrand(pageable: Pageable, firstPrice: Int, secondPrice: Int, brand: List<String>): Page<Product>
 
-    @Query("From Product p where (:brand is null or p.brand in :brand)" +
+    @Query("From Product p where ((:brand) is null or p.brand in (:brand))" +
             " and (:firstPrice is null or p.price between :firstPrice and :secondPrice)" +
             " and (:stockEmpty is null or :stockEmpty is true and p.stock = 0 or :stockEmpty is false)" +
             " and (:stockFull is null or :stockFull is true and p.stock > 0 or :stockFull is false)" +

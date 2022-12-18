@@ -21,6 +21,10 @@ data class Promo(
     var productsPromo: MutableSet<Product> = mutableSetOf()
 ) {
     fun deleteAllPromoProducts(): Promo {
+        productsPromo.forEach {
+            it.sellPrice = null
+            it.percent = null
+        }
         productsPromo.clear()
         return this
     }

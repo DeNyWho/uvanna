@@ -16,6 +16,33 @@ class ImageService {
     @Autowired
     lateinit var adminRepository: AdminRepository
 
+    fun deleteImage(token: String, url: String): ServiceResponse<String> {
+        val check = checkToken(token)
+        return if(check) {
+            try {
+                fileService.deleteByUrl(url)
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Success",
+                    status = HttpStatus.OK
+                )
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Something went wrong... ( ${e.message} )",
+                    status = HttpStatus.NOT_FOUND
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+    }
+
+
 
     fun loadImage(token: String, file: MultipartFile): ServiceResponse<String>{
         val check = checkToken(token)

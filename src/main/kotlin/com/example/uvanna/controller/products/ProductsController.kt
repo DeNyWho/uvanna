@@ -128,7 +128,6 @@ class ProductsController {
         stockEmpty: Boolean?,
         stockFull: Boolean?,
         isSell: Boolean?,
-        promoId: String?,
         @Parameter(description = "Filter = expensive | cheap | new | old") filter: String?,
         categoryId: String?,
         productId: String?,

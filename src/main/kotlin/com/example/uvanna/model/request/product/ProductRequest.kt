@@ -7,6 +7,6 @@ data class ProductRequest(
     var thirdSub: String = "",
     var price: Int = 0,
     var stock: Int = 0,
-    var charactTitle: List<String>,
-    var charactData: List<String>,
+    var charactTitle: List<String> = listOf(),
+    var charactData: List<String> = listOf(),
 )

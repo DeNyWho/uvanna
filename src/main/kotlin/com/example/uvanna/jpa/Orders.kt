@@ -1,6 +1,8 @@
 package com.example.uvanna.jpa
 
 import com.example.uvanna.model.OrdersProducts
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.*
 import javax.persistence.*
 
@@ -29,7 +31,13 @@ data class Orders(
     @Column(nullable = true)
     val products: MutableSet<OrdersProducts> = mutableSetOf<OrdersProducts>(),
     val status: String = "",
-    val updated: String = ""
+    val updated: String = "",
+    @Column(nullable = true)
+    val createdTime: LocalDateTime? = null,
+    @Column(nullable = true)
+    val deleteTime: LocalDate? = null,
+    @Column(nullable = true)
+    val paymentMessage: Boolean? = null
 ) {
     fun addProducts(product: OrdersProducts): Orders {
         products.add(product)

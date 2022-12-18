@@ -18,6 +18,10 @@ class FileService {
     @Value("\${host_url}")
     lateinit var host: String
 
+    fun deleteByUrl(url: String?) {
+        imageRepository.deleteById(url?.replaceRange(0..27, "")!!)
+    }
+
     fun save(file: MultipartFile): String {
         val id = UUID.randomUUID().toString()
         imageRepository.save(Image(

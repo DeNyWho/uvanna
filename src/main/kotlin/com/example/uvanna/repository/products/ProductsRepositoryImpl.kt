@@ -48,6 +48,15 @@ interface ProductsRepositoryImpl {
 
     fun deleteProduct(token: String, id: String): ServiceResponse<String>
 
+
+    fun getProductRandom(
+        countCard: Int,
+        page: Int,
+        filter: String?,
+        productId: String?
+    ): PagingResponse<ProductsLightResponse>?
+
+
     fun getProducts(
         countCard: Int,
         page: Int,
@@ -59,12 +68,5 @@ interface ProductsRepositoryImpl {
         stockEmpty: Boolean?,
         stockFull: Boolean?,
         isSellByPromo: Boolean?
-    ): PagingResponse<ProductsLightResponse>?
-
-    fun getProductRandom(
-        countCard: Int,
-        page: Int,
-        filter: String?,
-        productId: String?
     ): PagingResponse<ProductsLightResponse>?
 }

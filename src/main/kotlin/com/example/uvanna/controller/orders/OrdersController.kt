@@ -44,6 +44,7 @@ class OrdersController {
 
     @GetMapping()
     fun getOrders(
+        @RequestHeader (value = "Authorization") token: String,
         @Parameter(description = "filter = new | old | paid | no paid ")
         filter: String?,
         @RequestParam(defaultValue = "0") pageNum: @Min(0) @Max(500) Int,
@@ -51,7 +52,7 @@ class OrdersController {
         response: HttpServletResponse
     ): PagingResponse<Orders>? {
         return try {
-             orderService.getOrdersList(filter, pageNum, pageSize)
+             orderService.getOrdersList(token = token, filter = filter, pageNum = pageNum, pageSize = pageSize)
         } catch (e: ChangeSetPersister.NotFoundException) {
             PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

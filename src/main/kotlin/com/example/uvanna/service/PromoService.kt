@@ -35,11 +35,10 @@ class PromoService: PromoRepositoryImpl {
     @Autowired
     lateinit var fileService: FileService
 
-    override fun addPromoWithProducts(
+    override fun createPromo(
         title: String,
         description: String,
         file: MultipartFile,
-        products: List<PromoProductRequest>,
         token: String,
         dateExpired: String
     ): ServiceResponse<Promo>{
@@ -59,14 +58,6 @@ class PromoService: PromoRepositoryImpl {
                     dateExpired = dateExpired,
                     dateCreated = LocalDate.now(),
                 )
-
-                products.forEach {
-                    val product = productsRepository.findById(it.productId).get()
-                    product.percent = it.percent
-                    product.sellPrice = product.price * (it.percent /100)
-                    productsRepository.save(product)
-                    item.addPromoProducts(productsRepository.findById(it.productId).get())
-                }
 
                 promoRepository.save(item)
 
@@ -92,12 +83,55 @@ class PromoService: PromoRepositoryImpl {
         }
     }
 
-    override fun editPromoWithProducts(
+    override fun addProductsToPromo(
+        id: String,
+        token: String,
+        products: List<PromoProductRequest>
+    ): ServiceResponse<Promo> {
+        return try {
+            val check = checkToken(token)
+
+            if(check) {
+
+                val promo = promoRepository.findById(id).get()
+
+                products.forEach {
+                    val product = productsRepository.findById(it.product).get()
+                    product.percent = it.percent
+                    product.sellPrice = product.price * (it.percent /100)
+                    productsRepository.save(product)
+                    promo.addPromoProducts(productsRepository.findById(it.product).get())
+                }
+
+                promoRepository.save(promo)
+
+                ServiceResponse(
+                    data = listOf(promoRepository.findById(promo.id).get()),
+                    message = "Products has been added to promo with id = $id",
+                    status = HttpStatus.OK
+                )
+            } else {
+                ServiceResponse(
+                    data = null,
+                    message = "Unexpected token",
+                    status = HttpStatus.UNAUTHORIZED
+                )
+            }
+
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = "Something went wrong: ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun editPromo(
         id: String,
         title: String,
         description: String,
         file: MultipartFile,
-        products: List<PromoProductRequest>,
         token: String,
         dateExpired: String
     ): ServiceResponse<Promo>{
@@ -107,6 +141,8 @@ class PromoService: PromoRepositoryImpl {
             if(check) {
                 val imageUrl = fileService.save(file)
 
+                val tempPromo = promoRepository.findById(id).get()
+
                 val item = Promo(
                     id = id,
                     title = title,
@@ -114,16 +150,10 @@ class PromoService: PromoRepositoryImpl {
                     imageUrl = imageUrl,
                     dateExpired = dateExpired,
                     dateCreated = LocalDate.now(),
+                    productsPromo = tempPromo.productsPromo
                 )
 
-                products.forEach {
-                    val product = productsRepository.findById(it.productId).get()
-                    product.percent = it.percent
-                    product.sellPrice = product.price * (it.percent /100)
-                    productsRepository.save(product)
-                    item.addPromoProducts(productsRepository.findById(it.productId).get())
-                }
-
+                promoRepository.deleteById(id)
                 promoRepository.save(item)
 
                 ServiceResponse(
@@ -206,24 +236,32 @@ class PromoService: PromoRepositoryImpl {
     override fun addProductPromo(id: String, token: String, productsIds: List<PromoProductRequest>): ServiceResponse<Any> {
         val check = checkToken(token)
         return if(check) {
-            return try {
+            try {
                 val promo = promoRepository.findById(id).get()
-                promo.deleteAllPromoProducts()
+                return try {
+                    promo.deleteAllPromoProducts()
 
-                productsIds.forEach {
-                    val product = productsRepository.findById(it.productId).get()
-                    product.percent = it.percent
-                    product.sellPrice = product.price * (it.percent/100)
-                    productsRepository.save(product)
-                    promo.addPromoProducts(productsRepository.findById(it.productId).get())
+                    productsIds.forEach {
+                        val product = productsRepository.findById(it.product).get()
+                        product.percent = it.percent
+                        product.sellPrice = product.price - (product.price * (it.percent.toDouble() / 100.00)).toInt()
+                        promo.addPromoProducts(productsRepository.findById(it.product).get())
+                    }
+                    promoRepository.deleteById(id)
+                    promoRepository.save(promo)
+
+                    ServiceResponse(
+                        data = listOf(),
+                        message = "Products promo has been edited",
+                        status = HttpStatus.OK
+                    )
+                } catch (e: Exception){
+                    ServiceResponse(
+                        data = listOf(),
+                        message = "Something went wrong: ${e.message}",
+                        status = HttpStatus.NOT_FOUND
+                    )
                 }
-                promoRepository.save(promo)
-
-                ServiceResponse(
-                    data = listOf(),
-                    message = "Products promo has been edited",
-                    status = HttpStatus.OK
-                )
             } catch (e: Exception) {
                 ServiceResponse(
                     data = listOf(),
@@ -245,6 +283,8 @@ class PromoService: PromoRepositoryImpl {
         val check = checkToken(token)
         return if(check) {
             return try {
+                val temp = promoRepository.findById(id).get()
+                fileService.deleteByUrl(temp.imageUrl)
                 promoRepository.deleteById(id)
                 ServiceResponse(
                     data = listOf(),

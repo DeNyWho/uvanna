@@ -81,7 +81,7 @@ class ProductService: ProductsRepositoryImpl {
                     }
 
                     val item = Product(
-                        id = UUID.randomUUID().toString(),
+                        id = id,
                         images = imagesUrl,
                         title = product.title,
                         updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
@@ -93,6 +93,7 @@ class ProductService: ProductsRepositoryImpl {
                         price = product.price,
                     )
 
+                    productsRepository.deleteById(id)
                     productsRepository.save(item)
                     ServiceResponse(
                         data = listOf(productsRepository.findById(item.id).get()),
@@ -275,7 +276,7 @@ class ProductService: ProductsRepositoryImpl {
         stockFull: Boolean?,
         isSellByPromo: Boolean?,
     ): PagingResponse<ProductsLightResponse>? {
-        return try {
+//        return try {
             val sort = when (filter) {
                 "expensive" -> Sort.by(
                     Sort.Order(Sort.Direction.DESC, "price"),
@@ -296,7 +297,7 @@ class ProductService: ProductsRepositoryImpl {
                 if (sort != null) PageRequest.of(page, countCard, sort) else PageRequest.of(page, countCard)
             val statePage: Page<Product> = productsRepository.findAllBy(
                 pageable = pageable,
-                brand = if(brand?.brand?.size!! > 0) brand.brand else null,
+                brand = brand?.brand,
                 firstPrice = smallPrice,
                 secondPrice = highPrice,
                 stockEmpty = stockEmpty,
@@ -319,20 +320,20 @@ class ProductService: ProductsRepositoryImpl {
                     )
                 )
             }
-            PagingResponse(
+        return PagingResponse(
                 data = light,
                 totalElements = statePage.totalElements,
                 totalPages = statePage.totalPages,
                 message = "Success",
                 status = HttpStatus.OK
             )
-        } catch (e: Exception) {
-            PagingResponse(
-                data = null,
-                message = e.message.toString(),
-                status = HttpStatus.BAD_REQUEST
-            )
-        }
+//        } catch (e: Exception) {
+//            PagingResponse(
+//                data = null,
+//                message = e.message.toString(),
+//                status = HttpStatus.BAD_REQUEST
+//            )
+//        }
     }
 
     override fun getProductRandom(

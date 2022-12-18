@@ -84,7 +84,9 @@ class PaymentService: PaymentRepositoryImpl {
 
             var price = 0
             ordersProducts.forEach {
-                price = price + productsRepository.findById(it.product).get().price
+                val product = productsRepository.findById(it.product).get()
+                val temp = if(product.sellPrice != null) product.sellPrice else product.price
+                price = price + temp!!
             }
             var v =
                 "${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}-${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}"
@@ -183,7 +185,9 @@ class PaymentService: PaymentRepositoryImpl {
 
             var price = 0
             ordersProducts.forEach {
-                price = price + productsRepository.findById(it.product).get().price
+                val product = productsRepository.findById(it.product).get()
+                val temp = if(product.sellPrice != null) product.sellPrice else product.price
+                price = price + temp!!
             }
 
             ordersRepository.save(

@@ -18,21 +18,22 @@ interface PromoRepositoryImpl {
     fun addProductPromo(id: String, token: String, productsIds: List<PromoProductRequest>): ServiceResponse<Any>
     fun getProductPromo(page: Int, countCard: Int, id: String): PagingResponse<ProductsLightResponse>
 
-    fun editPromoWithProducts(
-        id: String,
+
+    fun createPromo(
         title: String,
         description: String,
         file: MultipartFile,
-        products: List<PromoProductRequest>,
         token: String,
         dateExpired: String
     ): ServiceResponse<Promo>
 
-    fun addPromoWithProducts(
+    fun addProductsToPromo(id: String, token: String, products: List<PromoProductRequest>): ServiceResponse<Promo>
+
+    fun editPromo(
+        id: String,
         title: String,
         description: String,
         file: MultipartFile,
-        products: List<PromoProductRequest>,
         token: String,
         dateExpired: String
     ): ServiceResponse<Promo>

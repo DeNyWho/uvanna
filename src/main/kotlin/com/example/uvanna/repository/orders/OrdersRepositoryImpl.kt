@@ -13,8 +13,11 @@ interface OrdersRepositoryImpl {
     fun getOrdersList(
         filter: String?,
         pageNum: @Min(value = 0.toLong()) @Max(value = 500.toLong()) Int,
-        pageSize: @Min(value = 1.toLong()) @Max(value = 500.toLong()) Int
+        pageSize: @Min(value = 1.toLong()) @Max(value = 500.toLong()) Int,
+        token: String
     ): PagingResponse<Orders>?
 
     fun editOrder(id: String, order: Orders, token: String): ServiceResponse<Orders>
+    fun scheduleCheckForDelete()
+    fun scheduleCheckForMessage()
 }

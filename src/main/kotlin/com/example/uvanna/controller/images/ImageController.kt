@@ -42,6 +42,19 @@ class ImageController {
         }
     }
 
+    @DeleteMapping("deleteImage")
+    fun deleteImage(
+        @RequestParam url: String,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<String> {
+        return try {
+            imageService.deleteImage(token, url)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
     @GetMapping("{id}")
     fun getFile(@PathVariable id: String): ResponseEntity<ByteArray?>? {
         val fileEntityOptional: Optional<Image> = fileService.getFile(id)

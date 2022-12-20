@@ -19,7 +19,7 @@ data class Orders(
     val typePayment: String = "",
     val typeDelivery: String = "",
     val code: String = "",
-    val price: Int = 0,
+    val price: Double = 0.0,
     @Column(nullable = true)
     val paymentID: String? = null,
     @Column(nullable = true)
@@ -33,11 +33,9 @@ data class Orders(
     val status: String = "",
     val updated: String = "",
     @Column(nullable = true)
-    val createdTime: LocalDateTime? = null,
-    @Column(nullable = true)
     val deleteTime: LocalDate? = null,
     @Column(nullable = true)
-    val paymentMessage: Boolean? = null
+    val emailSend: Boolean? = null
 ) {
     fun addProducts(product: OrdersProducts): Orders {
         products.add(product)

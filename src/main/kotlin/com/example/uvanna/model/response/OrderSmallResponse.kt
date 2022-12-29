@@ -5,5 +5,7 @@ import kotlinx.serialization.SerialName
 
 data class OrderSmallResponse(
     @SerialName("Order")
-    val order: Orders
+    val order: Orders,
+    @SerialName("Products")
+    val products: List<ProductsWithCount> = listOf()
 )

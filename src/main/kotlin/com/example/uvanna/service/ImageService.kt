@@ -2,6 +2,7 @@ package com.example.uvanna.service
 
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.admin.AdminRepository
+import com.example.uvanna.util.checkToken
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -12,9 +13,6 @@ class ImageService {
 
     @Autowired
     lateinit var fileService: FileService
-
-    @Autowired
-    lateinit var adminRepository: AdminRepository
 
     fun deleteImage(token: String, url: String): ServiceResponse<String> {
         val check = checkToken(token)
@@ -67,12 +65,6 @@ class ImageService {
                 status = HttpStatus.UNAUTHORIZED
             )
         }
-    }
-
-    fun checkToken(token: String): Boolean {
-        val token = adminRepository.findAdminTokenByToken(token)
-
-        return token != null
     }
 
 }

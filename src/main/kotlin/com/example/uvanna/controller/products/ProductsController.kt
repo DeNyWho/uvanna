@@ -3,6 +3,7 @@ package com.example.uvanna.controller.products
 import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.product.Brands
+import com.example.uvanna.model.product.ProductListIds
 import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductLighterResponse
@@ -41,6 +42,20 @@ class ProductsController {
     ): ServiceResponse<Product>? {
         return try {
             productService.addProduct(product = product, files = files, characteristic = product.charactTitle, data = product.charactData, token = token)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @PostMapping("stock/{id}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun addProductStock(
+        @PathVariable id: String,
+        stock: Int,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<Product>? {
+        return try {
+            productService.addProductStock(id = id, stock = stock, token = token)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -87,6 +102,18 @@ class ProductsController {
     ): ServiceResponse<Product>? {
         return try {
             productService.getProduct(id)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @GetMapping("listIds")
+    fun getProducts(
+        @RequestParam products: List<String>,
+        response: HttpServletResponse
+    ): ServiceResponse<ProductLighterResponse> {
+        return try {
+            productService.getProductsByIds(products)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

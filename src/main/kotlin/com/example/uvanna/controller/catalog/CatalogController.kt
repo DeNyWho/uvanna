@@ -36,6 +36,21 @@ class CatalogController {
         }
     }
 
+    @PostMapping("{id}/edit",consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun editCategory(
+        @RequestParam file: MultipartFile,
+        @RequestParam title: String,
+        @PathVariable id: String,
+        token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<Any> {
+        return try {
+            catalogService.edit(id = id, file = file, title = title, token = token)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
     @DeleteMapping
     fun deleteCategory(
         @RequestParam id: String,

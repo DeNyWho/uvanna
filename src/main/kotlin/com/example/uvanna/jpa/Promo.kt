@@ -9,6 +9,7 @@ data class Promo(
     @Id
     var id: String = "",
     var title: String? = "",
+    @Column(columnDefinition = "TEXT")
     val description: String? = "",
     val imageUrl: String? = null,
     val dateCreated: LocalDate? = null,

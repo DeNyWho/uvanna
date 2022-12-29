@@ -6,6 +6,7 @@ import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.calls.CallsRepository
+import com.example.uvanna.util.checkToken
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -113,10 +114,4 @@ class CallsService {
         }
     }
 
-
-    fun checkToken(token: String): Boolean {
-        val token = adminRepository.findAdminTokenByToken(token)
-
-        return token != null
-    }
 }

@@ -8,5 +8,7 @@ data class OrderFullResponseNoPaid(
     @SerialName("Order")
     val order: Orders,
     @SerialName("Payment")
-    val orderConverterPaid: OrderConverterPaid
+    val orderConverterPaid: OrderConverterPaid,
+    @SerialName("Products")
+    val products: List<ProductsWithCount> = listOf()
 )

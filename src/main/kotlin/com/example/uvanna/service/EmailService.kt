@@ -61,9 +61,19 @@ class EmailService: EmailRepository {
 
         params["price"] = paymentInfo.price
         params["code"] = paymentInfo.code
-        params["findOrder"] = "https://uvanna.store/order/findOrder?code=$paymentInfo.code"
+        params["findOrder"] = "https://uvanna.store/order/findOrder?code=${paymentInfo.code}"
 
-        sendSimpleMessageUsingTemplate(paymentInfo.email, "Новый заказ", "createNewOrder", params)
+        sendSimpleMessageUsingTemplate(paymentInfo.email, "Новый заказ", "newOrder", params)
+    }
+
+    fun sendOrderMessage(paymentInfo: Orders, title: String, template: String) {
+        var params:MutableMap<String, Any> = mutableMapOf()
+
+        params["price"] = paymentInfo.price
+        params["code"] = paymentInfo.code
+        params["findOrder"] = "https://uvanna.store/order/findOrder?code=${paymentInfo.code}"
+
+        sendSimpleMessageUsingTemplate(paymentInfo.email, title, template, params)
     }
 
 }

@@ -14,6 +14,7 @@ import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.orders.OrdersRepository
 import com.example.uvanna.repository.orders.OrdersRepositoryImpl
 import com.example.uvanna.repository.products.ProductsRepository
+import com.example.uvanna.util.checkToken
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -44,9 +45,6 @@ class OrderService: OrdersRepositoryImpl {
 
     @Autowired
     lateinit var ordersRepository: OrdersRepository
-
-    @Autowired
-    lateinit var adminRepository: AdminRepository
 
     @Autowired
     lateinit var productsRepository: ProductsRepository
@@ -207,6 +205,18 @@ class OrderService: OrdersRepositoryImpl {
                         }
                     }
 
+                    val products = mutableListOf<ProductsWithCount>()
+
+                    order.products.forEach {
+                        val temp = productsRepository.findById(it.productID).get()
+                        products.add(
+                            ProductsWithCount(
+                                product = temp,
+                                count = it.count
+                            )
+                        )
+                    }
+
                     runBlocking {
                         try {
                             val f = client.get {
@@ -260,10 +270,10 @@ class OrderService: OrdersRepositoryImpl {
                                 paymentID = order.paymentID,
                                 paymentSuccess = c!!.paid.toString(),
                                 products = order.products,
-                                status = when {
-                                    c!!.status == "succeeded" -> "Заказ успешно оплачен"
-                                    c!!.status == "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-                                    c!!.status == "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
+                                status = when (c!!.status) {
+                                    "succeeded" -> "Заказ успешно оплачен"
+                                    "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
+                                    "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
                                     else -> "Заказ требует оплаты"
                                 },
                                 updated = LocalDate.now().toString(),
@@ -289,22 +299,22 @@ class OrderService: OrdersRepositoryImpl {
                                 paymentID = order.paymentID,
                                 paymentSuccess = c!!.paid.toString(),
                                 products = order.products,
-                                status = when (l!!.status) {
+                                status = when (c!!.status) {
                                     "succeeded" -> "Заказ успешно оплачен"
                                     "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
                                     "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
                                     else -> "Заказ требует оплаты"
                                 },
                                 updated = LocalDate.now().toString(),
-                                deleteTime = if (l!!.status == "canceled") {
+                                deleteTime = if (c!!.status == "canceled") {
                                     if (order.deleteTime == null)
                                         LocalDate.now().plusDays(7) else order.deleteTime
                                 } else order.deleteTime
                             ),
-                            orderConverterNeedPaid = c!!
+                            orderConverterNeedPaid = c!!,
+                            products = products
                         )
-                    }
-                    else if (l != null) {
+                    } else if (l != null) {
                         ordersRepository.deleteById(order.id)
                         ordersRepository.save(
                             Orders(
@@ -362,7 +372,8 @@ class OrderService: OrdersRepositoryImpl {
                                         LocalDate.now().plusDays(7) else order.deleteTime
                                 } else order.deleteTime
                             ),
-                            orderConverterPaid = l!!
+                            orderConverterPaid = l!!,
+                            products = products
                         )
                     } else {
                         ServiceResponse<Any>(
@@ -372,6 +383,17 @@ class OrderService: OrdersRepositoryImpl {
                         )
                     }
                 } else {
+                    val products = mutableListOf<ProductsWithCount>()
+
+                    order.products.forEach {
+                        val temp = productsRepository.findById(it.productID).get()
+                        products.add(
+                            ProductsWithCount(
+                                product = temp,
+                                count = it.count
+                            )
+                        )
+                    }
                     OrderSmallResponse(
                         order = Orders(
                             id = order.id,
@@ -389,12 +411,13 @@ class OrderService: OrdersRepositoryImpl {
                             products = order.products,
                             status = "Заказ сформирован",
                             updated = LocalDate.now().toString()
-                        )
+                        ),
+                        products = products
                     )
                 }
             } catch (e: Exception) {
-                ServiceResponse<Any>(
-                    data = listOf(),
+                ServiceResponse(
+                    data = listOf(e),
                     message = "Order with code = $id not found",
                     status = HttpStatus.NOT_FOUND
                 )
@@ -476,11 +499,11 @@ class OrderService: OrdersRepositoryImpl {
 
                         if (c != null && c!!.status != "pending" && c!!.status != "waiting_for_capture") {
                             ordersRepository.deleteById(order.id)
-                            if (c!!.status == "succeeded" && order.emailSend == false || order.emailSend == null) {
-                                emailService.sendSimpleMessage(
-                                    order.email,
-                                    "Заказ успешно оплачен",
-                                    "Заказ успешно оплачен. Если вам не пришел чек оплаты - немного подождите, чеки могут отправляться с задержкой"
+                            if ((c!!.status == "succeeded" && order.emailSend == false) || (order.emailSend == null && c!!.status == "succeeded")) {
+                                emailService.sendOrderMessage(
+                                    paymentInfo = order,
+                                    title = "Заказ успешно оплачен",
+                                    template = "orderPaid"
                                 )
 
                                 val items = mutableListOf<Items>()
@@ -533,11 +556,11 @@ class OrderService: OrdersRepositoryImpl {
                                         }
                                     }
                                 }
-                            } else if (c!!.status == "canceled" && order.emailSend == false || order.emailSend == null) {
-                                emailService.sendSimpleMessage(
-                                    order.email,
-                                    "Заказ не был оплачен",
-                                    "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
+                            } else if ((c!!.status == "canceled" && order.emailSend == false) || (order.emailSend == null && c!!.status == "canceled")) {
+                                emailService.sendOrderMessage(
+                                    paymentInfo = order,
+                                    title = "Заказ не был оплачен",
+                                    template = "rejected"
                                 )
                             }
                             ordersRepository.save(
@@ -575,11 +598,11 @@ class OrderService: OrdersRepositoryImpl {
 
                         if (l != null && l!!.status != "pending" && l!!.status != "waiting_for_capture") {
                             ordersRepository.deleteById(order.id)
-                            if (l!!.status == "succeeded" && order.emailSend == false || order.emailSend == null) {
-                                emailService.sendSimpleMessage(
-                                    order.email,
-                                    "Заказ успешно оплачен",
-                                    "Заказ успешно оплачен. Если вам не пришел чек оплаты - немного подождите, чеки могут отправляться с задержкой"
+                            if ((l!!.status == "succeeded" && order.emailSend == false) || (l!!.status == "succeeded" && order.emailSend == null)) {
+                                emailService.sendOrderMessage(
+                                    paymentInfo = order,
+                                    title = "Заказ успешно оплачен",
+                                    template = "orderPaid"
                                 )
                                 val items = mutableListOf<Items>()
 
@@ -635,11 +658,11 @@ class OrderService: OrdersRepositoryImpl {
                                         }
                                     }
                                 }
-                            } else if (l!!.status == "canceled" && order.emailSend == false || order.emailSend == null) {
-                                emailService.sendSimpleMessage(
-                                    order.email,
-                                    "Заказ не был оплачен",
-                                    "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
+                            } else if ((l!!.status == "canceled" && order.emailSend == false) || (order.emailSend == null && l!!.status == "canceled")) {
+                                emailService.sendOrderMessage(
+                                    paymentInfo = order,
+                                    title = "Заказ не был оплачен",
+                                    template = "rejected"
                                 )
                             }
                             ordersRepository.save(
@@ -688,11 +711,5 @@ class OrderService: OrdersRepositoryImpl {
                 ordersRepository.deleteById(it.id)
             }
         }
-    }
-
-    fun checkToken(token: String): Boolean {
-        val token = adminRepository.findAdminTokenByToken(token)
-
-        return token != null
     }
 }

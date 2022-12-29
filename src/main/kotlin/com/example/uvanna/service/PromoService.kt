@@ -9,6 +9,7 @@ import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.promo.PromoRepository
 import com.example.uvanna.repository.promo.PromoRepositoryImpl
+import com.example.uvanna.util.checkToken
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -22,9 +23,6 @@ import java.util.*
 
 @Service
 class PromoService: PromoRepositoryImpl {
-
-    @Autowired
-    lateinit var adminRepository: AdminRepository
 
     @Autowired
     lateinit var promoRepository: PromoRepository
@@ -339,12 +337,6 @@ class PromoService: PromoRepositoryImpl {
                 status = HttpStatus.BAD_REQUEST
             )
         }
-    }
-
-    fun checkToken(token: String): Boolean {
-        val token = adminRepository.findAdminTokenByToken(token)
-
-        return token != null
     }
 
 }

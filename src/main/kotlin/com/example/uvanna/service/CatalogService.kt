@@ -12,6 +12,8 @@ import com.example.uvanna.repository.catalog.CatalogRepository
 import com.example.uvanna.repository.catalog.CatalogRepositoryImpl
 import com.example.uvanna.repository.catalog.CatalogSecondRepository
 import com.example.uvanna.repository.catalog.CatalogThirdRepository
+import com.example.uvanna.repository.products.ProductsRepository
+import com.example.uvanna.util.checkToken
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -21,9 +23,6 @@ import java.util.*
 
 @Service
 class CatalogService: CatalogRepositoryImpl {
-
-    @Autowired
-    private lateinit var adminRepository: AdminRepository
 
     @Autowired
     private lateinit var catalogRepository: CatalogRepository
@@ -36,6 +35,9 @@ class CatalogService: CatalogRepositoryImpl {
 
     @Autowired
     private lateinit var fileService: FileService
+
+    @Autowired
+    private lateinit var productsRepository: ProductsRepository
 
     override fun getUpperLevels(id: String): Any {
         val firstCatalog = catalogRepository.findById(id).isPresent
@@ -121,29 +123,59 @@ class CatalogService: CatalogRepositoryImpl {
                 val catalogThird = catalogThirdRepository.findById(id).isPresent
 
                 if (catalogFirst) {
-                    val catalog = catalogRepository.findById(id).get()
-                    catalogRepository.deleteById(id)
-                    catalog.sub.forEach { secondItem ->
-                        catalogSecondRepository.deleteById(secondItem.id!!)
-                        secondItem.sub.forEach { thirdItem ->
-                            catalogThirdRepository.deleteById(thirdItem.id!!)
+                    try {
+                        val catalog = catalogRepository.findById(id).get()
+                        catalogRepository.deleteById(id)
+                        catalog.sub.forEach { secondItem ->
+                            catalogSecondRepository.deleteById(secondItem.id!!)
+                            secondItem.sub.forEach { thirdItem ->
+                                catalogThirdRepository.deleteById(thirdItem.id!!)
+                            }
                         }
+                        val temp = productsRepository.findAllByCategories(category = catalog.id!!)
+
+                        temp.forEach {
+                            productsRepository.deleteById(it.id)
+                        }
+
+                        count = count + 1
+                    } catch (e: Exception) {
+                        println(e.message)
                     }
-                    count = count + 1
                 }
 
                 if (catalogSecond) {
-                    val catalog = catalogSecondRepository.findById(id).get()
-                    catalogSecondRepository.deleteById(id)
-                    catalog.sub.forEach { item ->
-                        catalogThirdRepository.deleteById(item.id!!)
+                    try {
+                        val catalog = catalogSecondRepository.findById(id).get()
+                        catalogSecondRepository.deleteById(id)
+                        catalog.sub.forEach { item ->
+                            catalogThirdRepository.deleteById(item.id!!)
+                        }
+                        val temp = productsRepository.findAllByCategories(category = catalog.id!!)
+
+                        temp.forEach {
+                            productsRepository.deleteById(it.id)
+                        }
+
+                        count = count + 1
+                    } catch (e: Exception) {
+                        println(e.message)
                     }
-                    count = count + 1
                 }
 
                 if (catalogThird) {
-                    catalogThirdRepository.deleteById(id)
-                    count = count + 1
+                    try {
+                        catalogThirdRepository.deleteById(id)
+                        val temp = productsRepository.findAllByCategories(category = id)
+
+                        temp.forEach {
+                            productsRepository.deleteById(it.id)
+                        }
+
+                        count = count + 1
+                    } catch (e: Exception){
+                        println(e.message)
+                    }
                 }
                 if(count > 0){
                     ServiceResponse(
@@ -174,7 +206,67 @@ class CatalogService: CatalogRepositoryImpl {
             )
         }
     }
+    override fun edit(id: String, file: MultipartFile, title: String, token: String): ServiceResponse<Any> {
+        val check = checkToken(token)
+        return if (check) {
+            return try {
+                var option: String? = null
+                val catalogFirst = catalogRepository.findById(id).isPresent
+                val catalogSecond = catalogSecondRepository.findById(id).isPresent
+                val catalogThird = catalogThirdRepository.findById(id).isPresent
 
+                if (catalogFirst) {
+                    try {
+                        val catalog = catalogRepository.findById(id).get()
+                        option = catalog.level
+                    } catch (e: Exception) {
+                        println(e.message)
+                    }
+                }
+
+                if (catalogSecond) {
+                    try {
+                        val catalog = catalogSecondRepository.findById(id).get()
+                        option = catalog.level
+                    } catch (e: Exception) {
+                        println(e.message)
+                    }
+                }
+
+                if (catalogThird) {
+                    try {
+                        val catalog = catalogThirdRepository.findById(id).get()
+                        option = catalog.level
+                    } catch (e: Exception){
+                        println(e.message)
+                    }
+                }
+
+                when (option) {
+                    "first" -> addFirstLevel(file, title)
+                    "second" -> addSecondLevel(id, file, title)
+                    "third" -> addThirdLevel(id, title, file)
+                }
+                ServiceResponse(
+                    data = null,
+                    message = "Category with id = $id has been deleted",
+                    status = HttpStatus.OK
+                )
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = null,
+                    message = "Category with id = $id not found",
+                    status = HttpStatus.NOT_FOUND
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+    }
 
     override fun addLevel(
         id: String?,
@@ -193,13 +285,13 @@ class CatalogService: CatalogRepositoryImpl {
                 }
                 ServiceResponse(
                     data = null,
-                    message = "Banner with id = $id has been deleted",
+                    message = "Category with id = $id has been deleted",
                     status = HttpStatus.OK
                 )
             } catch (e: Exception) {
                 ServiceResponse(
                     data = null,
-                    message = "Banner with id = $id not found",
+                    message = "Category with id = $id not found",
                     status = HttpStatus.NOT_FOUND
                 )
             }
@@ -273,9 +365,7 @@ class CatalogService: CatalogRepositoryImpl {
     }
 
 
-    fun checkToken(token: String): Boolean {
-        val token = adminRepository.findAdminTokenByToken(token)
 
-        return token != null
-    }
+
+
 }

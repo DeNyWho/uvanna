@@ -12,6 +12,7 @@ import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.products.ProductsRepositoryImpl
 import com.example.uvanna.repository.promo.PromoRepository
+import com.example.uvanna.util.checkToken
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.data.domain.Page
@@ -28,9 +29,6 @@ import java.util.*
 
 @Service
 class ProductService: ProductsRepositoryImpl {
-
-    @Autowired
-    lateinit var adminRepository: AdminRepository
 
     @Autowired
     lateinit var productsRepository: ProductsRepository
@@ -86,10 +84,12 @@ class ProductService: ProductsRepositoryImpl {
                         title = product.title,
                         updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
                         characteristic = charact,
+                        firstSub = product.firstSub,
                         secondSub = product.secondSub,
                         thirdSub = product.thirdSub,
                         stock = product.stock,
                         brand = product.brand,
+                        sellPrice = product.sellPrice,
                         price = product.price,
                     )
 
@@ -124,6 +124,8 @@ class ProductService: ProductsRepositoryImpl {
     }
 
 
+
+
     override fun addProduct(
         product: ProductRequest,
         files: List<MultipartFile>,
@@ -156,6 +158,7 @@ class ProductService: ProductsRepositoryImpl {
                         title = product.title,
                         updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
                         characteristic = charact,
+                        firstSub = product.firstSub,
                         secondSub = product.secondSub,
                         thirdSub = product.thirdSub,
                         stock = product.stock,
@@ -210,10 +213,39 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
+    override fun getProductsByIds(ids: List<String>): ServiceResponse<ProductLighterResponse> {
+        return try {
+            val light = mutableListOf<ProductLighterResponse>()
+            ids.forEach {
+                val product = productsRepository.findById(it).get()
+                light.add(
+                    ProductLighterResponse(
+                        id = product.id,
+                        title = product.title,
+                        imageUrls = product.images,
+                        price = product.price,
+                        sellPrice = product.sellPrice
+                    )
+                )
+            }
+            ServiceResponse(
+                data = light,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
     override fun getProduct(id: String): ServiceResponse<Product>? {
         return try {
             ServiceResponse(
-                data = listOf(productsRepository.getById(id)),
+                data = listOf(productsRepository.findById(id).get()),
                 message = "Success",
                 status = HttpStatus.OK
             )
@@ -276,7 +308,7 @@ class ProductService: ProductsRepositoryImpl {
         stockFull: Boolean?,
         isSellByPromo: Boolean?,
     ): PagingResponse<ProductsLightResponse>? {
-//        return try {
+        return try {
             val sort = when (filter) {
                 "expensive" -> Sort.by(
                     Sort.Order(Sort.Direction.DESC, "price"),
@@ -320,20 +352,22 @@ class ProductService: ProductsRepositoryImpl {
                     )
                 )
             }
-        return PagingResponse(
+            PagingResponse(
                 data = light,
                 totalElements = statePage.totalElements,
                 totalPages = statePage.totalPages,
+                maxPrice = statePage.content.maxOf { it.price },
                 message = "Success",
                 status = HttpStatus.OK
             )
-//        } catch (e: Exception) {
-//            PagingResponse(
-//                data = null,
-//                message = e.message.toString(),
-//                status = HttpStatus.BAD_REQUEST
-//            )
-//        }
+        } catch (e: Exception) {
+            PagingResponse(
+                data = null,
+                message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST,
+                maxPrice = null
+            )
+        }
     }
 
     override fun getProductRandom(
@@ -419,10 +453,42 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
-    fun checkToken(token: String): Boolean {
-        val token = adminRepository.findAdminTokenByToken(token)
+    override fun addProductStock(id: String, stock: Int, token: String): ServiceResponse<Product>? {
+        return try {
+            val temp = productsRepository.findById(id).get()
 
-        return token != null
+            val product = Product(
+                id = id,
+                images = temp.images,
+                updated = temp.updated,
+                title = temp.title,
+                characteristic = temp.characteristic,
+                brand = temp.brand,
+                firstSub = temp.firstSub,
+                secondSub = temp.secondSub,
+                thirdSub = temp.thirdSub,
+                price = temp.price,
+                sellPrice = temp.sellPrice,
+                stock = temp.stock + stock,
+                percent = temp.percent
+            )
+
+            productsRepository.deleteById(id)
+
+            productsRepository.save(product)
+
+            ServiceResponse(
+                data = listOf(productsRepository.findById(id).get()),
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
     }
 
 }

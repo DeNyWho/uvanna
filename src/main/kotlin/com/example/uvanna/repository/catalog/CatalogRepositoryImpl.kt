@@ -17,4 +17,6 @@ interface CatalogRepositoryImpl {
         option: String,
         token: String
     ): ServiceResponse<String>
+
+    fun edit(id: String, file: MultipartFile, title: String, token: String): ServiceResponse<Any>
 }

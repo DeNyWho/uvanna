@@ -47,7 +47,7 @@ class ProductsController {
         }
     }
 
-    @PostMapping("stock/{id}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @PostMapping("stock/{id}")
     fun addProductStock(
         @PathVariable id: String,
         stock: Int,
@@ -102,6 +102,17 @@ class ProductsController {
     ): ServiceResponse<Product>? {
         return try {
             productService.getProduct(id)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @GetMapping("ids/all")
+    fun getIdsProducts(
+        response: HttpServletResponse
+    ): ServiceResponse<String> {
+        return try {
+            productService.getProductsIds()
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

@@ -63,6 +63,17 @@ class SiteController {
         }
     }
 
+    @GetMapping("blog/ids/all")
+    fun getIdsBlogs(
+        response: HttpServletResponse
+    ): ServiceResponse<String> {
+        return try {
+            siteService.getBlogsIds()
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
     @PostMapping("blog/{id}/edit", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun editBlog(
         @PathVariable id: String,

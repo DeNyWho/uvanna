@@ -80,6 +80,17 @@ class PromoController {
         }
     }
 
+    @GetMapping("/ids/all")
+    fun getIdsPromos(
+        response: HttpServletResponse
+    ): ServiceResponse<String> {
+        return try {
+            promoService.getPromosIds()
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
 
     @GetMapping("/all")
     fun getPromos(

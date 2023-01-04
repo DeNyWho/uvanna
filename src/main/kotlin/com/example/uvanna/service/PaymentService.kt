@@ -256,7 +256,7 @@ class PaymentService: PaymentRepositoryImpl {
     override fun getOrder(id: String): ServiceResponse<Orders>? {
         return try {
             ServiceResponse(
-                data = listOf(ordersRepository.getById(id)),
+                data = listOf(ordersRepository.findById(id).get()),
                 message = "Success",
                 status = HttpStatus.OK
             )

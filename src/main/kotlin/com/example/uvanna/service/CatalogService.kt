@@ -7,18 +7,18 @@ import com.example.uvanna.model.category.CategoryFirst
 import com.example.uvanna.model.category.CategorySecond
 import com.example.uvanna.model.category.CategoryThird
 import com.example.uvanna.model.response.ServiceResponse
-import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.catalog.CatalogRepository
 import com.example.uvanna.repository.catalog.CatalogRepositoryImpl
 import com.example.uvanna.repository.catalog.CatalogSecondRepository
 import com.example.uvanna.repository.catalog.CatalogThirdRepository
 import com.example.uvanna.repository.products.ProductsRepository
-import com.example.uvanna.util.checkToken
+import com.example.uvanna.util.CheckUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
+import javax.annotation.Resource
 
 
 @Service
@@ -38,6 +38,9 @@ class CatalogService: CatalogRepositoryImpl {
 
     @Autowired
     private lateinit var productsRepository: ProductsRepository
+
+    @Resource
+    private lateinit var checkUtil: CheckUtil
 
     override fun getUpperLevels(id: String): Any {
         val firstCatalog = catalogRepository.findById(id).isPresent
@@ -114,7 +117,7 @@ class CatalogService: CatalogRepositoryImpl {
     }
 
     override fun deleteCategory(id: String, token: String): ServiceResponse<String> {
-        val check = checkToken(token)
+        val check = checkUtil.checkToken(token)
         return if (check) {
             return try {
                 var count = 0
@@ -207,7 +210,7 @@ class CatalogService: CatalogRepositoryImpl {
         }
     }
     override fun edit(id: String, file: MultipartFile, title: String, token: String): ServiceResponse<Any> {
-        val check = checkToken(token)
+        val check = checkUtil.checkToken(token)
         return if (check) {
             return try {
                 var option: String? = null
@@ -275,7 +278,7 @@ class CatalogService: CatalogRepositoryImpl {
         option: String,
         token: String,
     ): ServiceResponse<String> {
-        val check = checkToken(token)
+        val check = checkUtil.checkToken(token)
         return if (check) {
             return try {
                 when (option) {

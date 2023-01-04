@@ -5,11 +5,10 @@ import com.example.uvanna.model.request.promo.PromoProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse
-import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.promo.PromoRepository
 import com.example.uvanna.repository.promo.PromoRepositoryImpl
-import com.example.uvanna.util.checkToken
+import com.example.uvanna.util.CheckUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -20,6 +19,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDate
 import java.util.*
+import javax.annotation.Resource
 
 @Service
 class PromoService: PromoRepositoryImpl {
@@ -33,6 +33,9 @@ class PromoService: PromoRepositoryImpl {
     @Autowired
     lateinit var fileService: FileService
 
+    @Resource
+    private lateinit var checkUtil: CheckUtil
+
     override fun createPromo(
         title: String,
         description: String,
@@ -41,7 +44,7 @@ class PromoService: PromoRepositoryImpl {
         dateExpired: String
     ): ServiceResponse<Promo>{
         return try {
-            val check = checkToken(token)
+            val check = checkUtil.checkToken(token)
 
             if(check) {
                 val imageUrl = fileService.save(file)
@@ -53,7 +56,7 @@ class PromoService: PromoRepositoryImpl {
                     title = title,
                     description = description,
                     imageUrl = imageUrl,
-                    dateExpired = dateExpired,
+                    dateExpired = LocalDate.parse(dateExpired),
                     dateCreated = LocalDate.now(),
                 )
 
@@ -87,7 +90,7 @@ class PromoService: PromoRepositoryImpl {
         products: List<PromoProductRequest>
     ): ServiceResponse<Promo> {
         return try {
-            val check = checkToken(token)
+            val check = checkUtil.checkToken(token)
 
             if(check) {
 
@@ -134,7 +137,7 @@ class PromoService: PromoRepositoryImpl {
         dateExpired: String
     ): ServiceResponse<Promo>{
         return try {
-            val check = checkToken(token)
+            val check = checkUtil.checkToken(token)
 
             if(check) {
                 val imageUrl = fileService.save(file)
@@ -146,7 +149,7 @@ class PromoService: PromoRepositoryImpl {
                     title = title,
                     description = description,
                     imageUrl = imageUrl,
-                    dateExpired = dateExpired,
+                    dateExpired = LocalDate.parse(dateExpired),
                     dateCreated = LocalDate.now(),
                     productsPromo = tempPromo.productsPromo
                 )
@@ -176,8 +179,6 @@ class PromoService: PromoRepositoryImpl {
         }
     }
 
-
-
     override fun getPromo(id: String): ServiceResponse<Promo>{
         return try {
             ServiceResponse(
@@ -189,6 +190,30 @@ class PromoService: PromoRepositoryImpl {
             ServiceResponse(
                 data = null,
                 message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun getPromosIds(): ServiceResponse<String> {
+        return try {
+            val ids = mutableListOf<String>()
+
+            val promos = promoRepository.findAll()
+
+            promos.forEach {
+                ids.add(it.id)
+            }
+
+            ServiceResponse(
+                data = ids,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
+            ServiceResponse(
+                data = listOf(),
+                message = "Something went wrong... ${e.message}",
                 status = HttpStatus.BAD_REQUEST
             )
         }
@@ -232,7 +257,8 @@ class PromoService: PromoRepositoryImpl {
     }
 
     override fun addProductPromo(id: String, token: String, productsIds: List<PromoProductRequest>): ServiceResponse<Any> {
-        val check = checkToken(token)
+        val check = checkUtil.checkToken(token)
+
         return if(check) {
             try {
                 val promo = promoRepository.findById(id).get()
@@ -278,7 +304,8 @@ class PromoService: PromoRepositoryImpl {
     }
 
     override fun deletePromo(id: String, token: String): ServiceResponse<String>{
-        val check = checkToken(token)
+        val check = checkUtil.checkToken(token)
+
         return if(check) {
             return try {
                 val temp = promoRepository.findById(id).get()
@@ -336,6 +363,16 @@ class PromoService: PromoRepositoryImpl {
                 message = "Something went wrong: ${e.message}",
                 status = HttpStatus.BAD_REQUEST
             )
+        }
+    }
+
+    override fun scheduleCheckForDelete() {
+        val promos = promoRepository.findAll()
+
+        promos.forEach {
+            if(it.dateExpired == LocalDate.now()) {
+                promoRepository.deleteById(it.id)
+            }
         }
     }
 

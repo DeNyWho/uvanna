@@ -8,11 +8,10 @@ import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductLighterResponse
 import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse
-import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.products.ProductsRepositoryImpl
 import com.example.uvanna.repository.promo.PromoRepository
-import com.example.uvanna.util.checkToken
+import com.example.uvanna.util.CheckUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.data.domain.Page
@@ -25,6 +24,7 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.multipart.MultipartFile
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.annotation.Resource
 
 
 @Service
@@ -34,10 +34,10 @@ class ProductService: ProductsRepositoryImpl {
     lateinit var productsRepository: ProductsRepository
 
     @Autowired
-    lateinit var promoRepository: PromoRepository
-
-    @Autowired
     private lateinit var fileService: FileService
+
+    @Resource
+    private lateinit var checkUtil: CheckUtil
 
 
     private var restTemplate: RestTemplate? = null
@@ -59,7 +59,7 @@ class ProductService: ProductsRepositoryImpl {
         product: ProductRequest
     ): ServiceResponse<Product>? {
         return try {
-            val check = checkToken(token)
+            val check = checkUtil.checkToken(token)
             return if(check) {
                 return try {
                     val charact = mutableListOf<Characteristic>()
@@ -134,7 +134,7 @@ class ProductService: ProductsRepositoryImpl {
         data: List<String>
     ): ServiceResponse<Product>? {
         return try {
-            val check = checkToken(token)
+            val check = checkUtil.checkToken(token)
             return if(check) {
                 return try {
                     val charact = mutableListOf<Characteristic>()
@@ -208,6 +208,30 @@ class ProductService: ProductsRepositoryImpl {
             ServiceResponse(
                 data = null,
                 message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun getProductsIds(): ServiceResponse<String> {
+        return try {
+            val ids = mutableListOf<String>()
+
+            val products = productsRepository.findAll()
+
+            products.forEach {
+                ids.add(it.id)
+            }
+
+            ServiceResponse(
+                data = ids,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
+            ServiceResponse(
+                data = listOf(),
+                message = "Something went wrong... ${e.message}",
                 status = HttpStatus.BAD_REQUEST
             )
         }
@@ -428,7 +452,8 @@ class ProductService: ProductsRepositoryImpl {
     }
 
     override fun deleteProduct(token: String, id: String): ServiceResponse<String>{
-        val check = checkToken(token)
+        val check = checkUtil.checkToken(token)
+
         return if(check) {
             return try {
                 productsRepository.deleteById(id)
@@ -456,6 +481,8 @@ class ProductService: ProductsRepositoryImpl {
     override fun addProductStock(id: String, stock: Int, token: String): ServiceResponse<Product>? {
         return try {
             val temp = productsRepository.findById(id).get()
+
+            println("ZXC ${temp.images}")
 
             val product = Product(
                 id = id,

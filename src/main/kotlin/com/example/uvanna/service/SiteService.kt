@@ -1,14 +1,10 @@
 package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Blog
-import com.example.uvanna.jpa.MainBanner
-import com.example.uvanna.jpa.Product
-import com.example.uvanna.model.request.site.BlogRequest
 import com.example.uvanna.model.response.*
-import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.site.BlogRepository
 import com.example.uvanna.repository.site.SiteRepositoryImpl
-import com.example.uvanna.util.checkToken
+import com.example.uvanna.util.CheckUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -20,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
+import javax.annotation.Resource
 
 @Service
 class SiteService: SiteRepositoryImpl {
@@ -30,9 +27,13 @@ class SiteService: SiteRepositoryImpl {
     @Autowired
     lateinit var fileService: FileService
 
+    @Resource
+    private lateinit var checkUtil: CheckUtil
+
     override fun addBlog(mainImage: MultipartFile, subImages: List<MultipartFile>?, title: String, description: String, token: String): ServiceResponse<Blog>{
         return try {
-            val check = checkToken(token)
+            val check = checkUtil.checkToken(token)
+
             return if(check) {
                 return try {
                     val imageUrl = fileService.save(mainImage)
@@ -84,7 +85,8 @@ class SiteService: SiteRepositoryImpl {
 
     override fun editBlog(id: String, mainImage: MultipartFile, subImages: List<MultipartFile>?, title: String, description: String, token: String): ServiceResponse<Blog>? {
         return try {
-            val check = checkToken(token)
+            val check = checkUtil.checkToken(token)
+
             return if(check) {
                 return try {
                     val prevBlog = blogRepository.findById(id).get()
@@ -177,6 +179,30 @@ class SiteService: SiteRepositoryImpl {
         }
     }
 
+    override fun getBlogsIds(): ServiceResponse<String> {
+        return try {
+            val ids = mutableListOf<String>()
+
+            val blogs = blogRepository.findAll()
+
+            blogs.forEach {
+                ids.add(it.id)
+            }
+
+            ServiceResponse(
+                data = ids,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
+            ServiceResponse(
+                data = listOf(),
+                message = "Something went wrong... ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
     override fun getBlogs(filter: String?, pageNum: Int, pageSize: Int): PagingBlogResponse<BlogLighterResponse> {
         return try {
             val sort = when (filter) {
@@ -240,7 +266,8 @@ class SiteService: SiteRepositoryImpl {
     }
 
     override fun deleteBlog(token: String, id: String): ServiceResponse<String>{
-        val check = checkToken(token)
+        val check = checkUtil.checkToken(token)
+
         return if(check) {
             return try {
                 val temp = blogRepository.findById(id).get()

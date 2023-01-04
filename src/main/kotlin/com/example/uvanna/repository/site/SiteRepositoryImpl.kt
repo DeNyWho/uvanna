@@ -32,4 +32,6 @@ interface SiteRepositoryImpl {
         description: String,
         token: String
     ): ServiceResponse<Blog>?
+
+    fun getBlogsIds(): ServiceResponse<String>
 }

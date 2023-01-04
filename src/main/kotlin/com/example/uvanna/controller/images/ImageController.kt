@@ -32,7 +32,7 @@ class ImageController {
     @PostMapping("loadImage" ,consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun loadImage(
         @RequestBody file: MultipartFile,
-        token: String,
+        @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<String> {
         return try {

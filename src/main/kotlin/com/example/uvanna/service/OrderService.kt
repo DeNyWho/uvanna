@@ -1,20 +1,17 @@
 package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Orders
-import com.example.uvanna.model.orders.OrderConverterPaid
 import com.example.uvanna.model.orders.OrderConverterNeedPaid
+import com.example.uvanna.model.orders.OrderConverterPaid
 import com.example.uvanna.model.payment.*
 import com.example.uvanna.model.payment.receipt.Customer
 import com.example.uvanna.model.payment.receipt.Items
-import com.example.uvanna.model.payment.receipt.Receipt
-import com.example.uvanna.model.request.payment.PaymentRequest
 import com.example.uvanna.model.request.payment.ReceiptRequest
 import com.example.uvanna.model.response.*
-import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.orders.OrdersRepository
 import com.example.uvanna.repository.orders.OrdersRepositoryImpl
 import com.example.uvanna.repository.products.ProductsRepository
-import com.example.uvanna.util.checkToken
+import com.example.uvanna.util.CheckUtil
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -39,6 +36,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.util.*
+import javax.annotation.Resource
 
 @Service
 class OrderService: OrdersRepositoryImpl {
@@ -58,9 +56,12 @@ class OrderService: OrdersRepositoryImpl {
     @Value("\${payment_shop}")
     lateinit var paymentShop: String
 
+    @Resource
+    private lateinit var checkUtil: CheckUtil
+
     override fun editOrder(id: String, order: Orders, token: String): ServiceResponse<Orders> {
         return try {
-            val check = checkToken(token)
+            val check = checkUtil.checkToken(token)
             return if(check) {
                 return try {
                     val orderTemp = ordersRepository.findById(id)
@@ -123,7 +124,7 @@ class OrderService: OrdersRepositoryImpl {
         pageSize: Int,
         token: String
     ): PagingResponse<Orders>? {
-        val check = checkToken(token)
+        val check = checkUtil.checkToken(token)
         return if (check) {
             try {
                 val sort = when (filter) {

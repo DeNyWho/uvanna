@@ -4,9 +4,8 @@ import com.example.uvanna.jpa.Calls
 import com.example.uvanna.model.request.call.CallRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
-import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.repository.calls.CallsRepository
-import com.example.uvanna.util.checkToken
+import com.example.uvanna.util.CheckUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -15,14 +14,16 @@ import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.util.*
+import javax.annotation.Resource
 
 @Service
 class CallsService {
 
     @Autowired
     private lateinit var callsRepository: CallsRepository
-    @Autowired
-    private lateinit var adminRepository: AdminRepository
+
+    @Resource
+    private lateinit var checkUtil: CheckUtil
 
     fun addCall(call: CallRequest): ServiceResponse<Calls> {
         return try {
@@ -52,7 +53,7 @@ class CallsService {
     }
 
     fun deleteCall(token: String, id: String): ServiceResponse<Any> {
-        val check = checkToken(token)
+        val check = checkUtil.checkToken(token)
         return if(check) {
             try {
                 callsRepository.deleteById(id)

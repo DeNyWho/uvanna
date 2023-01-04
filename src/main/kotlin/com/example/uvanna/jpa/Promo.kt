@@ -13,7 +13,7 @@ data class Promo(
     val description: String? = "",
     val imageUrl: String? = null,
     val dateCreated: LocalDate? = null,
-    val dateExpired: String? = null,
+    val dateExpired: LocalDate? = null,
     @OneToMany(
         fetch = FetchType.EAGER,
         cascade = [CascadeType.DETACH, CascadeType.PERSIST, CascadeType.REFRESH]

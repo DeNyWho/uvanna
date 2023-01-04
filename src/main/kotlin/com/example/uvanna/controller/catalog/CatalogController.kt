@@ -41,7 +41,7 @@ class CatalogController {
         @RequestParam file: MultipartFile,
         @RequestParam title: String,
         @PathVariable id: String,
-        token: String,
+        @RequestHeader(value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<Any> {
         return try {

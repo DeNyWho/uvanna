@@ -10,14 +10,14 @@ import org.springframework.web.multipart.MultipartFile
 interface PromoRepositoryImpl {
 
     fun getPromo(id: String): ServiceResponse<Promo>
+
     fun getPromos(pageSize: Int, pageNum: Int): PagingResponse<Promo>
 
     fun deletePromo(id: String, token: String): ServiceResponse<String>
 
-//    fun deleteProductPromo(id: String, token: String, productsIds: List<String>): Any
     fun addProductPromo(id: String, token: String, productsIds: List<PromoProductRequest>): ServiceResponse<Any>
-    fun getProductPromo(page: Int, countCard: Int, id: String): PagingResponse<ProductsLightResponse>
 
+    fun getProductPromo(page: Int, countCard: Int, id: String): PagingResponse<ProductsLightResponse>
 
     fun createPromo(
         title: String,
@@ -37,4 +37,7 @@ interface PromoRepositoryImpl {
         token: String,
         dateExpired: String
     ): ServiceResponse<Promo>
+
+    fun getPromosIds(): ServiceResponse<String>
+    fun scheduleCheckForDelete()
 }

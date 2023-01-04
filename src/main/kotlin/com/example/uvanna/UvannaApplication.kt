@@ -1,6 +1,7 @@
 package com.example.uvanna
 
 import com.example.uvanna.service.OrderService
+import com.example.uvanna.service.PromoService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -17,9 +18,17 @@ class ScheduleTasks {
     @Autowired
     private lateinit var orderService: OrderService
 
-    @Scheduled(fixedRate = 86400000)
+    @Autowired
+    private lateinit var promoService: PromoService
+
+    @Scheduled(cron = "0 0 * * * *")
     fun deleteOrderBySchedule() {
         orderService.scheduleCheckForDelete()
+    }
+
+    @Scheduled(cron = "0 0 * * * *")
+    fun deletePromoBySchedule() {
+        promoService.scheduleCheckForDelete()
     }
 
     @Scheduled(fixedRate = 60000)

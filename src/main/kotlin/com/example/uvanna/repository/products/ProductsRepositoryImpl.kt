@@ -72,4 +72,5 @@ interface ProductsRepositoryImpl {
 
     fun getProductsByIds(ids: List<String>): ServiceResponse<ProductLighterResponse>
     fun addProductStock(id: String, stock: Int, token: String): ServiceResponse<Product>?
+    fun getProductsIds(): ServiceResponse<String>
 }

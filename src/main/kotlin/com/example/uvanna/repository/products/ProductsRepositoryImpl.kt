@@ -2,6 +2,7 @@ package com.example.uvanna.repository.products
 
 import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
+import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
@@ -73,4 +74,7 @@ interface ProductsRepositoryImpl {
     fun getProductsByIds(ids: List<String>): ServiceResponse<ProductLighterResponse>
     fun addProductStock(id: String, stock: Int, token: String): ServiceResponse<Product>?
     fun getProductsIds(): ServiceResponse<String>
+    fun createBrand(title: String, token: String): ServiceResponse<ProductBrands>?
+    fun getAllBrands(): ServiceResponse<ProductBrands>?
+    fun deleteBrandById(id: String, token: String): ServiceResponse<String>
 }

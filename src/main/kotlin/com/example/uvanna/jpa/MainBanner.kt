@@ -9,5 +9,6 @@ import javax.persistence.Table
 data class MainBanner(
     @Id
     var id: String = "",
-    val imageUrl: String? = null
+    val imagePCUrl: String? = null,
+    val imageMobileUrl: String? = null,
 )

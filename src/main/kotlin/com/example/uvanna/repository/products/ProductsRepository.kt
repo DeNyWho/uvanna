@@ -12,6 +12,9 @@ import org.springframework.stereotype.Repository
 @Repository
 interface ProductsRepository: JpaRepository<Product, String> {
 
+    @Query("Select max(p.price) From Product p ")
+    fun getMaxPrice(): Int
+
     @Query("From Product p where ((:brand) is null or p.brand in (:brand))" +
             " and (:firstPrice is null or p.price between :firstPrice and :secondPrice)" +
             " and (:stockEmpty is null or :stockEmpty is true and p.stock = 0 or :stockEmpty is false)" +

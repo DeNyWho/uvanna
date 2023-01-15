@@ -1,6 +1,8 @@
 package com.example.uvanna.controller.orders
 
 import com.example.uvanna.jpa.Orders
+import com.example.uvanna.jpa.Product
+import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.OrderService
@@ -9,7 +11,9 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.crossstore.ChangeSetPersister
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 import javax.servlet.http.HttpServletResponse
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
@@ -23,6 +27,51 @@ class OrdersController {
 
     @Autowired
     lateinit var orderService: OrderService
+
+    @PostMapping("status/{id}")
+    fun changeOrderStatus(
+        @PathVariable id: String,
+        @RequestHeader (value = "Authorization") token: String,
+        status: String,
+        response: HttpServletResponse
+    ): ServiceResponse<Orders> {
+        return try {
+            orderService.changeOrderStatus(id = id, token = token, status = status)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @PostMapping("{id}/addFiles", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun addOrderFiles(
+        @PathVariable id: String,
+        @RequestBody files: List<MultipartFile>,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<Orders>? {
+        return try {
+            orderService.addFile(id = id, token = token, files = files)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+
+    @DeleteMapping("{id}/deleteFiles", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun deleteOrderFiles(
+        @PathVariable id: String,
+        files: List<String>,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<String>? {
+        return try {
+            orderService.deleteFile(id = id, token = token, files = files)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+
 
     @PostMapping("edit/{id}")
     fun editOrder(
@@ -63,7 +112,7 @@ class OrdersController {
         @PathVariable code: String,
         response: HttpServletResponse
     ): Any {
-            return orderService.getOrders(code)
+        return orderService.getOrders(code)
     }
 
 }

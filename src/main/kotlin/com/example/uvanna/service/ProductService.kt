@@ -2,12 +2,14 @@ package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
+import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductLighterResponse
 import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse
+import com.example.uvanna.repository.products.BrandsRepository
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.products.ProductsRepositoryImpl
 import com.example.uvanna.repository.promo.PromoRepository
@@ -32,6 +34,9 @@ class ProductService: ProductsRepositoryImpl {
 
     @Autowired
     lateinit var productsRepository: ProductsRepository
+
+    @Autowired
+    lateinit var brandsRepository: BrandsRepository
 
     @Autowired
     private lateinit var fileService: FileService
@@ -171,6 +176,94 @@ class ProductService: ProductsRepositoryImpl {
                     ServiceResponse(
                         data = listOf(productsRepository.findById(item.id).get()),
                         message = "Product has been created",
+                        status = HttpStatus.OK
+                    )
+                } catch (e: Exception) {
+                    ServiceResponse(
+                        data = null,
+                        message = "Something went wrong: ${e.message}",
+                        status = HttpStatus.BAD_REQUEST
+                    )
+                }
+            } else {
+                ServiceResponse(
+                    data = null,
+                    message = "Unexpected token",
+                    status = HttpStatus.UNAUTHORIZED
+                )
+            }
+
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = "Something went wrong: ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun deleteBrandById(id: String, token: String): ServiceResponse<String> {
+        val check = checkUtil.checkToken(token)
+
+        return if(check) {
+            return try {
+                brandsRepository.deleteById(id)
+
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Brand with id = $id has been deleted",
+                    status = HttpStatus.OK
+                )
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Brand with id = $id not found",
+                    status = HttpStatus.NOT_FOUND
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+    }
+
+    override fun getAllBrands(): ServiceResponse<ProductBrands>? {
+        return try {
+
+            val brands = brandsRepository.findAll().toList()
+
+            ServiceResponse(
+                data = brands,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
+            ServiceResponse(
+                data = listOf(),
+                message = "Something went wrong... ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun createBrand(title: String, token: String): ServiceResponse<ProductBrands>? {
+        return try {
+            val check = checkUtil.checkToken(token)
+            return if(check) {
+                return try {
+                    val item = ProductBrands(
+                        id = UUID.randomUUID().toString(),
+                        title = title
+                    )
+
+                    brandsRepository.save(item)
+
+                    ServiceResponse(
+                        data = listOf(brandsRepository.findById(item.id).get()),
+                        message = "Brand has been created",
                         status = HttpStatus.OK
                     )
                 } catch (e: Exception) {
@@ -362,6 +455,8 @@ class ProductService: ProductsRepositoryImpl {
                 isSell = isSellByPromo
             )
 
+            val maxPricePage = productsRepository.getMaxPrice()
+
             val light = mutableListOf<ProductsLightResponse>()
 
             statePage.content.forEach {
@@ -376,11 +471,12 @@ class ProductService: ProductsRepositoryImpl {
                     )
                 )
             }
+
             PagingResponse(
                 data = light,
                 totalElements = statePage.totalElements,
                 totalPages = statePage.totalPages,
-                maxPrice = statePage.content.maxOf { it.price },
+                maxPrice = maxPricePage,
                 message = "Success",
                 status = HttpStatus.OK
             )

@@ -1,6 +1,7 @@
 package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Image
+import com.example.uvanna.repository.files.FilesRepository
 import com.example.uvanna.repository.image.ImageRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -15,11 +16,18 @@ class FileService {
     @Autowired
     private lateinit var imageRepository: ImageRepository
 
+    @Autowired
+    private lateinit var filesRepository: FilesRepository
+
     @Value("\${host_url}")
     lateinit var host: String
 
+    fun deleteFile(url: String) {
+        filesRepository.deleteById(url.replaceRange(0..27, ""))
+    }
+
     fun deleteByUrl(url: String?) {
-        imageRepository.deleteById(url?.replaceRange(0..27, "")!!)
+        imageRepository.deleteById(url?.replaceRange(0..28, "")!!)
     }
 
     fun save(file: MultipartFile): String {
@@ -31,15 +39,13 @@ class FileService {
         return "$host/images/$id"
     }
 
-    fun saveBytes(file: ByteArray): String {
+    fun saveFile(file: MultipartFile): String {
         val id = UUID.randomUUID().toString()
-        imageRepository.save(
-            Image(
-                id = id,
-                image = file
-            )
-        )
-        return "$host/images/$id"
+        imageRepository.save(Image(
+            id = id,
+            image = file.bytes
+        ))
+        return "$host/files/$id"
     }
 
     fun getFile(id: String): Optional<Image> {

@@ -107,7 +107,7 @@ class CatalogService: CatalogRepositoryImpl {
 
                 val catalog = catalogThirdRepository.findById(id).get()
 
-                return CategoryThird(id = catalog.id!!, title = catalog.title!!, level = catalog.level)
+                return CategoryThird(id = catalog.id!!, title = catalog.title!!, level = catalog.level, imageUrl = catalog.imageUrl)
             }
         } else {
             return catalogRepository.findAll()
@@ -135,6 +135,9 @@ class CatalogService: CatalogRepositoryImpl {
                                 catalogThirdRepository.deleteById(thirdItem.id!!)
                             }
                         }
+
+                        fileService.deleteByUrl(catalog.imageUrl)
+
                         val temp = productsRepository.findAllByCategories(category = catalog.id!!)
 
                         temp.forEach {
@@ -149,11 +152,20 @@ class CatalogService: CatalogRepositoryImpl {
 
                 if (catalogSecond) {
                     try {
+
+                        val second = catalogSecondRepository.findById(id).get()
+                        val firstCatalog = catalogRepository.findUpper(second)
+
+                        firstCatalog.deleteFromSecondLevel(second)
+
                         val catalog = catalogSecondRepository.findById(id).get()
                         catalogSecondRepository.deleteById(id)
                         catalog.sub.forEach { item ->
                             catalogThirdRepository.deleteById(item.id!!)
                         }
+
+                        fileService.deleteByUrl(catalog.imageUrl)
+
                         val temp = productsRepository.findAllByCategories(category = catalog.id!!)
 
                         temp.forEach {
@@ -168,7 +180,15 @@ class CatalogService: CatalogRepositoryImpl {
 
                 if (catalogThird) {
                     try {
+                        val third = catalogThirdRepository.findById(id).get()
+                        val secondCatalog = catalogSecondRepository.findUpper(third)
+
+                        secondCatalog.deleteFromThirdLevel(third)
+
                         catalogThirdRepository.deleteById(id)
+
+                        fileService.deleteByUrl(third.imageUrl)
+
                         val temp = productsRepository.findAllByCategories(category = id)
 
                         temp.forEach {
@@ -189,8 +209,8 @@ class CatalogService: CatalogRepositoryImpl {
                 } else {
                     ServiceResponse(
                         data = listOf(),
-                        message = "Category with id = $id has been deleted",
-                        status = HttpStatus.OK
+                        message = "Category with id = $id not found",
+                        status = HttpStatus.NOT_FOUND
                     )
                 }
 
@@ -209,19 +229,34 @@ class CatalogService: CatalogRepositoryImpl {
             )
         }
     }
+
     override fun edit(id: String, file: MultipartFile, title: String, token: String): ServiceResponse<Any> {
         val check = checkUtil.checkToken(token)
         return if (check) {
             return try {
-                var option: String? = null
+                var count = 0
                 val catalogFirst = catalogRepository.findById(id).isPresent
                 val catalogSecond = catalogSecondRepository.findById(id).isPresent
                 val catalogThird = catalogThirdRepository.findById(id).isPresent
 
                 if (catalogFirst) {
                     try {
-                        val catalog = catalogRepository.findById(id).get()
-                        option = catalog.level
+                        val temp = catalogRepository.findById(id).get()
+                        catalogRepository.deleteById(id)
+
+                        fileService.deleteByUrl(temp.imageUrl)
+
+                        val catalog = CatalogFirst(
+                            id = id,
+                            title = title,
+                            sub = temp.sub,
+                            imageUrl = fileService.save(file),
+                            level = temp.level
+                        )
+
+                        catalogRepository.save(catalog)
+
+                        count = count + 1
                     } catch (e: Exception) {
                         println(e.message)
                     }
@@ -229,8 +264,22 @@ class CatalogService: CatalogRepositoryImpl {
 
                 if (catalogSecond) {
                     try {
-                        val catalog = catalogSecondRepository.findById(id).get()
-                        option = catalog.level
+                        val temp = catalogSecondRepository.findById(id).get()
+                        catalogSecondRepository.deleteById(id)
+
+                        fileService.deleteByUrl(temp.imageUrl)
+
+                        val catalog = CatalogSecond(
+                            id = id,
+                            title = title,
+                            sub = temp.sub,
+                            imageUrl = fileService.save(file),
+                            level = temp.level
+                        )
+
+                        catalogSecondRepository.save(catalog)
+
+                        count = count + 1
                     } catch (e: Exception) {
                         println(e.message)
                     }
@@ -238,23 +287,39 @@ class CatalogService: CatalogRepositoryImpl {
 
                 if (catalogThird) {
                     try {
-                        val catalog = catalogThirdRepository.findById(id).get()
-                        option = catalog.level
+                        val temp = catalogThirdRepository.findById(id).get()
+                        catalogThirdRepository.deleteById(id)
+
+                        fileService.deleteByUrl(temp.imageUrl)
+
+                        val catalog = CatalogThird(
+                            id = id,
+                            title = title,
+                            imageUrl = fileService.save(file),
+                            level = temp.level
+                        )
+
+                        catalogThirdRepository.save(catalog)
+
+                        count = count + 1
                     } catch (e: Exception){
                         println(e.message)
                     }
                 }
 
-                when (option) {
-                    "first" -> addFirstLevel(file, title)
-                    "second" -> addSecondLevel(id, file, title)
-                    "third" -> addThirdLevel(id, title, file)
+                if(count > 0 ){
+                    ServiceResponse(
+                        data = null,
+                        message = "Category with id = $id has been edited",
+                        status = HttpStatus.OK
+                    )
+                } else {
+                    ServiceResponse(
+                        data = null,
+                        message = "Something went wrong...",
+                        status = HttpStatus.NOT_FOUND
+                    )
                 }
-                ServiceResponse(
-                    data = null,
-                    message = "Category with id = $id has been deleted",
-                    status = HttpStatus.OK
-                )
             } catch (e: Exception) {
                 ServiceResponse(
                     data = null,
@@ -350,7 +415,7 @@ class CatalogService: CatalogRepositoryImpl {
         id: String,
         title: String,
         file: MultipartFile,
-    ){
+    ) {
         val thirdId = UUID.randomUUID().toString()
 
         val third = catalogThirdRepository.save(
@@ -366,9 +431,4 @@ class CatalogService: CatalogRepositoryImpl {
         )
         catalogSecondRepository.save(b)
     }
-
-
-
-
-
 }

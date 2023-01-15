@@ -4,6 +4,7 @@ import com.example.uvanna.jpa.Orders
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import org.springframework.stereotype.Repository
+import org.springframework.web.multipart.MultipartFile
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
 
@@ -20,4 +21,7 @@ interface OrdersRepositoryImpl {
     fun editOrder(id: String, order: Orders, token: String): ServiceResponse<Orders>
     fun scheduleCheckForDelete()
     fun scheduleCheckForMessage()
+    fun changeOrderStatus(id: String, status: String, token: String): ServiceResponse<Orders>
+    fun deleteFile(id: String, files: List<String>, token: String): ServiceResponse<String>
+    fun addFile(id: String, files: List<MultipartFile>, token: String): ServiceResponse<Orders>?
 }

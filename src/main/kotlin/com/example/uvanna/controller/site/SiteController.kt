@@ -1,6 +1,7 @@
 package com.example.uvanna.controller.site
 
 import com.example.uvanna.jpa.Blog
+import com.example.uvanna.jpa.MainBanner
 import com.example.uvanna.model.request.site.BlogRequest
 import com.example.uvanna.model.response.BlogLighterResponse
 import com.example.uvanna.model.response.PagingBlogResponse
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
+import javax.print.attribute.standard.Media
 import javax.servlet.http.HttpServletResponse
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
@@ -26,6 +28,69 @@ class SiteController {
 
     @Autowired
     lateinit var siteService: SiteService
+
+
+    @PostMapping("banner/create", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun createBanner(
+        @RequestPart("imagePC") pcImage: MultipartFile,
+        @RequestPart("imageMobile") mobileImage: MultipartFile,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<MainBanner> {
+        return try {
+            siteService.createBanner (
+                pcImage = pcImage,
+                mobileImage = mobileImage,
+                token = token
+            )
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @GetMapping("banner/")
+    fun getBanners(
+        response: HttpServletResponse
+    ): ServiceResponse<MainBanner> {
+        return try {
+            siteService.getBannersAll ()
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @DeleteMapping("banner/delete/{id}")
+    fun deleteBanner(
+        @PathVariable id: String,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<MainBanner> {
+        return try {
+            siteService.deleteBanner(token = token, id = id)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @PostMapping("banner/edit/{id}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun editBanner(
+        @PathVariable id: String,
+        @RequestPart("imagePC") pcImage: MultipartFile,
+        @RequestPart("imageMobile") mobileImage: MultipartFile,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<MainBanner> {
+        return try {
+            siteService.editBanner (
+                id = id,
+                pcImage = pcImage,
+                mobileImage = mobileImage,
+                token = token
+            )
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
 
     @PostMapping("blog", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun addBlog(

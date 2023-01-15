@@ -1,7 +1,9 @@
 package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Blog
+import com.example.uvanna.jpa.MainBanner
 import com.example.uvanna.model.response.*
+import com.example.uvanna.repository.site.BannerRepository
 import com.example.uvanna.repository.site.BlogRepository
 import com.example.uvanna.repository.site.SiteRepositoryImpl
 import com.example.uvanna.util.CheckUtil
@@ -23,6 +25,9 @@ class SiteService: SiteRepositoryImpl {
 
     @Autowired
     lateinit var blogRepository: BlogRepository
+
+    @Autowired
+    lateinit var bannerRepository: BannerRepository
 
     @Autowired
     lateinit var fileService: FileService
@@ -299,6 +304,160 @@ class SiteService: SiteRepositoryImpl {
                 data = null,
                 message = "Unexpected token",
                 status = HttpStatus.UNAUTHORIZED
+            )
+        }
+    }
+
+    override fun createBanner(pcImage: MultipartFile, mobileImage: MultipartFile, token: String): ServiceResponse<MainBanner> {
+        return try {
+            val check = checkUtil.checkToken(token)
+
+            return if(check) {
+                return try {
+                    val imagePcUrl = fileService.save(pcImage)
+                    val imageMobileUrl = fileService.save(mobileImage)
+
+                    val item = MainBanner(
+                        id = UUID.randomUUID().toString(),
+                        imageMobileUrl = imageMobileUrl,
+                        imagePCUrl = imagePcUrl
+                    )
+
+                    bannerRepository.save(item)
+
+                    ServiceResponse(
+                        data = listOf(bannerRepository.findById(item.id).get()),
+                        message = "Banner has been created",
+                        status = HttpStatus.OK
+                    )
+                } catch (e: Exception) {
+                    ServiceResponse(
+                        data = null,
+                        message = "Something went wrong: ${e.message}",
+                        status = HttpStatus.BAD_REQUEST
+                    )
+                }
+            } else {
+                ServiceResponse(
+                    data = null,
+                    message = "Unexpected token",
+                    status = HttpStatus.UNAUTHORIZED
+                )
+            }
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = "Something went wrong: ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+   override fun editBanner(id: String, pcImage: MultipartFile, mobileImage: MultipartFile, token: String): ServiceResponse<MainBanner> {
+        return try {
+            val check = checkUtil.checkToken(token)
+
+            return if(check) {
+                return try {
+                    val temp = bannerRepository.findById(id).get()
+
+                    fileService.deleteByUrl(temp.imageMobileUrl)
+                    fileService.deleteByUrl(temp.imagePCUrl)
+
+                    val imagePcUrl = fileService.save(pcImage)
+                    val imageMobileUrl = fileService.save(mobileImage)
+
+                    bannerRepository.deleteById(id)
+
+                    val item = MainBanner(
+                        id = id,
+                        imageMobileUrl = imageMobileUrl,
+                        imagePCUrl = imagePcUrl
+                    )
+
+                    bannerRepository.save(item)
+
+                    ServiceResponse(
+                        data = listOf(bannerRepository.findById(item.id).get()),
+                        message = "Banner has been edited",
+                        status = HttpStatus.OK
+                    )
+                } catch (e: Exception) {
+                    ServiceResponse(
+                        data = null,
+                        message = "Something went wrong: ${e.message}",
+                        status = HttpStatus.BAD_REQUEST
+                    )
+                }
+            } else {
+                ServiceResponse(
+                    data = null,
+                    message = "Unexpected token",
+                    status = HttpStatus.UNAUTHORIZED
+                )
+            }
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = "Something went wrong: ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun deleteBanner(id: String, token: String): ServiceResponse<MainBanner> {
+        return try {
+            val check = checkUtil.checkToken(token)
+
+            return if(check) {
+                return try {
+                    val temp = bannerRepository.findById(id).get()
+
+                    fileService.deleteByUrl(temp.imageMobileUrl)
+                    fileService.deleteByUrl(temp.imagePCUrl)
+
+                    bannerRepository.deleteById(id)
+
+                    ServiceResponse(
+                        data = listOf(),
+                        message = "Banner with id = $id has been deleted",
+                        status = HttpStatus.OK
+                    )
+                } catch (e: Exception) {
+                    ServiceResponse(
+                        data = listOf(),
+                        message = "Banner with id = $id not found",
+                        status = HttpStatus.NOT_FOUND
+                    )
+                }
+            } else {
+                ServiceResponse(
+                    data = null,
+                    message = "Unexpected token",
+                    status = HttpStatus.UNAUTHORIZED
+                )
+            }
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = "Something went wrong: ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun getBannersAll(): ServiceResponse<MainBanner> {
+        return try {
+            ServiceResponse(
+                data = bannerRepository.findAll(),
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
+            ServiceResponse(
+                data = null,
+                message = "Something went wrong: ${e.message}",
+                status = HttpStatus.BAD_REQUEST
             )
         }
     }

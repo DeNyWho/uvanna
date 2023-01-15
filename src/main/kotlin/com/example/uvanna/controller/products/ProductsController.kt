@@ -2,6 +2,7 @@ package com.example.uvanna.controller.products
 
 import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
+import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.product.ProductListIds
 import com.example.uvanna.model.request.product.ProductRequest
@@ -28,7 +29,6 @@ import javax.validation.constraints.Min
 @Tag(name = "ProductsApi", description = "All about products")
 @RequestMapping("/api/products/")
 class ProductsController {
-
 
     @Autowired
     lateinit var productService: ProductService
@@ -125,6 +125,43 @@ class ProductsController {
     ): ServiceResponse<ProductLighterResponse> {
         return try {
             productService.getProductsByIds(products)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @DeleteMapping("brands/{id}/delete")
+    fun deleteBrandById(
+        @PathVariable id: String,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<String> {
+        return try {
+            productService.deleteBrandById(id = id, token = token)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @GetMapping("brands/all")
+    fun getAllBrands(
+        response: HttpServletResponse
+    ): ServiceResponse<ProductBrands>? {
+        return try {
+            productService.getAllBrands()
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @PostMapping("brands/create")
+    fun addNewBrands(
+        title: String,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<ProductBrands>? {
+        return try {
+            productService.createBrand(title = title, token = token)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

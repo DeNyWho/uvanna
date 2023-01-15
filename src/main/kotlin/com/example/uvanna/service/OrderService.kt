@@ -1,5 +1,6 @@
 package com.example.uvanna.service
 
+import com.example.uvanna.jpa.Files
 import com.example.uvanna.jpa.Orders
 import com.example.uvanna.model.orders.OrderConverterNeedPaid
 import com.example.uvanna.model.orders.OrderConverterPaid
@@ -34,6 +35,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDate
 import java.util.*
 import javax.annotation.Resource
@@ -58,6 +60,135 @@ class OrderService: OrdersRepositoryImpl {
 
     @Resource
     private lateinit var checkUtil: CheckUtil
+
+    @Autowired
+    lateinit var fileService: FileService
+
+    override fun addFile(id: String, files: List<MultipartFile>, token: String): ServiceResponse<Orders>? {
+        val check = checkUtil.checkToken(token)
+
+        return if(check) {
+            return try {
+                val item = ordersRepository.findById(id).get()
+
+                println(item)
+
+                files.forEach {
+                    val file = fileService.saveFile(it)
+                    item.addOrderFiles(file)
+                }
+
+                ordersRepository.deleteById(id)
+                ordersRepository.save(item)
+
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Brand with id = $id has been deleted",
+                    status = HttpStatus.OK
+                )
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Brand with id = $id not found",
+                    status = HttpStatus.NOT_FOUND
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+
+    }
+
+    override fun deleteFile(id: String, files: List<String>, token: String): ServiceResponse<String> {
+        val check = checkUtil.checkToken(token)
+
+        return if(check) {
+            return try {
+                val item = ordersRepository.findById(id).get()
+
+                println(item)
+
+                files.forEach {
+                    item.deleteOrderFiles(it)
+                    fileService.deleteFile(it)
+                }
+
+                ordersRepository.deleteById(id)
+                ordersRepository.save(item)
+
+                ServiceResponse(
+                    data = listOf(),
+                    message = "File has been deleted",
+                    status = HttpStatus.OK
+                )
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Something went wrong... ${e.message}",
+                    status = HttpStatus.NOT_FOUND
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+    }
+
+
+    override fun changeOrderStatus(id: String, status: String, token: String): ServiceResponse<Orders> {
+        return try {
+            val check = checkUtil.checkToken(token)
+
+            return if (check) {
+                val order = ordersRepository.findById(id).get()
+
+                if (
+                    order.status != "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)." &&
+                    order.status != "Заказ находится на стадии подтверждения платежа" &&
+                    order.status != "Заказ требует оплаты"
+                ) {
+                    println(order)
+
+                    order.status = status
+
+                    ordersRepository.deleteById(id)
+
+                    ordersRepository.save(order)
+
+                    ServiceResponse(
+                        data = listOf(ordersRepository.findById(id).get()),
+                        message = "Order has been edited",
+                        status = HttpStatus.OK
+                    )
+                } else {
+                    ServiceResponse(
+                        data = null,
+                        message = "Order not paid",
+                        status = HttpStatus.BAD_REQUEST
+                    )
+                }
+            } else {
+                ServiceResponse(
+                    data = null,
+                    message = "Unexpected token",
+                    status = HttpStatus.UNAUTHORIZED
+                )
+            }
+        } catch (e: Exception) {
+            ServiceResponse(
+                data = null,
+                message = "Something went wrong: ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
 
     override fun editOrder(id: String, order: Orders, token: String): ServiceResponse<Orders> {
         return try {
@@ -277,6 +408,7 @@ class OrderService: OrdersRepositoryImpl {
                                     "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
                                     else -> "Заказ требует оплаты"
                                 },
+                                orderFiles = order.orderFiles,
                                 updated = LocalDate.now().toString(),
                                 deleteTime = if (c!!.status == "canceled") {
                                     if (order.deleteTime == null)
@@ -306,6 +438,7 @@ class OrderService: OrdersRepositoryImpl {
                                     "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
                                     else -> "Заказ требует оплаты"
                                 },
+                                orderFiles = order.orderFiles,
                                 updated = LocalDate.now().toString(),
                                 deleteTime = if (c!!.status == "canceled") {
                                     if (order.deleteTime == null)
@@ -338,6 +471,7 @@ class OrderService: OrdersRepositoryImpl {
                                     "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
                                     else -> "Заказ требует оплаты"
                                 },
+                                orderFiles = order.orderFiles,
                                 updated = LocalDate.now().toString(),
                                 deleteTime = if (l!!.status == "canceled") {
                                     if (order.deleteTime == null)
@@ -367,6 +501,7 @@ class OrderService: OrdersRepositoryImpl {
                                     "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
                                     else -> "Заказ требует оплаты"
                                 },
+                                orderFiles = order.orderFiles,
                                 updated = LocalDate.now().toString(),
                                 deleteTime = if (l!!.status == "canceled") {
                                     if (order.deleteTime == null)
@@ -407,6 +542,7 @@ class OrderService: OrdersRepositoryImpl {
                             typePayment = order.typePayment,
                             typeDelivery = order.typeDelivery,
                             code = order.code,
+                            orderFiles = order.orderFiles,
                             paymentID = order.paymentID,
                             paymentSuccess = order.typePayment,
                             products = order.products,
@@ -585,6 +721,7 @@ class OrderService: OrdersRepositoryImpl {
                                         "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
                                         else -> "Заказ требует оплаты"
                                     },
+                                    orderFiles = order.orderFiles,
                                     updated = LocalDate.now().toString(),
                                     deleteTime = if (c!!.status == "canceled") {
                                         if (order.deleteTime == null)
@@ -687,6 +824,7 @@ class OrderService: OrdersRepositoryImpl {
                                         "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
                                         else -> "Заказ требует оплаты"
                                     },
+                                    orderFiles = order.orderFiles,
                                     updated = LocalDate.now().toString(),
                                     deleteTime = if (l!!.status == "canceled") {
                                         if (order.deleteTime == null)

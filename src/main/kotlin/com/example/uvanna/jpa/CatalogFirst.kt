@@ -21,4 +21,9 @@ data class CatalogFirst(
         sub.add(catalog)
         return this
     }
+
+    fun deleteFromSecondLevel(catalog: CatalogSecond): CatalogFirst {
+        sub.remove(catalog)
+        return this
+    }
 }

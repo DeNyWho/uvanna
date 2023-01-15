@@ -30,15 +30,28 @@ data class Orders(
     )
     @Column(nullable = true)
     val products: MutableSet<OrdersProducts> = mutableSetOf<OrdersProducts>(),
-    val status: String = "",
+    var status: String = "",
     val updated: String = "",
     @Column(nullable = true)
     val deleteTime: LocalDate? = null,
     @Column(nullable = true)
-    val emailSend: Boolean? = null
+    val emailSend: Boolean? = null,
+    @ElementCollection
+    @Column(nullable = true)
+    val orderFiles: MutableSet<String> = mutableSetOf()
 ) {
     fun addProducts(product: OrdersProducts): Orders {
         products.add(product)
+        return this
+    }
+
+    fun addOrderFiles(file: String): Orders {
+        orderFiles.add(file)
+        return this
+    }
+
+    fun deleteOrderFiles(file: String): Orders {
+        orderFiles.remove(file)
         return this
     }
 }

@@ -310,7 +310,11 @@ class PromoService: PromoRepositoryImpl {
             return try {
                 val temp = promoRepository.findById(id).get()
                 fileService.deleteByUrl(temp.imageUrl)
+
+                temp.deleteAllPromoProducts()
+
                 promoRepository.deleteById(id)
+
                 ServiceResponse(
                     data = listOf(),
                     message = "Promo with id = $id has been deleted",

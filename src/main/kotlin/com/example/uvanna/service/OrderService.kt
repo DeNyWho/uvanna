@@ -83,13 +83,13 @@ class OrderService: OrdersRepositoryImpl {
 
                 ServiceResponse(
                     data = listOf(),
-                    message = "Brand with id = $id has been deleted",
+                    message = "File with id = $id has been added",
                     status = HttpStatus.OK
                 )
             } catch (e: Exception) {
                 ServiceResponse(
                     data = listOf(),
-                    message = "Brand with id = $id not found",
+                    message = "File with id = $id not found",
                     status = HttpStatus.NOT_FOUND
                 )
             }

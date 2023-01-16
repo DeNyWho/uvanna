@@ -57,7 +57,7 @@ class ImageController {
 
     @GetMapping("{id}")
     fun getFile(@PathVariable id: String): ResponseEntity<ByteArray?>? {
-        val fileEntityOptional: Optional<Image> = fileService.getFile(id)
+        val fileEntityOptional: Optional<Image> = fileService.getImage(id)
         if (!fileEntityOptional.isPresent) {
             return ResponseEntity.notFound()
                 .build()

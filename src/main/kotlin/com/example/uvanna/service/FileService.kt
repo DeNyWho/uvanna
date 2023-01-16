@@ -1,5 +1,6 @@
 package com.example.uvanna.service
 
+import com.example.uvanna.jpa.Files
 import com.example.uvanna.jpa.Image
 import com.example.uvanna.repository.files.FilesRepository
 import com.example.uvanna.repository.image.ImageRepository
@@ -41,14 +42,20 @@ class FileService {
 
     fun saveFile(file: MultipartFile): String {
         val id = UUID.randomUUID().toString()
-        imageRepository.save(Image(
-            id = id,
-            image = file.bytes
-        ))
+        filesRepository.save(
+            Files(
+                id = id,
+                file = file.bytes
+            )
+        )
         return "$host/files/$id"
     }
 
-    fun getFile(id: String): Optional<Image> {
+    fun getFile(id: String): Optional<Files> {
+        return filesRepository.findById(id)
+    }
+
+    fun getImage(id: String): Optional<Image> {
         return imageRepository.findById(id)
     }
 

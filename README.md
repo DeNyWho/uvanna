@@ -1,5 +1,5 @@
 # Uvanna shop
-MVC Spring Api with Swagger, MoySklad API
+MVC Spring Api with yookassa, postgreSQL, SMTP, 
 
 ```Commercial project```
 

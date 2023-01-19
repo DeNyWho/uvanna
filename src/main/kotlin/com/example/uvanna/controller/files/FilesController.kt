@@ -14,7 +14,7 @@ import java.util.*
 @RestController
 @CrossOrigin("*")
 @Tag(name = "Files", description = "Files")
-@RequestMapping("/files/")
+@RequestMapping("/api/files/")
 class FilesController {
 
     @Autowired
@@ -27,6 +27,7 @@ class FilesController {
             return ResponseEntity.notFound()
                 .build()
         }
+        println("ФАЙЛА НЕТ ФАЙЛА НЕТ ALERT")
 
         val fileEntity = fileEntityOptional.get()
         return ResponseEntity.ok()

@@ -1,8 +1,6 @@
 package com.example.uvanna.controller.orders
 
 import com.example.uvanna.jpa.Orders
-import com.example.uvanna.jpa.Product
-import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.OrderService
@@ -48,7 +46,7 @@ class OrdersController {
         @RequestBody files: List<MultipartFile>,
         @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
-    ): ServiceResponse<Orders>? {
+    ): ServiceResponse<String>? {
         return try {
             orderService.addFile(id = id, token = token, files = files)
         } catch (e: ChangeSetPersister.NotFoundException) {
@@ -57,7 +55,7 @@ class OrdersController {
     }
 
 
-    @DeleteMapping("{id}/deleteFiles", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @DeleteMapping("{id}/deleteFiles")
     fun deleteOrderFiles(
         @PathVariable id: String,
         files: List<String>,

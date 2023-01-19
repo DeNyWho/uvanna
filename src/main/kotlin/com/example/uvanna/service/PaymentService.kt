@@ -37,6 +37,7 @@ import org.springframework.stereotype.Service
 import java.text.SimpleDateFormat
 import java.util.*
 import com.example.uvanna.model.payment.receipt.Items
+import java.time.ZoneId
 
 
 @Service
@@ -162,10 +163,23 @@ class PaymentService: PaymentRepositoryImpl {
                         streetFull = paymentDataRequest.streetFull,
                         fullName = paymentDataRequest.fullname,
                         phone = paymentDataRequest.phone,
+                        dateCreated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                            Date.from(
+                                Date().toInstant().atZone(
+                                    ZoneId.of("Europe/Moscow")
+                                ).toInstant()
+                            )
+                        ).toString(),
                         email = paymentDataRequest.email,
                         paymentSuccess = false.toString(),
                         price = price,
-                        updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
+                        updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                            Date.from(
+                                Date().toInstant().atZone(
+                                    ZoneId.of("Europe/Moscow")
+                                ).toInstant()
+                            )
+                        ).toString(),
                         typeDelivery = paymentDataRequest.typeDelivery,
                         typePayment = paymentDataRequest.typePayment,
                         paymentID = c.id,
@@ -220,8 +234,21 @@ class PaymentService: PaymentRepositoryImpl {
                 phone = paymentDataRequest.phone,
                 email = paymentDataRequest.email,
                 price = price,
+                dateCreated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                    Date.from(
+                        Date().toInstant().atZone(
+                            ZoneId.of("Europe/Moscow")
+                        ).toInstant()
+                    )
+                ).toString(),
                 paymentSuccess = false.toString(),
-                updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
+                updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                    Date.from(
+                        Date().toInstant().atZone(
+                            ZoneId.of("Europe/Moscow")
+                        ).toInstant()
+                    )
+                ).toString(),
                 typeDelivery = paymentDataRequest.typeDelivery,
                 typePayment = paymentDataRequest.typePayment,
                 paymentID = c.id,

@@ -23,5 +23,5 @@ interface OrdersRepositoryImpl {
     fun scheduleCheckForMessage()
     fun changeOrderStatus(id: String, status: String, token: String): ServiceResponse<Orders>
     fun deleteFile(id: String, files: List<String>, token: String): ServiceResponse<String>
-    fun addFile(id: String, files: List<MultipartFile>, token: String): ServiceResponse<Orders>?
+    fun addFile(id: String, files: List<MultipartFile>, token: String): ServiceResponse<String>?
 }

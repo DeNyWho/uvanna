@@ -32,11 +32,12 @@ data class Orders(
     val products: MutableSet<OrdersProducts> = mutableSetOf<OrdersProducts>(),
     var status: String = "",
     val updated: String = "",
+    val dateCreated: String = "",
     @Column(nullable = true)
     val deleteTime: LocalDate? = null,
     @Column(nullable = true)
     val emailSend: Boolean? = null,
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @Column(nullable = true)
     val orderFiles: MutableSet<String> = mutableSetOf()
 ) {

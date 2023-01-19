@@ -1,9 +1,7 @@
 package com.example.uvanna.controller.promo
 
 import com.example.uvanna.jpa.Promo
-import com.example.uvanna.model.request.payment.ProductsRequestsing
 import com.example.uvanna.model.request.promo.PromoProductRequest
-import com.example.uvanna.model.request.promo.PromoRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductsLightResponse
 import com.example.uvanna.model.response.ServiceResponse

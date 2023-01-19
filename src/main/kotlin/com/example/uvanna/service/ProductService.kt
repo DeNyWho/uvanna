@@ -3,6 +3,7 @@ package com.example.uvanna.service
 import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
+import com.example.uvanna.jpa.TemplateCharact
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
@@ -12,7 +13,7 @@ import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.products.BrandsRepository
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.products.ProductsRepositoryImpl
-import com.example.uvanna.repository.promo.PromoRepository
+import com.example.uvanna.repository.products.TemplateCharactRepository
 import com.example.uvanna.util.CheckUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -31,6 +32,9 @@ import javax.annotation.Resource
 
 @Service
 class ProductService: ProductsRepositoryImpl {
+
+    @Autowired
+    lateinit var templateCharactRepository: TemplateCharactRepository
 
     @Autowired
     lateinit var productsRepository: ProductsRepository
@@ -609,6 +613,118 @@ class ProductService: ProductsRepositoryImpl {
             ServiceResponse(
                 data = null,
                 message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun addTemplateCharact(id: String, token: String, charact: List<String>): ServiceResponse<TemplateCharact> {
+        val check = checkUtil.checkToken(token)
+
+        return if(check) {
+            return try {
+                val item = TemplateCharact(
+                    categoryId = id,
+                    charact = charact
+                )
+
+                templateCharactRepository.save(item)
+
+                ServiceResponse(
+                    data = listOf(templateCharactRepository.findById(id).get()),
+                    message = "Success",
+                    status = HttpStatus.OK
+                )
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = null,
+                    message = e.message.toString(),
+                    status = HttpStatus.BAD_REQUEST
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+    }
+
+    override fun editTemplateCharact(id: String, token: String, charact: List<String>): ServiceResponse<TemplateCharact> {
+        val check = checkUtil.checkToken(token)
+
+        return if (check) {
+            return try {
+                val item = TemplateCharact(
+                    categoryId = id,
+                    charact = charact
+                )
+                templateCharactRepository.deleteById(id)
+                templateCharactRepository.save(item)
+
+                ServiceResponse(
+                    data = listOf(templateCharactRepository.findById(id).get()),
+                    message = "Template with category id = $id has been edited",
+                    status = HttpStatus.OK
+                )
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = null,
+                    message = e.message.toString(),
+                    status = HttpStatus.BAD_REQUEST
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+    }
+
+    override fun deleteTemplateCharact(id: String, token: String): ServiceResponse<TemplateCharact> {
+        val check = checkUtil.checkToken(token)
+
+        return if(check) {
+            return try {
+                templateCharactRepository.deleteById(id)
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Template with category id = $id has been deleted",
+                    status = HttpStatus.OK
+                )
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = listOf(),
+                    message = "Template with category id = $id not found",
+                    status = HttpStatus.NOT_FOUND
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+
+    }
+
+    override fun getTemplateCharact(): ServiceResponse<TemplateCharact> {
+        return try {
+            val items = templateCharactRepository.findAll().toList()
+
+            ServiceResponse(
+                data = items,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
+            ServiceResponse(
+                data = listOf(),
+                message = "Something went wrong... ${e.message}",
                 status = HttpStatus.BAD_REQUEST
             )
         }

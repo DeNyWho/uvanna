@@ -24,11 +24,11 @@ class FileService {
     lateinit var host: String
 
     fun deleteFile(url: String) {
-        filesRepository.deleteById(url.replaceRange(0..27, ""))
+        filesRepository.deleteById(url.replaceRange(0..30, ""))
     }
 
     fun deleteByUrl(url: String?) {
-        imageRepository.deleteById(url?.replaceRange(0..28, "")!!)
+        imageRepository.deleteById(url?.replaceRange(0..27, "")!!)
     }
 
     fun save(file: MultipartFile): String {
@@ -48,7 +48,7 @@ class FileService {
                 file = file.bytes
             )
         )
-        return "$host/files/$id"
+        return "$host/api/files/$id"
     }
 
     fun getFile(id: String): Optional<Files> {

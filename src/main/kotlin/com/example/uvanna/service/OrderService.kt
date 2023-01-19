@@ -1,6 +1,5 @@
 package com.example.uvanna.service
 
-import com.example.uvanna.jpa.Files
 import com.example.uvanna.jpa.Orders
 import com.example.uvanna.model.orders.OrderConverterNeedPaid
 import com.example.uvanna.model.orders.OrderConverterPaid
@@ -36,7 +35,9 @@ import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
+import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.*
 import javax.annotation.Resource
 
@@ -64,7 +65,7 @@ class OrderService: OrdersRepositoryImpl {
     @Autowired
     lateinit var fileService: FileService
 
-    override fun addFile(id: String, files: List<MultipartFile>, token: String): ServiceResponse<Orders>? {
+    override fun addFile(id: String, files: List<MultipartFile>, token: String): ServiceResponse<String>? {
         val check = checkUtil.checkToken(token)
 
         return if(check) {
@@ -82,7 +83,7 @@ class OrderService: OrdersRepositoryImpl {
                 ordersRepository.save(item)
 
                 ServiceResponse(
-                    data = listOf(),
+                    data = ordersRepository.findById(id).get().orderFiles.toList(),
                     message = "File with id = $id has been added",
                     status = HttpStatus.OK
                 )
@@ -129,7 +130,7 @@ class OrderService: OrdersRepositoryImpl {
                 ServiceResponse(
                     data = listOf(),
                     message = "Something went wrong... ${e.message}",
-                    status = HttpStatus.NOT_FOUND
+                    status = HttpStatus.BAD_REQUEST
                 )
             }
         } else {
@@ -260,11 +261,11 @@ class OrderService: OrdersRepositoryImpl {
             try {
                 val sort = when (filter) {
                     "new" -> Sort.by(
-                        Sort.Order(Sort.Direction.DESC, "updated"),
+                        Sort.Order(Sort.Direction.DESC, "dateCreated"),
                     )
 
                     "old" -> Sort.by(
-                        Sort.Order(Sort.Direction.ASC, "updated")
+                        Sort.Order(Sort.Direction.ASC, "dateCreated")
                     )
 
                     else -> null
@@ -401,15 +402,26 @@ class OrderService: OrdersRepositoryImpl {
                                 price = order.price,
                                 paymentID = order.paymentID,
                                 paymentSuccess = c!!.paid.toString(),
+                                dateCreated = order.dateCreated,
                                 products = order.products,
-                                status = when (c!!.status) {
-                                    "succeeded" -> "Заказ успешно оплачен"
-                                    "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-                                    "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-                                    else -> "Заказ требует оплаты"
+                                status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
+                                    when (c!!.status) {
+                                        "succeeded" -> "Заказ успешно оплачен"
+                                        "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
+                                        "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
+                                        else -> "Заказ требует оплаты"
+                                    }
+                                } else {
+                                    order.status
                                 },
                                 orderFiles = order.orderFiles,
-                                updated = LocalDate.now().toString(),
+                                updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                                    Date.from(
+                                        Date().toInstant().atZone(
+                                            ZoneId.of("Europe/Moscow")
+                                        ).toInstant()
+                                    )
+                                ).toString(),
                                 deleteTime = if (c!!.status == "canceled") {
                                     if (order.deleteTime == null)
                                         LocalDate.now().plusDays(7) else order.deleteTime
@@ -432,14 +444,25 @@ class OrderService: OrdersRepositoryImpl {
                                 paymentID = order.paymentID,
                                 paymentSuccess = c!!.paid.toString(),
                                 products = order.products,
-                                status = when (c!!.status) {
-                                    "succeeded" -> "Заказ успешно оплачен"
-                                    "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-                                    "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-                                    else -> "Заказ требует оплаты"
+                                dateCreated = order.dateCreated,
+                                status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
+                                    when (c!!.status) {
+                                        "succeeded" -> "Заказ успешно оплачен"
+                                        "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
+                                        "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
+                                        else -> "Заказ требует оплаты"
+                                    }
+                                } else {
+                                    order.status
                                 },
                                 orderFiles = order.orderFiles,
-                                updated = LocalDate.now().toString(),
+                                updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                                    Date.from(
+                                        Date().toInstant().atZone(
+                                            ZoneId.of("Europe/Moscow")
+                                        ).toInstant()
+                                    )
+                                ).toString(),
                                 deleteTime = if (c!!.status == "canceled") {
                                     if (order.deleteTime == null)
                                         LocalDate.now().plusDays(7) else order.deleteTime
@@ -464,15 +487,26 @@ class OrderService: OrdersRepositoryImpl {
                                 code = order.code,
                                 paymentID = order.paymentID,
                                 paymentSuccess = l!!.paid.toString(),
+                                dateCreated = order.dateCreated,
                                 products = order.products,
-                                status = when (l!!.status) {
-                                    "succeeded" -> "Заказ успешно оплачен"
-                                    "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-                                    "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-                                    else -> "Заказ требует оплаты"
+                                status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
+                                    when (l!!.status) {
+                                        "succeeded" -> "Заказ успешно оплачен"
+                                        "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
+                                        "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
+                                        else -> "Заказ требует оплаты"
+                                    }
+                                } else {
+                                    order.status
                                 },
                                 orderFiles = order.orderFiles,
-                                updated = LocalDate.now().toString(),
+                                updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                                    Date.from(
+                                        Date().toInstant().atZone(
+                                            ZoneId.of("Europe/Moscow")
+                                        ).toInstant()
+                                    )
+                                ).toString(),
                                 deleteTime = if (l!!.status == "canceled") {
                                     if (order.deleteTime == null)
                                         LocalDate.now().plusDays(7) else order.deleteTime
@@ -495,14 +529,25 @@ class OrderService: OrdersRepositoryImpl {
                                 paymentID = order.paymentID,
                                 paymentSuccess = l!!.paid.toString(),
                                 products = order.products,
-                                status = when (l!!.status) {
-                                    "succeeded" -> "Заказ успешно оплачен"
-                                    "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-                                    "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-                                    else -> "Заказ требует оплаты"
+                                dateCreated = order.dateCreated,
+                                status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
+                                    when (l!!.status) {
+                                        "succeeded" -> "Заказ успешно оплачен"
+                                        "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
+                                        "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
+                                        else -> "Заказ требует оплаты"
+                                    }
+                                } else {
+                                    order.status
                                 },
                                 orderFiles = order.orderFiles,
-                                updated = LocalDate.now().toString(),
+                                updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                                    Date.from(
+                                        Date().toInstant().atZone(
+                                            ZoneId.of("Europe/Moscow")
+                                        ).toInstant()
+                                    )
+                                ).toString(),
                                 deleteTime = if (l!!.status == "canceled") {
                                     if (order.deleteTime == null)
                                         LocalDate.now().plusDays(7) else order.deleteTime
@@ -543,11 +588,18 @@ class OrderService: OrdersRepositoryImpl {
                             typeDelivery = order.typeDelivery,
                             code = order.code,
                             orderFiles = order.orderFiles,
+                            dateCreated = order.dateCreated,
                             paymentID = order.paymentID,
                             paymentSuccess = order.typePayment,
                             products = order.products,
-                            status = "Заказ сформирован",
-                            updated = LocalDate.now().toString()
+                            status = order.status,
+                            updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                                Date.from(
+                                    Date().toInstant().atZone(
+                                        ZoneId.of("Europe/Moscow")
+                                    ).toInstant()
+                                )
+                            ).toString()
                         ),
                         products = products
                     )
@@ -715,14 +767,25 @@ class OrderService: OrdersRepositoryImpl {
                                     paymentID = order.paymentID,
                                     paymentSuccess = c!!.paid.toString(),
                                     products = order.products,
-                                    status = when (c!!.status) {
-                                        "succeeded" -> "Заказ успешно оплачен"
-                                        "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-                                        "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-                                        else -> "Заказ требует оплаты"
+                                    dateCreated = order.dateCreated,
+                                    status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
+                                        when (c!!.status) {
+                                            "succeeded" -> "Заказ успешно оплачен"
+                                            "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
+                                            "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
+                                            else -> "Заказ требует оплаты"
+                                        }
+                                    } else {
+                                        order.status
                                     },
                                     orderFiles = order.orderFiles,
-                                    updated = LocalDate.now().toString(),
+                                    updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                                        Date.from(
+                                            Date().toInstant().atZone(
+                                                ZoneId.of("Europe/Moscow")
+                                            ).toInstant()
+                                        )
+                                    ).toString(),
                                     deleteTime = if (c!!.status == "canceled") {
                                         if (order.deleteTime == null)
                                             LocalDate.now().plusDays(7) else order.deleteTime
@@ -814,18 +877,29 @@ class OrderService: OrdersRepositoryImpl {
                                     typePayment = order.typePayment,
                                     typeDelivery = order.typeDelivery,
                                     code = order.code,
+                                    dateCreated = order.dateCreated,
                                     price = order.price,
                                     paymentID = order.paymentID,
                                     paymentSuccess = l!!.paid.toString(),
                                     products = order.products,
-                                    status = when (l!!.status) {
-                                        "succeeded" -> "Заказ успешно оплачен"
-                                        "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-                                        "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-                                        else -> "Заказ требует оплаты"
+                                    status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
+                                        when (l!!.status) {
+                                            "succeeded" -> "Заказ успешно оплачен"
+                                            "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
+                                            "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
+                                            else -> "Заказ требует оплаты"
+                                        }
+                                    } else {
+                                        order.status
                                     },
                                     orderFiles = order.orderFiles,
-                                    updated = LocalDate.now().toString(),
+                                    updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                                        Date.from(
+                                            Date().toInstant().atZone(
+                                                ZoneId.of("Europe/Moscow")
+                                            ).toInstant()
+                                        )
+                                    ).toString(),
                                     deleteTime = if (l!!.status == "canceled") {
                                         if (order.deleteTime == null)
                                             LocalDate.now().plusDays(7) else order.deleteTime

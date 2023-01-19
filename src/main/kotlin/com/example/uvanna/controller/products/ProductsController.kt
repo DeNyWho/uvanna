@@ -3,8 +3,8 @@ package com.example.uvanna.controller.products
 import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
+import com.example.uvanna.jpa.TemplateCharact
 import com.example.uvanna.model.product.Brands
-import com.example.uvanna.model.product.ProductListIds
 import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductLighterResponse
@@ -125,6 +125,58 @@ class ProductsController {
     ): ServiceResponse<ProductLighterResponse> {
         return try {
             productService.getProductsByIds(products)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @PostMapping("character/template")
+    fun addTemplate(
+        @RequestParam categoryId: String,
+        @RequestHeader (value = "Authorization") token: String,
+        @RequestBody charact: List<String>,
+        response: HttpServletResponse
+    ): ServiceResponse<TemplateCharact> {
+        return try {
+            productService.addTemplateCharact(id = categoryId, token = token, charact = charact)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @GetMapping("character/template")
+    fun getTemplate(
+        response: HttpServletResponse
+    ): ServiceResponse<TemplateCharact> {
+        return try {
+            productService.getTemplateCharact()
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @PostMapping("character/{id}/template")
+    fun editTemplate(
+        @PathVariable id: String,
+        @RequestHeader (value = "Authorization") token: String,
+        @RequestBody charact: List<String>,
+        response: HttpServletResponse
+    ): ServiceResponse<TemplateCharact> {
+        return try {
+            productService.editTemplateCharact(id = id, token = token, charact = charact)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @DeleteMapping("character/{id}/template")
+    fun deleteTemplate(
+        @PathVariable id: String,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<TemplateCharact> {
+        return try {
+            productService.deleteTemplateCharact(id = id, token = token)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

@@ -2,7 +2,6 @@ package com.example.uvanna.controller.site
 
 import com.example.uvanna.jpa.Blog
 import com.example.uvanna.jpa.MainBanner
-import com.example.uvanna.model.request.site.BlogRequest
 import com.example.uvanna.model.response.BlogLighterResponse
 import com.example.uvanna.model.response.PagingBlogResponse
 import com.example.uvanna.model.response.ServiceResponse
@@ -15,7 +14,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
-import javax.print.attribute.standard.Media
 import javax.servlet.http.HttpServletResponse
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min

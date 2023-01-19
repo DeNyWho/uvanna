@@ -2,7 +2,6 @@ package com.example.uvanna.controller.images
 
 import com.example.uvanna.jpa.Image
 import com.example.uvanna.model.response.ServiceResponse
-import com.example.uvanna.repository.admin.AdminRepository
 import com.example.uvanna.service.FileService
 import com.example.uvanna.service.ImageService
 import io.swagger.v3.oas.annotations.tags.Tag

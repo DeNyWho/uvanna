@@ -3,6 +3,7 @@ package com.example.uvanna.repository.products
 import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
+import com.example.uvanna.jpa.TemplateCharact
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
@@ -77,4 +78,8 @@ interface ProductsRepositoryImpl {
     fun createBrand(title: String, token: String): ServiceResponse<ProductBrands>?
     fun getAllBrands(): ServiceResponse<ProductBrands>?
     fun deleteBrandById(id: String, token: String): ServiceResponse<String>
+    fun addTemplateCharact(id: String, token: String, charact: List<String>): ServiceResponse<TemplateCharact>
+    fun deleteTemplateCharact(id: String, token: String): ServiceResponse<TemplateCharact>
+    fun editTemplateCharact(id: String, token: String, charact: List<String>): ServiceResponse<TemplateCharact>
+    fun getTemplateCharact(): ServiceResponse<TemplateCharact>
 }

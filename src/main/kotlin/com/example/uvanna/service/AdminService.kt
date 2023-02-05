@@ -1,6 +1,6 @@
 package com.example.uvanna.service
 
-import com.example.uvanna.jpa.AdminToken
+import com.example.uvanna.jpa.Admins
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.admin.AdminRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,6 +21,7 @@ class AdminService {
     @Value("\${admin_password}")
     lateinit var adminPassword: String
 
+
     fun checkToken(token: String): ServiceResponse<String> {
         val pgToken = adminRepository.findAdminTokenByToken(token)
         return if (token == pgToken?.token) {
@@ -39,21 +40,26 @@ class AdminService {
     }
 
     fun generateToken(login: String, password: String): ServiceResponse<String> {
-        if(password == adminPassword && login == adminLogin) {
-            adminRepository.deleteAll()
+        try {
+            val admin = adminRepository.findAdminByLoginAndPassword(login = login, password = password)
+
+            adminRepository.deleteById(admin!!.id)
             val token = UUID.randomUUID().toString()
             adminRepository.save(
-                AdminToken(
-                    id = UUID.randomUUID().toString(),
+                Admins(
+                    id = admin.id,
+                    password = admin.password,
+                    login = admin.login,
                     token = token
                 )
             )
+
             return ServiceResponse(
                 data = listOf(token),
                 message = "Success",
                 status = HttpStatus.OK
             )
-        } else {
+        } catch (e: Exception) {
             return ServiceResponse(
                 data = null,
                 message = "Somthing went wrong....",

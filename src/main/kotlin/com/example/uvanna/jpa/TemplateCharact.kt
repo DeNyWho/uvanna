@@ -1,6 +1,5 @@
 package com.example.uvanna.jpa
 
-import java.time.LocalDateTime
 import javax.persistence.*
 
 @Entity

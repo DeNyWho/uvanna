@@ -7,6 +7,7 @@ import com.example.uvanna.model.payment.Confirmation
 import com.example.uvanna.model.payment.ConfirmationWithToken
 import com.example.uvanna.model.payment.Recipient
 import com.example.uvanna.model.payment.receipt.Customer
+import com.example.uvanna.model.payment.receipt.Items
 import com.example.uvanna.model.payment.receipt.Receipt
 import com.example.uvanna.model.request.payment.PaymentDataRequest
 import com.example.uvanna.model.request.payment.PaymentRequest
@@ -35,9 +36,10 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.text.SimpleDateFormat
-import java.util.*
-import com.example.uvanna.model.payment.receipt.Items
+import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.*
 
 
 @Service
@@ -156,6 +158,15 @@ class PaymentService: PaymentRepositoryImpl {
                 c = f
                 c.metadata = null
 
+                val r = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+                val z = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                    Date.from(
+                        Date().toInstant().atZone(
+                            ZoneId.of("Europe/Moscow")
+                        ).toInstant()
+                    )
+                )
+
                 withContext(Dispatchers.IO) {
                     val order = Orders(
                         id = id,
@@ -163,13 +174,7 @@ class PaymentService: PaymentRepositoryImpl {
                         streetFull = paymentDataRequest.streetFull,
                         fullName = paymentDataRequest.fullname,
                         phone = paymentDataRequest.phone,
-                        dateCreated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
-                            Date.from(
-                                Date().toInstant().atZone(
-                                    ZoneId.of("Europe/Moscow")
-                                ).toInstant()
-                            )
-                        ).toString(),
+                        dateCreated = LocalDateTime.parse(z, r ),
                         email = paymentDataRequest.email,
                         paymentSuccess = false.toString(),
                         price = price,
@@ -195,7 +200,9 @@ class PaymentService: PaymentRepositoryImpl {
                             ordersProductsRepository.save(
                                 OrdersProducts(
                                     productID = it.product,
-                                    count = it.count
+                                    count = it.count,
+                                    sellPrice = productsRepository.findById(it.product).get().sellPrice,
+                                    price = productsRepository.findById(it.product).get().price
                                 )
                             )
                         )
@@ -226,6 +233,15 @@ class PaymentService: PaymentRepositoryImpl {
                 price = price + (temp!! * it.count)
             }
 
+            val r = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+            val z = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                Date.from(
+                    Date().toInstant().atZone(
+                        ZoneId.of("Europe/Moscow")
+                    ).toInstant()
+                )
+            )
+
             val vxc = Orders(
                 id = id,
                 city = paymentDataRequest.city,
@@ -234,13 +250,7 @@ class PaymentService: PaymentRepositoryImpl {
                 phone = paymentDataRequest.phone,
                 email = paymentDataRequest.email,
                 price = price,
-                dateCreated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
-                    Date.from(
-                        Date().toInstant().atZone(
-                            ZoneId.of("Europe/Moscow")
-                        ).toInstant()
-                    )
-                ).toString(),
+                dateCreated = LocalDateTime.parse(z, r ),
                 paymentSuccess = false.toString(),
                 updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
                     Date.from(
@@ -265,7 +275,9 @@ class PaymentService: PaymentRepositoryImpl {
                     ordersProductsRepository.save(
                         OrdersProducts(
                             productID = it.product,
-                            count = it.count
+                            count = it.count,
+                            sellPrice = productsRepository.findById(it.product).get().sellPrice,
+                            price = productsRepository.findById(it.product).get().price
                         )
                     )
                 )

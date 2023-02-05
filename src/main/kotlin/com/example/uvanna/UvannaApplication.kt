@@ -2,15 +2,12 @@ package com.example.uvanna
 
 import com.example.uvanna.service.OrderService
 import com.example.uvanna.service.PromoService
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Component
 class ScheduleTasks {

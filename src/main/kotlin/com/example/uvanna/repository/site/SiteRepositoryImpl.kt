@@ -2,7 +2,6 @@ package com.example.uvanna.repository.site
 
 import com.example.uvanna.jpa.Blog
 import com.example.uvanna.jpa.MainBanner
-import com.example.uvanna.model.request.site.BlogRequest
 import com.example.uvanna.model.response.BlogLighterResponse
 import com.example.uvanna.model.response.PagingBlogResponse
 import com.example.uvanna.model.response.ServiceResponse

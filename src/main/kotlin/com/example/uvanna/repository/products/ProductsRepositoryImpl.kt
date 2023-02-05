@@ -1,6 +1,5 @@
 package com.example.uvanna.repository.products
 
-import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.jpa.TemplateCharact
@@ -18,8 +17,6 @@ import javax.validation.constraints.Min
 @Repository
 interface ProductsRepositoryImpl {
 
-
-    fun getCharactSort(level: String): List<Characteristic>
 
     fun getProduct(id: String): ServiceResponse<Product>?
 
@@ -69,7 +66,8 @@ interface ProductsRepositoryImpl {
         categoryId: String?,
         stockEmpty: Boolean?,
         stockFull: Boolean?,
-        isSellByPromo: Boolean?
+        isSellByPromo: Boolean?,
+        searchQuery: String?
     ): PagingResponse<ProductsLightResponse>?
 
     fun getProductsByIds(ids: List<String>): ServiceResponse<ProductLighterResponse>
@@ -82,4 +80,6 @@ interface ProductsRepositoryImpl {
     fun deleteTemplateCharact(id: String, token: String): ServiceResponse<TemplateCharact>
     fun editTemplateCharact(id: String, token: String, charact: List<String>): ServiceResponse<TemplateCharact>
     fun getTemplateCharact(): ServiceResponse<TemplateCharact>
+    fun getTemplateCharactById(id: String): ServiceResponse<TemplateCharact>
+    fun changeProductArchive(id: String, archive: Boolean, token: String): ServiceResponse<Product>?
 }

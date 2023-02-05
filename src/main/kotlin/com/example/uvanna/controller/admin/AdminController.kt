@@ -18,6 +18,7 @@ class AdminController {
     @Autowired
     lateinit var adminService: AdminService
 
+
     @PostMapping("generateToken")
     fun generateToken(
         @RequestParam login: String,

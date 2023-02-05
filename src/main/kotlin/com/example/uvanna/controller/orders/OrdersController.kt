@@ -58,7 +58,7 @@ class OrdersController {
     @DeleteMapping("{id}/deleteFiles")
     fun deleteOrderFiles(
         @PathVariable id: String,
-        files: List<String>,
+        @RequestBody files: List<String>,
         @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<String>? {

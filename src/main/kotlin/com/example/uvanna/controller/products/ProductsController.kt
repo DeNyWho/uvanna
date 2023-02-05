@@ -1,6 +1,5 @@
 package com.example.uvanna.controller.products
 
-import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.jpa.TemplateCharact
@@ -61,6 +60,20 @@ class ProductsController {
         }
     }
 
+    @PostMapping("archive/{id}")
+    fun addProductArchive(
+        @PathVariable id: String,
+        archive: Boolean,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<Product>? {
+        return try {
+            productService.changeProductArchive(id = id, archive = archive, token = token)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
     @PostMapping("edit/{id}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun editProducts(
         @PathVariable id: String,
@@ -78,18 +91,6 @@ class ProductsController {
                 data = product.charactData,
                 token = token,
             )
-        } catch (e: ChangeSetPersister.NotFoundException) {
-            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
-        }
-    }
-
-    @GetMapping("character/{id}")
-    fun getCharacterSort(
-        @PathVariable id: String,
-        response: HttpServletResponse
-    ): ServiceResponse<Characteristic> {
-        return try {
-            ServiceResponse(data = productService.getCharactSort(id), status = HttpStatus.OK)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -144,7 +145,19 @@ class ProductsController {
         }
     }
 
-    @GetMapping("character/template")
+    @GetMapping("character/template/{id}")
+    fun getCharacter(
+        @PathVariable id: String,
+        response: HttpServletResponse
+    ): ServiceResponse<TemplateCharact> {
+        return try {
+            productService.getTemplateCharactById(id)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @GetMapping("character/template/")
     fun getTemplate(
         response: HttpServletResponse
     ): ServiceResponse<TemplateCharact> {
@@ -258,6 +271,7 @@ class ProductsController {
         @Parameter(description = "Filter = expensive | cheap | new | old") filter: String?,
         categoryId: String?,
         productId: String?,
+        searchQuery: String?,
         response: HttpServletResponse
     ): PagingResponse<ProductsLightResponse>? {
         return try {
@@ -271,7 +285,8 @@ class ProductsController {
                 stockEmpty = stockEmpty,
                 stockFull = stockFull,
                 categoryId = categoryId,
-                isSellByPromo = isSell
+                isSellByPromo = isSell,
+                searchQuery = searchQuery
             )
         } catch (e: ChangeSetPersister.NotFoundException) {
             PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)

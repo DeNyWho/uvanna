@@ -421,7 +421,7 @@ class OrderService: OrdersRepositoryImpl {
                                             ZoneId.of("Europe/Moscow")
                                         ).toInstant()
                                     )
-                                ).toString(),
+                                ),
                                 deleteTime = if (c!!.status == "canceled") {
                                     if (order.deleteTime == null)
                                         LocalDate.now().plusDays(7) else order.deleteTime

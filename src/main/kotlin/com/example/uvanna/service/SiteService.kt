@@ -2,7 +2,9 @@ package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Blog
 import com.example.uvanna.jpa.MainBanner
-import com.example.uvanna.model.response.*
+import com.example.uvanna.model.response.BlogLighterResponse
+import com.example.uvanna.model.response.PagingBlogResponse
+import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.site.BannerRepository
 import com.example.uvanna.repository.site.BlogRepository
 import com.example.uvanna.repository.site.SiteRepositoryImpl

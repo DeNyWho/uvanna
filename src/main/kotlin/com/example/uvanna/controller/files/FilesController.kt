@@ -1,7 +1,6 @@
 package com.example.uvanna.controller.files
 
 import com.example.uvanna.jpa.Files
-import com.example.uvanna.jpa.Image
 import com.example.uvanna.service.FileService
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Autowired

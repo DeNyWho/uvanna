@@ -29,6 +29,7 @@ data class Promo(
         productsPromo.clear()
         return this
     }
+
     fun addPromoProducts(products: Product): Promo {
         productsPromo.add(products)
         return this

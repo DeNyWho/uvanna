@@ -26,6 +26,9 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.multipart.MultipartFile
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.annotation.Resource
 
@@ -87,11 +90,20 @@ class ProductService: ProductsRepositoryImpl {
                         imagesUrl.add(fileService.save(it))
                     }
 
+                    val v = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+                    val z = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                        Date.from(
+                            Date().toInstant().atZone(
+                                ZoneId.of("Europe/Moscow")
+                            ).toInstant()
+                        )
+                    )
+
                     val item = Product(
                         id = id,
                         images = imagesUrl,
                         title = product.title,
-                        updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
+                        updated = LocalDateTime.parse(z, v ),
                         characteristic = charact,
                         firstSub = product.firstSub,
                         secondSub = product.secondSub,
@@ -161,11 +173,20 @@ class ProductService: ProductsRepositoryImpl {
                         imagesUrl.add(fileService.save(it))
                     }
 
+                    val v = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+                    val z = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                        Date.from(
+                            Date().toInstant().atZone(
+                                ZoneId.of("Europe/Moscow")
+                            ).toInstant()
+                        )
+                    )
+
                     val item = Product(
                         id = UUID.randomUUID().toString(),
                         images = imagesUrl,
                         title = product.title,
-                        updated = SimpleDateFormat("dd/M/yyyy hh:mm:ss").format(Date()).toString(),
+                        updated = LocalDateTime.parse(z, v ),
                         characteristic = charact,
                         firstSub = product.firstSub,
                         secondSub = product.secondSub,
@@ -413,10 +434,6 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
-    override fun getCharactSort(level: String): List<Characteristic> {
-        return productsRepository.getThirdLevelSort(level)
-    }
-
     override fun getProducts(
         countCard: Int,
         page: Int,
@@ -428,6 +445,7 @@ class ProductService: ProductsRepositoryImpl {
         stockEmpty: Boolean?,
         stockFull: Boolean?,
         isSellByPromo: Boolean?,
+        searchQuery: String?,
     ): PagingResponse<ProductsLightResponse>? {
         return try {
             val sort = when (filter) {
@@ -456,10 +474,18 @@ class ProductService: ProductsRepositoryImpl {
                 stockEmpty = stockEmpty,
                 stockFull = stockFull,
                 categoryId = categoryId,
-                isSell = isSellByPromo
+                isSell = isSellByPromo,
+                searchQuery = searchQuery
             )
 
-            val maxPricePage = productsRepository.getMaxPrice()
+            val maxPricePage = productsRepository.getMaxPrice(
+                brand = brand?.brand,
+                stockEmpty = stockEmpty,
+                stockFull = stockFull,
+                categoryId = categoryId,
+                isSell = isSellByPromo,
+                searchQuery = searchQuery
+            )
 
             val light = mutableListOf<ProductsLightResponse>()
 
@@ -582,8 +608,6 @@ class ProductService: ProductsRepositoryImpl {
         return try {
             val temp = productsRepository.findById(id).get()
 
-            println("ZXC ${temp.images}")
-
             val product = Product(
                 id = id,
                 images = temp.images,
@@ -598,6 +622,45 @@ class ProductService: ProductsRepositoryImpl {
                 sellPrice = temp.sellPrice,
                 stock = temp.stock + stock,
                 percent = temp.percent
+            )
+
+            productsRepository.deleteById(id)
+
+            productsRepository.save(product)
+
+            ServiceResponse(
+                data = listOf(productsRepository.findById(id).get()),
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception){
+            ServiceResponse(
+                data = null,
+                message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun changeProductArchive(id: String, archive: Boolean, token: String): ServiceResponse<Product>? {
+        return try {
+            val temp = productsRepository.findById(id).get()
+
+            val product = Product(
+                id = id,
+                images = temp.images,
+                updated = temp.updated,
+                title = temp.title,
+                characteristic = temp.characteristic,
+                brand = temp.brand,
+                firstSub = temp.firstSub,
+                secondSub = temp.secondSub,
+                thirdSub = temp.thirdSub,
+                price = temp.price,
+                sellPrice = temp.sellPrice,
+                stock = temp.stock,
+                percent = temp.percent,
+                archive = archive
             )
 
             productsRepository.deleteById(id)
@@ -718,6 +781,24 @@ class ProductService: ProductsRepositoryImpl {
 
             ServiceResponse(
                 data = items,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
+            ServiceResponse(
+                data = listOf(),
+                message = "Something went wrong... ${e.message}",
+                status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun getTemplateCharactById(id: String): ServiceResponse<TemplateCharact> {
+        return try {
+            val item = templateCharactRepository.findById(id).get()
+
+            ServiceResponse(
+                data = listOf(item),
                 message = "Success",
                 status = HttpStatus.OK
             )

@@ -11,5 +11,7 @@ data class OrdersProducts (
     @Id
     var id: String = UUID.randomUUID().toString(),
     val productID: String = "",
+    val price: Int? = null,
+    val sellPrice: Int? = null,
     val count: Int = 0
 )

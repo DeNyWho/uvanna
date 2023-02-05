@@ -1,7 +1,6 @@
 package com.example.uvanna.model.response
 
 import com.example.uvanna.jpa.Orders
-import com.example.uvanna.jpa.Product
 import com.example.uvanna.model.orders.OrderConverterNeedPaid
 import kotlinx.serialization.SerialName
 

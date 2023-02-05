@@ -1,12 +1,8 @@
+
 package com.example.uvanna.jpa
 
-import java.time.LocalDate
 import java.time.LocalDateTime
-import javax.persistence.Column
-import javax.persistence.ElementCollection
-import javax.persistence.Entity
-import javax.persistence.Id
-import javax.persistence.Table
+import javax.persistence.*
 
 @Entity
 @Table(name = "Blog")

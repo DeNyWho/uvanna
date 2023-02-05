@@ -1,6 +1,7 @@
 package com.example.uvanna.jpa
 
 import com.example.uvanna.model.OrdersProducts
+import kotlinx.serialization.Contextual
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -32,7 +33,8 @@ data class Orders(
     val products: MutableSet<OrdersProducts> = mutableSetOf<OrdersProducts>(),
     var status: String = "",
     val updated: String = "",
-    val dateCreated: String = "",
+    @Contextual
+    val dateCreated: LocalDateTime = LocalDateTime.now(),
     @Column(nullable = true)
     val deleteTime: LocalDate? = null,
     @Column(nullable = true)

@@ -7,20 +7,22 @@ import com.example.uvanna.service.ImageService
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.crossstore.ChangeSetPersister
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
+import org.springframework.http.*
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
+import javax.servlet.ServletContext
 import javax.servlet.http.HttpServletResponse
+
 
 @RestController
 @CrossOrigin("*")
 @Tag(name = "Images", description = "Images")
 @RequestMapping("/images/")
 class ImageController {
+
+    @Autowired
+    private lateinit var servletContext: ServletContext
 
     @Autowired
     lateinit var imageService: ImageService
@@ -55,17 +57,12 @@ class ImageController {
     }
 
     @GetMapping("{id}")
-    fun getFile(@PathVariable id: String): ResponseEntity<ByteArray?>? {
+    fun getFile(@PathVariable id: String, response: HttpServletResponse) {
         val fileEntityOptional: Optional<Image> = fileService.getImage(id)
-        if (!fileEntityOptional.isPresent) {
-            return ResponseEntity.notFound()
-                .build()
-        }
+        val file = fileEntityOptional.get()
 
-        val fileEntity = fileEntityOptional.get()
-        return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileEntity.id + "\"")
-            .contentType(MediaType.valueOf(MediaType.IMAGE_PNG_VALUE))
-            .body(fileEntity.image)
+        response.contentType = MediaType.valueOf(MediaType.IMAGE_PNG_VALUE).toString()
+        response.outputStream.write(file.image!!)
+        response.outputStream.close()
     }
 }

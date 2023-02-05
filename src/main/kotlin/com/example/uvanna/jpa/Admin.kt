@@ -5,9 +5,12 @@ import javax.persistence.Id
 import javax.persistence.Table
 
 @Entity
-@Table(name = "Brands")
-data class ProductBrands(
+@Table(name = "Admins")
+data class Admins(
     @Id
     var id: String = "",
-    val title: String = ""
+    val login: String = "",
+    val password: String = "",
+    val token: String = ""
+
 )

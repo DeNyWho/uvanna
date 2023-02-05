@@ -12,15 +12,28 @@ import org.springframework.stereotype.Repository
 @Repository
 interface ProductsRepository: JpaRepository<Product, String> {
 
-    @Query("Select max(p.price) From Product p ")
-    fun getMaxPrice(): Int
+    @Query("Select max(p.price) From Product p where ((:brand) is null or p.brand in (:brand))" +
+            " and (:stockEmpty is null or :stockEmpty is true and p.stock = 0 or :stockEmpty is false)" +
+            " and (:stockFull is null or :stockFull is true and p.stock > 0 or :stockFull is false)" +
+            " and (:categoryId is null or p.thirdSub = :categoryId or p.secondSub = :categoryId or p.firstSub = :categoryId)" +
+            " and (:isSell is null or p.sellPrice is not null or p.sellPrice > 0)" +
+            " and (:searchQuery is null or upper(p.title) like concat('%', upper(:searchQuery), '%'))")
+    fun getMaxPrice(
+        brand: List<String?>?,
+        stockEmpty: Boolean?,
+        stockFull: Boolean?,
+        categoryId: String?,
+        isSell: Boolean?,
+        @Param("searchQuery") searchQuery: String?
+    ): Int
 
     @Query("From Product p where ((:brand) is null or p.brand in (:brand))" +
             " and (:firstPrice is null or p.price between :firstPrice and :secondPrice)" +
             " and (:stockEmpty is null or :stockEmpty is true and p.stock = 0 or :stockEmpty is false)" +
             " and (:stockFull is null or :stockFull is true and p.stock > 0 or :stockFull is false)" +
             " and (:categoryId is null or p.thirdSub = :categoryId or p.secondSub = :categoryId or p.firstSub = :categoryId)" +
-            " and (:isSell is null or p.sellPrice is not null or p.sellPrice > 0)")
+            " and (:isSell is null or p.sellPrice is not null or p.sellPrice > 0)" +
+            " and (:searchQuery is null or upper(p.title) like concat('%', upper(:searchQuery), '%'))")
     fun findAllBy(
         pageable: Pageable,
         brand: List<String?>?,
@@ -29,7 +42,8 @@ interface ProductsRepository: JpaRepository<Product, String> {
         stockEmpty: Boolean?,
         stockFull: Boolean?,
         categoryId: String?,
-        isSell: Boolean?
+        isSell: Boolean?,
+        @Param("searchQuery") searchQuery: String?
     ): Page<Product>
 
     @Query("select p From Product p where :category = p.firstSub or :category = p.secondSub or :category = p.thirdSub")

@@ -52,6 +52,8 @@ interface ProductsRepository: JpaRepository<Product, String> {
     @Query("select p from Product p where :productId <> p.id  order by random()")
     fun findProductsByRandom(pageable: Pageable, productId: String): Page<Product>
 
+    fun findProductByCharacteristicIn(pageable: Pageable, @Param("characteristic") characteristic: List<Characteristic>): List<Product>
+
     @Query("select v from Product v where upper(v.title) like concat('%', upper(?1), '%')")
     fun findByTitleSearch(pageable: Pageable, @Param("title") title: String): Page<Product>
 

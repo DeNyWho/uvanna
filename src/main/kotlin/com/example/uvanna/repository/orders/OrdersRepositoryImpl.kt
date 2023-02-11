@@ -1,6 +1,8 @@
 package com.example.uvanna.repository.orders
 
 import com.example.uvanna.jpa.Orders
+import com.example.uvanna.jpa.Services
+import com.example.uvanna.model.orders.ServiceRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import org.springframework.stereotype.Repository
@@ -24,4 +26,7 @@ interface OrdersRepositoryImpl {
     fun changeOrderStatus(id: String, status: String, token: String): ServiceResponse<Orders>
     fun deleteFile(id: String, files: List<String>, token: String): ServiceResponse<String>
     fun addFile(id: String, files: List<MultipartFile>, token: String): ServiceResponse<String>?
+    fun addServices(services: List<ServiceRequest>, token: String, id: String): ServiceResponse<Orders>?
+    fun editServices(services: List<ServiceRequest>, token: String, id: String): ServiceResponse<Orders>?
+    fun deleteServices(token: String, id: String): ServiceResponse<Orders>?
 }

@@ -11,4 +11,5 @@ data class ProductRequest(
     val sellPrice: Int? = null,
     var charactTitle: List<String> = listOf(),
     var charactData: List<String> = listOf(),
+    val archive: Boolean = false,
 )

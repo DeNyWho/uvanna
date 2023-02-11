@@ -51,6 +51,7 @@ class CatalogController {
         }
     }
 
+
     @DeleteMapping
     fun deleteCategory(
         @RequestParam id: String,

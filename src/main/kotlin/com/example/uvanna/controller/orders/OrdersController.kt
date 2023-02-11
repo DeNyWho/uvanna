@@ -1,6 +1,7 @@
 package com.example.uvanna.controller.orders
 
 import com.example.uvanna.jpa.Orders
+import com.example.uvanna.model.orders.ServiceRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.OrderService
@@ -102,6 +103,47 @@ class OrdersController {
              orderService.getOrdersList(token = token, filter = filter, pageNum = pageNum, pageSize = pageSize)
         } catch (e: ChangeSetPersister.NotFoundException) {
             PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @PostMapping("{id}/pdf/services")
+    fun addServices(
+        @PathVariable id: String,
+        @RequestHeader (value = "Authorization") token: String,
+        @RequestBody serviceRequest: List<ServiceRequest>,
+        response: HttpServletResponse
+    ): ServiceResponse<Orders>? {
+        return try {
+            orderService.addServices(services = serviceRequest, token = token, id = id)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @PostMapping("{id}/pdf/services/edit")
+    fun editServices(
+        @PathVariable id: String,
+        @RequestHeader (value = "Authorization") token: String,
+        @RequestBody serviceRequest: List<ServiceRequest>,
+        response: HttpServletResponse
+    ): ServiceResponse<Orders>? {
+        return try {
+            orderService.editServices(services = serviceRequest, token = token, id = id)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
+    @DeleteMapping("{id}/pdf/services")
+    fun deleteServices(
+        @PathVariable id: String,
+        @RequestHeader (value = "Authorization") token: String,
+        response: HttpServletResponse
+    ): ServiceResponse<Orders>? {
+        return try {
+            orderService.deleteServices(token = token, id = id)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
     }
 

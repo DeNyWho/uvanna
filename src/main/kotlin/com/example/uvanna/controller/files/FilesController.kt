@@ -26,7 +26,6 @@ class FilesController {
             return ResponseEntity.notFound()
                 .build()
         }
-        println("ФАЙЛА НЕТ ФАЙЛА НЕТ ALERT")
 
         val fileEntity = fileEntityOptional.get()
         return ResponseEntity.ok()

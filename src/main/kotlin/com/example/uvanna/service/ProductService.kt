@@ -112,6 +112,7 @@ class ProductService: ProductsRepositoryImpl {
                         brand = product.brand,
                         sellPrice = product.sellPrice,
                         price = product.price,
+                        archive = product.archive
                     )
 
                     productsRepository.deleteById(id)
@@ -194,7 +195,8 @@ class ProductService: ProductsRepositoryImpl {
                         stock = product.stock,
                         brand = product.brand,
                         price = product.price,
-                        sellPrice = null
+                        sellPrice = null,
+                        archive = product.archive
                     )
 
                     productsRepository.save(item)
@@ -366,7 +368,8 @@ class ProductService: ProductsRepositoryImpl {
                         title = product.title,
                         imageUrls = product.images,
                         price = product.price,
-                        sellPrice = product.sellPrice
+                        sellPrice = product.sellPrice,
+                        archive = product.archive
                     )
                 )
             }
@@ -416,7 +419,8 @@ class ProductService: ProductsRepositoryImpl {
                         title = it.title,
                         imageUrls = it.images,
                         price = it.price,
-                        sellPrice = it.sellPrice
+                        sellPrice = it.sellPrice,
+                        archive = it.archive
                     )
                 )
             }
@@ -497,7 +501,8 @@ class ProductService: ProductsRepositoryImpl {
                         imageUrls = it.images,
                         price = it.price,
                         stock = it.stock,
-                        sellPrice = it.sellPrice
+                        sellPrice = it.sellPrice,
+                        archive = it.archive
                     )
                 )
             }
@@ -557,7 +562,8 @@ class ProductService: ProductsRepositoryImpl {
                         imageUrls = it.images,
                         price = it.price,
                         stock = it.stock,
-                        sellPrice = it.sellPrice
+                        sellPrice = it.sellPrice,
+                        archive = it.archive
                     )
                 )
             }
@@ -621,7 +627,8 @@ class ProductService: ProductsRepositoryImpl {
                 price = temp.price,
                 sellPrice = temp.sellPrice,
                 stock = temp.stock + stock,
-                percent = temp.percent
+                percent = temp.percent,
+                archive = temp.archive
             )
 
             productsRepository.deleteById(id)
@@ -642,9 +649,12 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
+
     override fun changeProductArchive(id: String, archive: Boolean, token: String): ServiceResponse<Product>? {
         return try {
             val temp = productsRepository.findById(id).get()
+
+            println(temp.images)
 
             val product = Product(
                 id = id,

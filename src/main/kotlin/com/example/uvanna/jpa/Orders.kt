@@ -31,6 +31,12 @@ data class Orders(
     )
     @Column(nullable = true)
     val products: MutableSet<OrdersProducts> = mutableSetOf<OrdersProducts>(),
+    @OneToMany(
+        fetch = FetchType.EAGER,
+        cascade = [CascadeType.DETACH, CascadeType.PERSIST, CascadeType.REFRESH]
+    )
+    @Column(nullable = true)
+    val servicesPdf: MutableSet<Services> = mutableSetOf(),
     var status: String = "",
     val updated: String = "",
     @Contextual
@@ -45,6 +51,16 @@ data class Orders(
 ) {
     fun addProducts(product: OrdersProducts): Orders {
         products.add(product)
+        return this
+    }
+
+    fun addServicesPdf(service: Services): Orders {
+        servicesPdf.add(service)
+        return this
+    }
+
+    fun removeServicesPdf(): Orders {
+        servicesPdf.clear()
         return this
     }
 

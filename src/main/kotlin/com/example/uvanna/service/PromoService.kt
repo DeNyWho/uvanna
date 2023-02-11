@@ -350,7 +350,8 @@ class PromoService: PromoRepositoryImpl {
                         imageUrls = it.images,
                         price = it.price,
                         stock = it.stock,
-                        sellPrice = it.sellPrice
+                        sellPrice = it.sellPrice,
+                        archive = it.archive
                     )
                 )
             }

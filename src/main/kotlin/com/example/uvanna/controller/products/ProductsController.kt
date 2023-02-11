@@ -1,5 +1,6 @@
 package com.example.uvanna.controller.products
 
+import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.jpa.TemplateCharact

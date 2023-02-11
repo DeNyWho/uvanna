@@ -32,5 +32,5 @@ data class Product(
     @Column(nullable = true)
     var percent: Int? = null,
     @Column(nullable = true)
-    var archive: Boolean = false
+    var archive: Boolean? = false
 )

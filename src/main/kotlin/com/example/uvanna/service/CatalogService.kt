@@ -50,10 +50,25 @@ class CatalogService: CatalogRepositoryImpl {
         if (firstCatalog) {
             val catalog = catalogRepository.findById(id).get()
 
+            val firstSub = catalog.sub.sortedBy { it.title }.toMutableSet()
+            val secondSub = mutableListOf<CatalogSecond>()
+
+            firstSub.forEach { catalogSecond ->
+                secondSub.add(
+                    CatalogSecond(
+                        id = catalogSecond.id,
+                        level = catalogSecond.level,
+                        title = catalogSecond.title,
+                        sub = catalogSecond.sub.sortedBy { it.title }.toMutableSet(),
+                        imageUrl = catalogSecond.imageUrl,
+                    )
+                )
+            }
+
             return CategoryFirst(
                 id = catalog.id!!,
                 title = catalog.title!!,
-                sub = catalog.sub,
+                sub = secondSub.sortedBy { it.title }.toMutableSet(),
                 imageUrl = catalog.imageUrl,
                 level = catalog.level
             )
@@ -61,12 +76,41 @@ class CatalogService: CatalogRepositoryImpl {
 
         if (secondCatalog) {
             val catalog = catalogSecondRepository.findById(id).get()
-            return catalogRepository.findUpper(catalog)
+            val catalogTemp = catalogRepository.findUpper(catalog)
+            val secondSub = mutableListOf<CatalogSecond>()
+            val firstSub = catalogTemp.sub.sortedBy { it.title }.toMutableSet()
+
+            firstSub.forEach { catalogSecond ->
+                secondSub.add(
+                    CatalogSecond(
+                        id = catalogSecond.id,
+                        level = catalogSecond.level,
+                        title = catalogSecond.title,
+                        sub = catalogSecond.sub.sortedBy { it.title }.toMutableSet(),
+                        imageUrl = catalogSecond.imageUrl,
+                    )
+                )
+            }
+
+            return CategoryFirst(
+                id = catalogTemp.id!!,
+                title = catalogTemp.title!!,
+                sub = secondSub.sortedBy { it.title }.toMutableSet(),
+                imageUrl = catalogTemp.imageUrl,
+                level = catalogTemp.level
+            )
         }
 
         if (thirdCatalog) {
             val catalog = catalogThirdRepository.findById(id).get()
-            return catalogSecondRepository.findUpper(catalog)
+            val b = catalogSecondRepository.findUpper(catalog)
+            return CatalogSecond(
+                id = b.id,
+                level = b.level,
+                title = b.title,
+                sub = b.sub.sortedBy { it.title }.toMutableSet(),
+                imageUrl = b.imageUrl,
+            )
         }
 
         return false
@@ -82,10 +126,25 @@ class CatalogService: CatalogRepositoryImpl {
             if (firstCatalog) {
                 val catalog = catalogRepository.findById(id).get()
 
+                val firstSub = catalog.sub.sortedBy { it.title }.toMutableSet()
+                val secondSub = mutableListOf<CatalogSecond>()
+
+                firstSub.forEach { catalogSecond ->
+                    secondSub.add(
+                        CatalogSecond(
+                            id = catalogSecond.id,
+                            level = catalogSecond.level,
+                            title = catalogSecond.title,
+                            sub = catalogSecond.sub.sortedBy { it.title }.toMutableSet(),
+                            imageUrl = catalogSecond.imageUrl,
+                        )
+                    )
+                }
+
                 return CategoryFirst(
                     id = catalog.id!!,
                     title = catalog.title!!,
-                    sub = catalog.sub,
+                    sub = secondSub.sortedBy { it.title }.toMutableSet(),
                     imageUrl = catalog.imageUrl,
                     level = catalog.level
                 )
@@ -97,7 +156,7 @@ class CatalogService: CatalogRepositoryImpl {
                 return CategorySecond(
                     id = catalog.id!!,
                     title = catalog.title!!,
-                    sub = catalog.sub,
+                    sub = catalog.sub.sortedBy { it.title }.toMutableSet(),
                     imageUrl = catalog.imageUrl,
                     level = catalog.level
                 )
@@ -107,10 +166,41 @@ class CatalogService: CatalogRepositoryImpl {
 
                 val catalog = catalogThirdRepository.findById(id).get()
 
-                return CategoryThird(id = catalog.id!!, title = catalog.title!!, level = catalog.level, imageUrl = catalog.imageUrl)
+                return CategoryThird(
+                    id = catalog.id!!,
+                    title = catalog.title!!,
+                    level = catalog.level,
+                    imageUrl = catalog.imageUrl
+                )
             }
         } else {
-            return catalogRepository.findAll()
+            val catalogsTemp = catalogRepository.findAll()
+            val catalogs = mutableListOf<CatalogFirst>()
+
+            catalogsTemp.forEach { catalogFirst ->
+                val secondSub = mutableListOf<CatalogSecond>()
+                catalogFirst.sub.forEach { catalogSecond ->
+                    secondSub.add(
+                        CatalogSecond(
+                            id = catalogSecond.id,
+                            level = catalogSecond.level,
+                            title = catalogSecond.title,
+                            sub = catalogSecond.sub.sortedBy { it.title }.toMutableSet(),
+                            imageUrl = catalogSecond.imageUrl,
+                        )
+                    )
+                }
+                catalogs.add(
+                    CatalogFirst(
+                        id = catalogFirst.id,
+                        level = catalogFirst.level,
+                        imageUrl = catalogFirst.imageUrl,
+                        sub = secondSub.sortedBy { it.title }.toMutableSet(),
+                        title = catalogFirst.title
+                    )
+                )
+            }
+            return catalogs.sortedBy { it.title }
         }
 
         return false
@@ -265,7 +355,9 @@ class CatalogService: CatalogRepositoryImpl {
                 if (catalogSecond) {
                     try {
                         val temp = catalogSecondRepository.findById(id).get()
-                        catalogSecondRepository.deleteById(id)
+
+                        val first = catalogRepository.findUpper(temp)
+                        first.deleteFromSecondLevel(temp)
 
                         fileService.deleteByUrl(temp.imageUrl)
 
@@ -277,7 +369,14 @@ class CatalogService: CatalogRepositoryImpl {
                             level = temp.level
                         )
 
+                        first.addToSecondLevel(catalogSecondRepository.save(catalog))
+
+                        catalogRepository.deleteById(first.id!!)
+
+                        catalogSecondRepository.deleteById(id)
+
                         catalogSecondRepository.save(catalog)
+                        catalogRepository.save(first)
 
                         count = count + 1
                     } catch (e: Exception) {
@@ -288,7 +387,11 @@ class CatalogService: CatalogRepositoryImpl {
                 if (catalogThird) {
                     try {
                         val temp = catalogThirdRepository.findById(id).get()
-                        catalogThirdRepository.deleteById(id)
+
+                        val second = catalogSecondRepository.findUpper(temp)
+                        val first = catalogRepository.findUpper(second)
+
+                        second.deleteFromThirdLevel(temp)
 
                         fileService.deleteByUrl(temp.imageUrl)
 
@@ -299,7 +402,15 @@ class CatalogService: CatalogRepositoryImpl {
                             level = temp.level
                         )
 
+                        second.addToThirdLevel(catalogThirdRepository.save(catalog))
+
+                        catalogRepository.deleteById(first.id!!)
+                        catalogSecondRepository.deleteById(second.id!!)
+                        catalogThirdRepository.deleteById(id)
+
                         catalogThirdRepository.save(catalog)
+                        catalogSecondRepository.save(second)
+                        catalogRepository.save(first)
 
                         count = count + 1
                     } catch (e: Exception){

@@ -1,8 +1,10 @@
 package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Orders
+import com.example.uvanna.jpa.Services
 import com.example.uvanna.model.orders.OrderConverterNeedPaid
 import com.example.uvanna.model.orders.OrderConverterPaid
+import com.example.uvanna.model.orders.ServiceRequest
 import com.example.uvanna.model.payment.*
 import com.example.uvanna.model.payment.receipt.Customer
 import com.example.uvanna.model.payment.receipt.Items
@@ -10,6 +12,7 @@ import com.example.uvanna.model.request.payment.ReceiptRequest
 import com.example.uvanna.model.response.*
 import com.example.uvanna.repository.orders.OrdersRepository
 import com.example.uvanna.repository.orders.OrdersRepositoryImpl
+import com.example.uvanna.repository.orders.ServiceRepository
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.util.CheckUtil
 import io.ktor.client.*
@@ -49,6 +52,9 @@ class OrderService: OrdersRepositoryImpl {
 
     @Autowired
     lateinit var productsRepository: ProductsRepository
+
+    @Autowired
+    lateinit var serviceRepository: ServiceRepository
 
     @Autowired
     lateinit var emailService: EmailService
@@ -250,6 +256,130 @@ class OrderService: OrdersRepositoryImpl {
         paid = false
     )
 
+    override fun addServices(services: List<ServiceRequest>, token: String, id: String): ServiceResponse<Orders>? {
+        val check = checkUtil.checkToken(token)
+        return if (check) {
+            try {
+                val order = ordersRepository.findById(id).get()
+                if(order.servicesPdf.size > 0 ){
+                    order.removeServicesPdf()
+                }
+
+                services.forEach {
+                    val service = Services(
+                        serviceName = it.serviceName,
+                        count = it.count,
+                        price = it.price
+                    )
+                    val temp = serviceRepository.save(service)
+                    order.addServicesPdf(temp)
+                }
+
+                ordersRepository.deleteById(order.id)
+                ordersRepository.save(order)
+
+                ServiceResponse(
+                    data = listOf(order),
+                    message = "Success",
+                    status = HttpStatus.OK
+                )
+
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = null,
+                    message = e.message.toString(),
+                    status = HttpStatus.BAD_REQUEST
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+
+    }
+
+    override fun editServices(services: List<ServiceRequest>, token: String, id: String): ServiceResponse<Orders>? {
+        val check = checkUtil.checkToken(token)
+        return if (check) {
+            try {
+                val order = ordersRepository.findById(id).get()
+
+                if(order.servicesPdf.size > 0 ){
+                    order.removeServicesPdf()
+                }
+
+                services.forEach {
+                    val service = Services(
+                        serviceName = it.serviceName,
+                        count = it.count,
+                        price = it.price
+                    )
+                    val temp = serviceRepository.save(service)
+                    order.addServicesPdf(temp)
+                }
+
+                ordersRepository.findById(order.id)
+                ordersRepository.save(order)
+
+                ServiceResponse(
+                    data = listOf(order),
+                    message = "Success",
+                    status = HttpStatus.BAD_REQUEST
+                )
+
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = null,
+                    message = e.message.toString(),
+                    status = HttpStatus.BAD_REQUEST
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+
+    }
+
+    override fun deleteServices(token: String, id: String): ServiceResponse<Orders>? {
+        val check = checkUtil.checkToken(token)
+        return if (check) {
+            try {
+                val order = ordersRepository.findById(id).get()
+
+                if(order.servicesPdf.size > 0 ){
+                    order.removeServicesPdf()
+                }
+
+                ServiceResponse(
+                    data = listOf(order),
+                    message = "Success",
+                    status = HttpStatus.BAD_REQUEST
+                )
+
+            } catch (e: Exception) {
+                ServiceResponse(
+                    data = null,
+                    message = e.message.toString(),
+                    status = HttpStatus.BAD_REQUEST
+                )
+            }
+        } else {
+            ServiceResponse(
+                data = null,
+                message = "Unexpected token",
+                status = HttpStatus.UNAUTHORIZED
+            )
+        }
+
+    }
+
     override fun getOrdersList(
         filter: String?,
         pageNum: Int,
@@ -414,6 +544,7 @@ class OrderService: OrdersRepositoryImpl {
                                 } else {
                                     order.status
                                 },
+                                servicesPdf = order.servicesPdf,
                                 orderFiles = order.orderFiles,
                                 updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
                                     Date.from(
@@ -455,6 +586,7 @@ class OrderService: OrdersRepositoryImpl {
                                 } else {
                                     order.status
                                 },
+                                servicesPdf = order.servicesPdf,
                                 orderFiles = order.orderFiles,
                                 updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
                                     Date.from(
@@ -499,6 +631,7 @@ class OrderService: OrdersRepositoryImpl {
                                 } else {
                                     order.status
                                 },
+                                servicesPdf = order.servicesPdf,
                                 orderFiles = order.orderFiles,
                                 updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
                                     Date.from(
@@ -540,6 +673,7 @@ class OrderService: OrdersRepositoryImpl {
                                 } else {
                                     order.status
                                 },
+                                servicesPdf = order.servicesPdf,
                                 orderFiles = order.orderFiles,
                                 updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
                                     Date.from(
@@ -593,6 +727,7 @@ class OrderService: OrdersRepositoryImpl {
                             paymentSuccess = order.typePayment,
                             products = order.products,
                             status = order.status,
+                            servicesPdf = order.servicesPdf,
                             updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
                                 Date.from(
                                     Date().toInstant().atZone(

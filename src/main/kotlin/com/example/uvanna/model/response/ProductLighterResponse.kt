@@ -6,4 +6,5 @@ data class ProductLighterResponse(
     val imageUrls: List<String>,
     val price: Int,
     val sellPrice: Int?,
+    val archive: Boolean?,
 )

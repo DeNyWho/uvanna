@@ -1,10 +1,12 @@
 package com.example.uvanna.controller.products
 
-import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.jpa.TemplateCharact
 import com.example.uvanna.model.product.Brands
+import com.example.uvanna.model.product.CharacteristicsRequest
+import com.example.uvanna.model.product.Charss
+import com.example.uvanna.model.product.Filters
 import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductLighterResponse
@@ -146,6 +148,19 @@ class ProductsController {
         }
     }
 
+    @GetMapping("filter/{id}")
+    fun getFilters(
+        @PathVariable
+        id: String,
+        response: HttpServletResponse
+    ): ServiceResponse<Filters>{
+        return try {
+            productService.getFilters(id)
+        } catch (e: ChangeSetPersister.NotFoundException) {
+            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+        }
+    }
+
     @GetMapping("character/template/{id}")
     fun getCharacter(
         @PathVariable id: String,
@@ -273,10 +288,11 @@ class ProductsController {
         categoryId: String?,
         productId: String?,
         searchQuery: String?,
+        @RequestBody chars: CharacteristicsRequest?,
         response: HttpServletResponse
     ): PagingResponse<ProductsLightResponse>? {
         return try {
-            productService.getProducts (
+            productService.getProducts(
                 countCard = pageSize,
                 page = pageNum,
                 brand = brands,
@@ -287,7 +303,8 @@ class ProductsController {
                 stockFull = stockFull,
                 categoryId = categoryId,
                 isSellByPromo = isSell,
-                searchQuery = searchQuery
+                searchQuery = searchQuery,
+                characteristics = chars
             )
         } catch (e: ChangeSetPersister.NotFoundException) {
             PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)

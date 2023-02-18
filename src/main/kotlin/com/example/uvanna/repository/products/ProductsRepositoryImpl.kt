@@ -4,6 +4,9 @@ import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.jpa.TemplateCharact
 import com.example.uvanna.model.product.Brands
+import com.example.uvanna.model.product.CharacteristicsRequest
+import com.example.uvanna.model.product.Charss
+import com.example.uvanna.model.product.Filters
 import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductLighterResponse
@@ -55,21 +58,6 @@ interface ProductsRepositoryImpl {
         productId: String?
     ): PagingResponse<ProductsLightResponse>?
 
-
-    fun getProducts(
-        countCard: Int,
-        page: Int,
-        brand: Brands?,
-        smallPrice: Int?,
-        highPrice: Int?,
-        filter: String?,
-        categoryId: String?,
-        stockEmpty: Boolean?,
-        stockFull: Boolean?,
-        isSellByPromo: Boolean?,
-        searchQuery: String?
-    ): PagingResponse<ProductsLightResponse>?
-
     fun getProductsByIds(ids: List<String>): ServiceResponse<ProductLighterResponse>
     fun addProductStock(id: String, stock: Int, token: String): ServiceResponse<Product>?
     fun getProductsIds(): ServiceResponse<String>
@@ -82,4 +70,19 @@ interface ProductsRepositoryImpl {
     fun getTemplateCharact(): ServiceResponse<TemplateCharact>
     fun getTemplateCharactById(id: String): ServiceResponse<TemplateCharact>
     fun changeProductArchive(id: String, archive: Boolean, token: String): ServiceResponse<Product>?
+    fun getFilters(categoryId: String): ServiceResponse<Filters>
+    fun getProducts(
+        countCard: Int,
+        page: Int,
+        brand: Brands?,
+        smallPrice: Int?,
+        highPrice: Int?,
+        filter: String?,
+        categoryId: String?,
+        stockEmpty: Boolean?,
+        stockFull: Boolean?,
+        isSellByPromo: Boolean?,
+        searchQuery: String?,
+        characteristics: CharacteristicsRequest?
+    ): PagingResponse<ProductsLightResponse>?
 }

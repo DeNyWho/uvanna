@@ -51,6 +51,20 @@ class CatalogController {
         }
     }
 
+//    @PostMapping("{id}/swap")
+//    fun swapCategory(
+//        @RequestHeader (value = "Authorization") token: String,
+//        @PathVariable id: String,
+//        swapToId: String,
+//        response: HttpServletResponse
+//    ): ServiceResponse<Any> {
+//        return try {
+//            catalogService.edit(id = id, file = file, title = title, token = token)
+//        } catch (e: ChangeSetPersister.NotFoundException) {
+//            ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
+//        }
+//    }
+
 
     @DeleteMapping
     fun deleteCategory(

@@ -320,6 +320,107 @@ class CatalogService: CatalogRepositoryImpl {
         }
     }
 
+//    override fun swapCategory(categoryId: String, swapToCategory: String, token: String): ServiceResponse<Any> {
+//        val check = checkUtil.checkToken(token)
+//        return if (check) {
+//            val firstCatalog = catalogRepository.findById(categoryId).isPresent
+//            val secondCatalog = catalogSecondRepository.findById(categoryId).isPresent
+//            val thirdCatalog = catalogThirdRepository.findById(categoryId).isPresent
+//
+//            if (firstCatalog) {
+//                return ServiceResponse(
+//                    data = null,
+//                    message = "the 1st level was introduced",
+//                    status = HttpStatus.BAD_REQUEST
+//                )
+//            }
+//
+//            if (secondCatalog) {
+//                val catalog = catalogSecondRepository.findById(categoryId).get()
+//                val catalogTemp = catalogRepository.findUpper(catalog)
+//                val secondSub = mutableListOf<CatalogSecond>()
+//                val firstSwap = catalogRepository.findById(swapToCategory).isPresent
+//                val secondSwap = catalogSecondRepository.findById(swapToCategory).isPresent
+//
+//                if(firstSwap){
+//                    val first = catalogRepository.findById(swapToCategory).get()
+//
+//                    val upper = CatalogFirst(
+//                        id = catalogTemp.id!!,
+//                        title = catalogTemp.title!!,
+//                        sub = secondSub.sortedBy { it.title }.toMutableSet(),
+//                        imageUrl = catalogTemp.imageUrl,
+//                        level = catalogTemp.level
+//                    )
+//
+//                    upper.deleteFromSecondLevel(catalog)
+//
+//                    catalogRepository.deleteById(upper.id!!)
+//                    catalogSecondRepository.deleteById(catalog.id!!)
+//                    catalogRepository.deleteById(first.id!!)
+//                    first.addToSecondLevel(catalog)
+//
+//                    catalogRepository.save(upper)
+//                    catalogRepository.save(first)
+//
+//                    return ServiceResponse(
+//                        data = listOf("Catalog with id = $categoryId swap to id = $swapToCategory"),
+//                        message = "Success",
+//                        status = HttpStatus.OK
+//                    )
+//                }
+//                if(secondSwap){
+//                    val second = catalogSecondRepository.findById(swapToCategory).get()
+//
+//                    val upper = CatalogFirst(
+//                        id = catalogTemp.id!!,
+//                        title = catalogTemp.title!!,
+//                        sub = secondSub.sortedBy { it.title }.toMutableSet(),
+//                        imageUrl = catalogTemp.imageUrl,
+//                        level = catalogTemp.level
+//                    )
+//
+//                    upper.deleteFromSecondLevel(catalog)
+//
+//                    catalogRepository.deleteById(upper.id!!)
+//                    catalogSecondRepository.deleteById(catalog.id!!)
+//                    catalogSecondRepository.deleteById(second.id!!)
+//                    second.addToThirdLevel(
+//                        CatalogThird(
+//                            id = UUID.randomUUID().toString(),
+//                            imageUrl = catalog.imageUrl,
+//                            title = catalog.title
+//                        )
+//                    )
+//
+//                    catalogRepository.save(upper)
+//                    catalogSecondRepository.save(second)
+//
+//                    return ServiceResponse(
+//                        data = listOf("Catalog with id = $categoryId swap to id = $swapToCategory"),
+//                        message = "Success",
+//                        status = HttpStatus.OK
+//                    )
+//                }
+//            }
+//
+//            if (thirdCatalog) {
+//
+//            }
+//            ServiceResponse(
+//                data = null,
+//                message = "Unexpected token",
+//                status = HttpStatus.UNAUTHORIZED
+//            )
+//        } else {
+//            ServiceResponse(
+//                data = null,
+//                message = "Unexpected token",
+//                status = HttpStatus.UNAUTHORIZED
+//            )
+//        }
+//    }
+
     override fun edit(id: String, file: MultipartFile, title: String, token: String): ServiceResponse<Any> {
         val check = checkUtil.checkToken(token)
         return if (check) {

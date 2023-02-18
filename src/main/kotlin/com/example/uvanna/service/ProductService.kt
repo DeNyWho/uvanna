@@ -4,7 +4,11 @@ import com.example.uvanna.jpa.Characteristic
 import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.jpa.TemplateCharact
+import com.example.uvanna.model.PercentageList
 import com.example.uvanna.model.product.Brands
+import com.example.uvanna.model.product.CharacteristicsRequest
+import com.example.uvanna.model.product.Charss
+import com.example.uvanna.model.product.Filters
 import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductLighterResponse
@@ -15,6 +19,7 @@ import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.products.ProductsRepositoryImpl
 import com.example.uvanna.repository.products.TemplateCharactRepository
 import com.example.uvanna.util.CheckUtil
+import com.example.uvanna.util.toPage
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.data.domain.Page
@@ -450,6 +455,7 @@ class ProductService: ProductsRepositoryImpl {
         stockFull: Boolean?,
         isSellByPromo: Boolean?,
         searchQuery: String?,
+        characteristics: CharacteristicsRequest?
     ): PagingResponse<ProductsLightResponse>? {
         return try {
             val sort = when (filter) {
@@ -465,31 +471,76 @@ class ProductService: ProductsRepositoryImpl {
                     Sort.Order(Sort.Direction.DESC, "updated")
                 )
 
+                "string" -> null
+
                 else -> null
             }
 
             val pageable: Pageable =
                 if (sort != null) PageRequest.of(page, countCard, sort) else PageRequest.of(page, countCard)
-            val statePage: Page<Product> = productsRepository.findAllBy(
-                pageable = pageable,
-                brand = brand?.brand,
-                firstPrice = smallPrice,
-                secondPrice = highPrice,
-                stockEmpty = stockEmpty,
-                stockFull = stockFull,
-                categoryId = categoryId,
-                isSell = isSellByPromo,
-                searchQuery = searchQuery
-            )
 
-            val maxPricePage = productsRepository.getMaxPrice(
-                brand = brand?.brand,
-                stockEmpty = stockEmpty,
-                stockFull = stockFull,
-                categoryId = categoryId,
-                isSell = isSellByPromo,
-                searchQuery = searchQuery
-            )
+            var maxPricePage = if(characteristics == null){
+                productsRepository.getMaxPrice(
+                    brand = brand?.brand,
+                    stockEmpty = stockEmpty,
+                    stockFull = stockFull,
+                    categoryId = categoryId,
+                    isSell = isSellByPromo,
+                    searchQuery = searchQuery
+                )
+            } else {
+                0
+            }
+            val statePage: Page<Product> = if(characteristics == null){
+                productsRepository.findAllBy(
+                    pageable = pageable,
+                    brand = brand?.brand,
+                    firstPrice = smallPrice,
+                    secondPrice = highPrice,
+                    stockEmpty = stockEmpty,
+                    stockFull = stockFull,
+                    categoryId = categoryId,
+                    isSell = isSellByPromo,
+                    searchQuery = searchQuery
+                )
+            } else {
+                val products = productsRepository.findAllBy(
+                    pageable = pageable,
+                    brand = brand?.brand,
+                    firstPrice = smallPrice,
+                    secondPrice = highPrice,
+                    stockEmpty = stockEmpty,
+                    stockFull = stockFull,
+                    categoryId = categoryId,
+                    isSell = isSellByPromo,
+                    searchQuery = searchQuery
+                ).content
+                val maxPercent = mutableListOf<PercentageList>()
+                val p = mutableListOf<Product>()
+                products.forEachIndexed { index, product ->
+                    val b = mutableListOf<Charss>()
+                    product.characteristic.forEach {
+                        b.add(
+                            Charss(
+                                data = it.data,
+                                title = it.title
+                            )
+                        )
+                    }
+                    val firstSet = HashSet(b)
+                    val secondSet = HashSet(characteristics.characteristics)
+                    firstSet.retainAll(secondSet)
+                    maxPercent.add(PercentageList(firstSet.size, index))
+                }
+                maxPercent.sortBy { it.size }
+                maxPercent.forEach {
+                    if(characteristics.characteristics.size == it.size){
+                        p.add(products[it.index])
+                    }
+                }
+                maxPricePage = p.maxOf { it.price }
+                p.toPage(pageable)
+            }
 
             val light = mutableListOf<ProductsLightResponse>()
 
@@ -799,6 +850,42 @@ class ProductService: ProductsRepositoryImpl {
                 data = listOf(),
                 message = "Something went wrong... ${e.message}",
                 status = HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    override fun getFilters(categoryId: String): ServiceResponse<Filters> {
+        return try {
+            val chars = templateCharactRepository.findById(categoryId).get()
+
+            val filters = mutableListOf<Filters>()
+
+            val products = productsRepository.findAllByCategories(categoryId)
+
+            chars.charact?.forEach { categoryCharacteristic ->
+                val tempFilters = mutableListOf<String>()
+                products.forEach { product ->
+                    product.characteristic.forEach { characteristic ->
+                        if(characteristic.title == categoryCharacteristic) tempFilters.add(characteristic.data)
+                    }
+                }
+                filters.add(
+                    Filters(
+                        title = categoryCharacteristic,
+                        data = tempFilters.distinct()
+                    )
+                )
+            }
+            ServiceResponse(
+                data = filters,
+                message = "Success",
+                status = HttpStatus.OK
+            )
+        } catch (e: Exception) {
+            ServiceResponse(
+                data = listOf(),
+                message = "Category with id = $categoryId not found",
+                status = HttpStatus.NOT_FOUND
             )
         }
     }

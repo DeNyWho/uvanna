@@ -14,29 +14,22 @@ data class Promo(
     val imageUrl: String? = null,
     val dateCreated: LocalDate? = null,
     val dateExpired: LocalDate? = null,
-    @OneToMany(
-        fetch = FetchType.EAGER,
-        cascade = [CascadeType.DETACH, CascadeType.PERSIST, CascadeType.REFRESH]
-    )
+    @ElementCollection
     @Column(nullable = true)
-    var productsPromo: MutableSet<Product> = mutableSetOf()
+    var productsPromo: MutableSet<String> = mutableSetOf()
 ) {
     fun deleteAllPromoProducts(): Promo {
-        productsPromo.forEach {
-            it.sellPrice = null
-            it.percent = null
-        }
         productsPromo.clear()
         return this
     }
 
-    fun addPromoProducts(products: Product): Promo {
-        productsPromo.add(products)
+    fun addPromoProducts(productId: String): Promo {
+        productsPromo.add(productId)
         return this
     }
 
-    fun deletePromoProducts(product: Product): Promo {
-        productsPromo.remove(product)
+    fun deletePromoProducts(productId: String): Promo {
+        productsPromo.remove(productId)
         return this
     }
 }

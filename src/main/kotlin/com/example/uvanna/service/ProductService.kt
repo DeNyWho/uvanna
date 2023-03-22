@@ -6,7 +6,6 @@ import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.jpa.TemplateCharact
 import com.example.uvanna.model.PercentageList
 import com.example.uvanna.model.product.Brands
-import com.example.uvanna.model.product.CharacteristicsRequest
 import com.example.uvanna.model.product.Charss
 import com.example.uvanna.model.product.Filters
 import com.example.uvanna.model.request.product.ProductRequest
@@ -455,8 +454,33 @@ class ProductService: ProductsRepositoryImpl {
         stockFull: Boolean?,
         isSellByPromo: Boolean?,
         searchQuery: String?,
-        characteristics: CharacteristicsRequest?
+        characteristics: Pair<List<String>?, List<String>?>
     ): PagingResponse<ProductsLightResponse>? {
+        var fka = Pair<List<String>?, List<String>?>(first = null, second = null)
+        if(characteristics.first != null) {
+            val first = mutableListOf<String>()
+            characteristics.first!!.forEachIndexed { index, s ->
+                val t = "${s[s.length - 2]}${s.last()}"
+                when {
+                    t == "см" && s.length < 4 -> {
+                        try {
+                            first[index - 1] = "${first[index - 1]} см"
+                        } catch (e: Exception) {
+                            first.add(s.replace(",",""))
+                        }
+                    }
+                    t == "мм" && s.length < 4 -> {
+                        try {
+                            first[index - 1] = "${first[index - 1]} мм"
+                        } catch (e: Exception) {
+                            first.add(s.replace(",",""))
+                        }
+                    }
+                    else -> first.add(s.replace(",",""))
+                }
+            }
+            fka = Pair(first = first, second = characteristics.second)
+        }
         return try {
             val sort = when (filter) {
                 "expensive" -> Sort.by(
@@ -476,10 +500,10 @@ class ProductService: ProductsRepositoryImpl {
                 else -> null
             }
 
-            val pageable: Pageable =
+            var pageable: Pageable =
                 if (sort != null) PageRequest.of(page, countCard, sort) else PageRequest.of(page, countCard)
 
-            var maxPricePage = if(characteristics == null){
+            var maxPricePage = if(characteristics.first == null) {
                 productsRepository.getMaxPrice(
                     brand = brand?.brand,
                     stockEmpty = stockEmpty,
@@ -491,7 +515,7 @@ class ProductService: ProductsRepositoryImpl {
             } else {
                 0
             }
-            val statePage: Page<Product> = if(characteristics == null){
+            val statePage: Page<Product> = if(characteristics.first == null){
                 productsRepository.findAllBy(
                     pageable = pageable,
                     brand = brand?.brand,
@@ -504,6 +528,7 @@ class ProductService: ProductsRepositoryImpl {
                     searchQuery = searchQuery
                 )
             } else {
+                pageable = if (sort != null) PageRequest.of(page, 32765, sort) else PageRequest.of(page, 32765)
                 val products = productsRepository.findAllBy(
                     pageable = pageable,
                     brand = brand?.brand,
@@ -515,6 +540,15 @@ class ProductService: ProductsRepositoryImpl {
                     isSell = isSellByPromo,
                     searchQuery = searchQuery
                 ).content
+                val tc = mutableListOf<Charss>()
+                fka.first!!.forEachIndexed { index, it ->
+                    tc.add(
+                        Charss(
+                            title = it,
+                            data = fka.second!![index]
+                        )
+                    )
+                }
                 val maxPercent = mutableListOf<PercentageList>()
                 val p = mutableListOf<Product>()
                 products.forEachIndexed { index, product ->
@@ -523,18 +557,18 @@ class ProductService: ProductsRepositoryImpl {
                         b.add(
                             Charss(
                                 data = it.data,
-                                title = it.title
+                                title = it.title.replace(",", "")
                             )
                         )
                     }
                     val firstSet = HashSet(b)
-                    val secondSet = HashSet(characteristics.characteristics)
+                    val secondSet = HashSet(tc)
                     firstSet.retainAll(secondSet)
                     maxPercent.add(PercentageList(firstSet.size, index))
                 }
                 maxPercent.sortBy { it.size }
                 maxPercent.forEach {
-                    if(characteristics.characteristics.size == it.size){
+                    if(tc.size == it.size){
                         p.add(products[it.index])
                     }
                 }
@@ -558,7 +592,7 @@ class ProductService: ProductsRepositoryImpl {
                 )
             }
 
-            PagingResponse(
+            return PagingResponse(
                 data = light,
                 totalElements = statePage.totalElements,
                 totalPages = statePage.totalPages,
@@ -865,8 +899,13 @@ class ProductService: ProductsRepositoryImpl {
             chars.charact?.forEach { categoryCharacteristic ->
                 val tempFilters = mutableListOf<String>()
                 products.forEach { product ->
+                    println("WWW ${product.id}")
                     product.characteristic.forEach { characteristic ->
-                        if(characteristic.title == categoryCharacteristic) tempFilters.add(characteristic.data)
+                        if(characteristic.title.replace(",","") == categoryCharacteristic.replace(",","")) {
+                            tempFilters.add(characteristic.data)
+                            println(characteristic.title)
+                            println(characteristic.data)
+                        }
                     }
                 }
                 filters.add(

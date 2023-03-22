@@ -2,6 +2,7 @@ package com.example.uvanna.repository.orders
 
 import com.example.uvanna.jpa.Orders
 import com.example.uvanna.jpa.Services
+import com.example.uvanna.model.orders.OrderRequest
 import com.example.uvanna.model.orders.ServiceRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
@@ -20,7 +21,6 @@ interface OrdersRepositoryImpl {
         token: String
     ): PagingResponse<Orders>?
 
-    fun editOrder(id: String, order: Orders, token: String): ServiceResponse<Orders>
     fun scheduleCheckForDelete()
     fun scheduleCheckForMessage()
     fun changeOrderStatus(id: String, status: String, token: String): ServiceResponse<Orders>
@@ -29,4 +29,5 @@ interface OrdersRepositoryImpl {
     fun addServices(services: List<ServiceRequest>, token: String, id: String): ServiceResponse<Orders>?
     fun editServices(services: List<ServiceRequest>, token: String, id: String): ServiceResponse<Orders>?
     fun deleteServices(token: String, id: String): ServiceResponse<Orders>?
+    fun editOrder(id: String, order: OrderRequest, token: String): ServiceResponse<Orders>
 }

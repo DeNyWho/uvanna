@@ -25,7 +25,8 @@ bin/
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-
+env.txt
+app.tar
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/

@@ -4,6 +4,7 @@ import com.example.uvanna.jpa.Promo
 import com.example.uvanna.model.request.promo.PromoProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductsLightResponse
+import com.example.uvanna.model.response.PromoResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.PromoService
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -70,7 +71,7 @@ class PromoController {
     fun getPromo(
         @PathVariable id: String,
         response: HttpServletResponse
-    ): ServiceResponse<Promo>? {
+    ): ServiceResponse<PromoResponse>? {
         return try {
             promoService.getPromo(id)
         } catch (e: ChangeSetPersister.NotFoundException) {

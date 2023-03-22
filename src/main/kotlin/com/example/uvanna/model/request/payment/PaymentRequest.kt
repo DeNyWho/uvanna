@@ -1,15 +1,23 @@
 package com.example.uvanna.model.request.payment
 
-import com.example.uvanna.model.payment.Amount
-import com.example.uvanna.model.payment.Confirmation
 import com.example.uvanna.model.payment.receipt.Receipt
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class PaymentRequest(
-    val amount: Amount = Amount(),
-    val confirmation: Confirmation = Confirmation(),
-    val capture: Boolean = true,
-    val test: Boolean = true,
-    val receipt: Receipt = Receipt()
+    @SerialName("TerminalKey")
+    val terminalKey: String = "TinkoffBankTest",
+    @SerialName("Amount")
+    val amount: Int = 0,
+    @SerialName("OrderId")
+    val orderID: String = "",
+    @SerialName("Description")
+    val description: String = "",
+    @SerialName("DATA")
+    val data: DataRequest = DataRequest(),
+    @SerialName("Receipt")
+    val receipt: Receipt = Receipt(),
+    @SerialName("SuccessURL")
+    val successURL: String = ""
 )

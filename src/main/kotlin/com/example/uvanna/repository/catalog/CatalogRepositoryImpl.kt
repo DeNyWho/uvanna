@@ -19,5 +19,5 @@ interface CatalogRepositoryImpl {
     ): ServiceResponse<String>
 
     fun edit(id: String, file: MultipartFile, title: String, token: String): ServiceResponse<Any>
-//    fun swapCategory(categoryId: String, swapToCategory: String, token: String): ServiceResponse<Any>
+    fun swapCategory(categoryId: String, swapToCategory: String, token: String): ServiceResponse<Any>
 }

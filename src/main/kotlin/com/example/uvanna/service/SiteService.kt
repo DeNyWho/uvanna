@@ -309,7 +309,7 @@ class SiteService: SiteRepositoryImpl {
         }
     }
 
-    override fun createBanner(pcImage: MultipartFile, mobileImage: MultipartFile, token: String): ServiceResponse<MainBanner> {
+    override fun createBanner(pcImage: MultipartFile, mobileImage: MultipartFile, token: String, url: String): ServiceResponse<MainBanner> {
         return try {
             val check = checkUtil.checkToken(token)
 
@@ -321,7 +321,8 @@ class SiteService: SiteRepositoryImpl {
                     val item = MainBanner(
                         id = UUID.randomUUID().toString(),
                         imageMobileUrl = imageMobileUrl,
-                        imagePCUrl = imagePcUrl
+                        imagePCUrl = imagePcUrl,
+                        url = url
                     )
 
                     bannerRepository.save(item)
@@ -354,7 +355,13 @@ class SiteService: SiteRepositoryImpl {
         }
     }
 
-   override fun editBanner(id: String, pcImage: MultipartFile, mobileImage: MultipartFile, token: String): ServiceResponse<MainBanner> {
+    override fun editBanner(
+        id: String,
+        url: String,
+        pcImage: MultipartFile,
+        mobileImage: MultipartFile,
+        token: String
+    ): ServiceResponse<MainBanner> {
         return try {
             val check = checkUtil.checkToken(token)
 
@@ -373,7 +380,8 @@ class SiteService: SiteRepositoryImpl {
                     val item = MainBanner(
                         id = id,
                         imageMobileUrl = imageMobileUrl,
-                        imagePCUrl = imagePcUrl
+                        imagePCUrl = imagePcUrl,
+                        url = url
                     )
 
                     bannerRepository.save(item)

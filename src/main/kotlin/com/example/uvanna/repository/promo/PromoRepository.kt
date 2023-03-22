@@ -11,6 +11,4 @@ import org.springframework.stereotype.Repository
 @Repository
 interface PromoRepository: JpaRepository<Promo, String> {
 
-    @Query("Select p.productsPromo from Promo p where p.id = :id")
-    fun getProducts(id: String, pageable: Pageable): Page<Product>
 }

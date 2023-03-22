@@ -1,20 +1,18 @@
 package com.example.uvanna.model.payment.receipt
 
-import com.example.uvanna.model.payment.Amount
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Items(
-    @SerialName("description")
-    val description: String = "Покупка на сайте U Vanna",
-    @SerialName("amount")
-    val amount: Amount = Amount(
-        value = "",
-        currency = "RUB"
-    ),
-    @SerialName("vat_code")
-    val vatCode: Int? = null,
-    @SerialName("quantity")
-    val quantity: String = ""
+    @SerialName("Name")
+    val name: String = "РўРѕРІР°СЂ UVanna.store",
+    @SerialName("Price")
+    val price: Int = 0,
+    @SerialName("Quantity")
+    val quantity: Int = 0,
+    @SerialName("Amount")
+    val amount: Int = 0,
+    @SerialName("Tax")
+    val tax: String = "none",
 )

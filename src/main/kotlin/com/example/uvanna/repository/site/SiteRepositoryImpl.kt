@@ -36,11 +36,12 @@ interface SiteRepositoryImpl {
     fun deleteBanner(id: String, token: String): ServiceResponse<MainBanner>
     fun editBanner(
         id: String,
+        url: String,
         pcImage: MultipartFile,
         mobileImage: MultipartFile,
         token: String
     ): ServiceResponse<MainBanner>
 
-    fun createBanner(pcImage: MultipartFile, mobileImage: MultipartFile, token: String): ServiceResponse<MainBanner>
+    fun createBanner(pcImage: MultipartFile, mobileImage: MultipartFile, token: String, url: String): ServiceResponse<MainBanner>
     fun getBannersAll(): ServiceResponse<MainBanner>
 }

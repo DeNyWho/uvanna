@@ -5,7 +5,6 @@ import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.jpa.TemplateCharact
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.product.CharacteristicsRequest
-import com.example.uvanna.model.product.Charss
 import com.example.uvanna.model.product.Filters
 import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
@@ -288,7 +287,8 @@ class ProductsController {
         categoryId: String?,
         productId: String?,
         searchQuery: String?,
-        @RequestBody chars: CharacteristicsRequest?,
+        @RequestParam charsTitle: List<String>?,
+        @RequestParam charsData: List<String>?,
         response: HttpServletResponse
     ): PagingResponse<ProductsLightResponse>? {
         return try {
@@ -304,7 +304,7 @@ class ProductsController {
                 categoryId = categoryId,
                 isSellByPromo = isSell,
                 searchQuery = searchQuery,
-                characteristics = chars
+                characteristics = Pair(first = charsTitle, second = charsData)
             )
         } catch (e: ChangeSetPersister.NotFoundException) {
             PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)

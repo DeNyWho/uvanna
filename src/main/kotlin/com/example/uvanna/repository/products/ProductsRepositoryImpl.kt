@@ -4,8 +4,6 @@ import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.jpa.TemplateCharact
 import com.example.uvanna.model.product.Brands
-import com.example.uvanna.model.product.CharacteristicsRequest
-import com.example.uvanna.model.product.Charss
 import com.example.uvanna.model.product.Filters
 import com.example.uvanna.model.request.product.ProductRequest
 import com.example.uvanna.model.response.PagingResponse
@@ -83,6 +81,6 @@ interface ProductsRepositoryImpl {
         stockFull: Boolean?,
         isSellByPromo: Boolean?,
         searchQuery: String?,
-        characteristics: CharacteristicsRequest?
+        characteristics: Pair<List<String>?, List<String>?>
     ): PagingResponse<ProductsLightResponse>?
 }

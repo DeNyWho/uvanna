@@ -17,7 +17,6 @@ data class OrderConverterPaid(
     val recipient: Recipient,
     @SerialName("created_at")
     val created_at: String,
-    val test: Boolean,
     @SerialName("paid")
     val paid: Boolean,
 )

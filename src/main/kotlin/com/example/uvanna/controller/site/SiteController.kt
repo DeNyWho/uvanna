@@ -32,6 +32,7 @@ class SiteController {
     fun createBanner(
         @RequestPart("imagePC") pcImage: MultipartFile,
         @RequestPart("imageMobile") mobileImage: MultipartFile,
+        @RequestParam(required = false) url: String,
         @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<MainBanner> {
@@ -39,6 +40,7 @@ class SiteController {
             siteService.createBanner (
                 pcImage = pcImage,
                 mobileImage = mobileImage,
+                url = url,
                 token = token
             )
         } catch (e: ChangeSetPersister.NotFoundException) {
@@ -75,6 +77,7 @@ class SiteController {
         @PathVariable id: String,
         @RequestPart("imagePC") pcImage: MultipartFile,
         @RequestPart("imageMobile") mobileImage: MultipartFile,
+        @RequestParam(required = false) url: String,
         @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<MainBanner> {
@@ -83,6 +86,7 @@ class SiteController {
                 id = id,
                 pcImage = pcImage,
                 mobileImage = mobileImage,
+                url = url,
                 token = token
             )
         } catch (e: ChangeSetPersister.NotFoundException) {

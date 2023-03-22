@@ -9,6 +9,7 @@ import com.example.uvanna.model.payment.Recipient
 import com.example.uvanna.model.payment.receipt.Customer
 import com.example.uvanna.model.payment.receipt.Items
 import com.example.uvanna.model.payment.receipt.Receipt
+import com.example.uvanna.model.request.payment.DataRequest
 import com.example.uvanna.model.request.payment.PaymentDataRequest
 import com.example.uvanna.model.request.payment.PaymentRequest
 import com.example.uvanna.model.request.payment.ProductsRequestsing
@@ -45,11 +46,11 @@ import java.util.*
 @Service
 class PaymentService: PaymentRepositoryImpl {
 
-    @Value("\${payment_key}")
-    lateinit var paymentKey: String
+    @Value("\${TerminalKey}")
+    lateinit var terminalKey: String
 
-    @Value("\${payment_shop}")
-    lateinit var paymentShop: String
+    @Value("\${TerminalPassword}")
+    lateinit var terminalPassword: String
 
     @Autowired
     lateinit var productsRepository: ProductsRepository
@@ -63,17 +64,7 @@ class PaymentService: PaymentRepositoryImpl {
     @Autowired
     lateinit var emailService: EmailService
 
-    var c: PaymentResponse = PaymentResponse(
-        id = "",
-        status = "",
-        amount = Amount(),
-        recipient = Recipient(),
-        created_at = "",
-        confirmation = ConfirmationWithToken(),
-        test = "",
-        paid = "",
-        refundable = ""
-    )
+    var c: PaymentResponse = PaymentResponse()
 
     override fun createNewPayment(ordersProducts: List<ProductsRequestsing>, paymentDataRequest: PaymentDataRequest): Any  {
         if (paymentDataRequest.typePayment == "beznal") {
@@ -92,7 +83,7 @@ class PaymentService: PaymentRepositoryImpl {
                 }
             }
 
-            var price = 0.0
+            var price = 0
             ordersProducts.forEach {
                 val product = productsRepository.findById(it.product).get()
                 val temp = if(product.sellPrice != null) product.sellPrice else product.price
@@ -112,13 +103,10 @@ class PaymentService: PaymentRepositoryImpl {
                 val product = productsRepository.findById(it.product).get()
                 items.add(
                     Items(
-                        description = product.title,
-                        amount = Amount(
-                            value = if(product.sellPrice == null) "${product.price}" else "${product.sellPrice}",
-                            currency = "RUB"
-                        ),
-                        quantity = "${it.count}",
-                        vatCode = 1
+                        name = product.title,
+                        price = product.price,
+                        amount = product.price * it.count,
+                        quantity = it.count
                     )
                 )
             }
@@ -128,35 +116,32 @@ class PaymentService: PaymentRepositoryImpl {
                 val f = client.post {
                     headers {
                         contentType(ContentType.Application.Json)
-                        append("Idempotence-Key", UUID.randomUUID().toString())
-                        append(Authorization, Credentials.basic(paymentShop, paymentKey))
                     }
                     setBody(
                         PaymentRequest(
-                            amount = Amount(value = price.toString(), currency = "RUB"),
-                            confirmation = Confirmation(
-                                type = "redirect",
-                                return_url = "https://uvanna.store/order/orderCreated?code=$v"
-                            ),
-                            capture = true,
-                            test = true,
+                            terminalKey = terminalKey,
+                            description = "Покупка на сайте Uvanna.store",
+                            orderID = id,
+                            amount = "${price}00".toInt(),
+                            successURL = "https://uvanna.store/order/orderCreated?code=$v",
                             receipt = Receipt(
-                                customer = Customer(
-                                    email = paymentDataRequest.email,
-                                    phone = paymentDataRequest.phone,
-                                ),
+                                email = paymentDataRequest.email,
+                                phone = paymentDataRequest.phone,
                                 items = items
+                            ),
+                            data = DataRequest(
+                                email = paymentDataRequest.email,
+                                phone = paymentDataRequest.phone
                             )
                         )
                     )
                     url {
                         protocol = URLProtocol.HTTPS
-                        host = "api.yookassa.ru/v3/payments"
+                        host = "securepay.tinkoff.ru/v2/Init"
                     }
                 }.body<PaymentResponse>()
 
                 c = f
-                c.metadata = null
 
                 val r = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
                 val z = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
@@ -166,6 +151,20 @@ class PaymentService: PaymentRepositoryImpl {
                         ).toInstant()
                     )
                 )
+
+                val b = mutableListOf<OrdersProducts>()
+                ordersProducts.forEach {
+                    b.add(
+                        ordersProductsRepository.save(
+                            OrdersProducts(
+                                productID = it.product,
+                                count = it.count,
+                                sellPrice = productsRepository.findById(it.product).get().sellPrice,
+                                price = productsRepository.findById(it.product).get().price
+                            )
+                        )
+                    )
+                }
 
                 withContext(Dispatchers.IO) {
                     val order = Orders(
@@ -177,7 +176,8 @@ class PaymentService: PaymentRepositoryImpl {
                         dateCreated = LocalDateTime.parse(z, r ),
                         email = paymentDataRequest.email,
                         paymentSuccess = false.toString(),
-                        price = price,
+                        price = price.toDouble(),
+                        products = b.toMutableSet(),
                         updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
                             Date.from(
                                 Date().toInstant().atZone(
@@ -187,29 +187,12 @@ class PaymentService: PaymentRepositoryImpl {
                         ).toString(),
                         typeDelivery = paymentDataRequest.typeDelivery,
                         typePayment = paymentDataRequest.typePayment,
-                        paymentID = c.id,
+                        paymentID = c.paymentId,
                         code = v,
                         status = "заказ требует оплаты"
                     )
+
                     ordersRepository.save(order)
-
-                    val tempOrder = ordersRepository.findById(id).get()
-
-                    ordersProducts.forEach {
-                        tempOrder.addProducts(
-                            ordersProductsRepository.save(
-                                OrdersProducts(
-                                    productID = it.product,
-                                    count = it.count,
-                                    sellPrice = productsRepository.findById(it.product).get().sellPrice,
-                                    price = productsRepository.findById(it.product).get().price
-                                )
-                            )
-                        )
-                    }
-
-                    ordersRepository.deleteById(id)
-                    ordersRepository.save(tempOrder)
                 }
             }
 
@@ -241,6 +224,19 @@ class PaymentService: PaymentRepositoryImpl {
                     ).toInstant()
                 )
             )
+            val b = mutableListOf<OrdersProducts>()
+            ordersProducts.forEach {
+                b.add(
+                    ordersProductsRepository.save(
+                        OrdersProducts(
+                            productID = it.product,
+                            count = it.count,
+                            sellPrice = productsRepository.findById(it.product).get().sellPrice,
+                            price = productsRepository.findById(it.product).get().price
+                        )
+                    )
+                )
+            }
 
             val vxc = Orders(
                 id = id,
@@ -259,34 +255,17 @@ class PaymentService: PaymentRepositoryImpl {
                         ).toInstant()
                     )
                 ).toString(),
+                products = b.toMutableSet(),
                 typeDelivery = paymentDataRequest.typeDelivery,
                 typePayment = paymentDataRequest.typePayment,
-                paymentID = c.id,
+                paymentID = c.paymentId,
                 code = v,
                 status = "Заказ сформирован"
             )
 
             ordersRepository.save(vxc)
 
-            val tempOrder = ordersRepository.findById(id).get()
-
-            ordersProducts.forEach {
-                tempOrder.addProducts(
-                    ordersProductsRepository.save(
-                        OrdersProducts(
-                            productID = it.product,
-                            count = it.count,
-                            sellPrice = productsRepository.findById(it.product).get().sellPrice,
-                            price = productsRepository.findById(it.product).get().price
-                        )
-                    )
-                )
-            }
-
-            ordersRepository.deleteById(id)
-            ordersRepository.save(tempOrder)
-
-            emailService.sendNewOrderMessage(paymentInfo = ordersRepository.findById(tempOrder.id).get())
+            emailService.sendNewOrderMessage(paymentInfo = ordersRepository.findById(vxc.id).get())
 
             return ordersRepository.findById(id)
         }

@@ -1,6 +1,7 @@
 package com.example.uvanna.controller.orders
 
 import com.example.uvanna.jpa.Orders
+import com.example.uvanna.model.orders.OrderRequest
 import com.example.uvanna.model.orders.ServiceRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ServiceResponse
@@ -75,7 +76,7 @@ class OrdersController {
     @PostMapping("edit/{id}")
     fun editOrder(
         @PathVariable id: String,
-        orders: Orders,
+        @RequestBody orders: OrderRequest,
         @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<Any> {

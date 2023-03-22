@@ -5,8 +5,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Receipt(
-    @SerialName("customer")
-    val customer: Customer = Customer(),
-    @SerialName("items")
+    @SerialName("Email")
+    val email: String = "",
+    @SerialName("Phone")
+    val phone: String = "",
+    @SerialName("Taxation")
+    val taxation: String = "usn_income",
+    @SerialName("Items")
     val items: List<Items> = listOf(),
 )

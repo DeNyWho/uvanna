@@ -18,7 +18,6 @@ data class OrderConverterNeedPaid(
     val created_at: String,
     @SerialName("confirmation")
     val confirmation: ConfirmationRedirect,
-    val test: Boolean,
     @SerialName("paid")
     val paid: Boolean,
     @SerialName("refundable")

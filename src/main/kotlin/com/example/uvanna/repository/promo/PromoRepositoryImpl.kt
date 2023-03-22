@@ -4,12 +4,13 @@ import com.example.uvanna.jpa.Promo
 import com.example.uvanna.model.request.promo.PromoProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductsLightResponse
+import com.example.uvanna.model.response.PromoResponse
 import com.example.uvanna.model.response.ServiceResponse
 import org.springframework.web.multipart.MultipartFile
 
 interface PromoRepositoryImpl {
 
-    fun getPromo(id: String): ServiceResponse<Promo>
+    fun getPromo(id: String): ServiceResponse<PromoResponse>
 
     fun getPromos(pageSize: Int, pageNum: Int): PagingResponse<Promo>
 

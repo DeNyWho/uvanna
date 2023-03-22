@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository
 interface ProductsRepository: JpaRepository<Product, String> {
 
     @Query("Select max(p.price) From Product p where ((:brand) is null or p.brand in (:brand))" +
+            " and (p.archive = false or p.archive is null)" +
             " and (:stockEmpty is null or :stockEmpty is true and p.stock = 0 or :stockEmpty is false)" +
             " and (:stockFull is null or :stockFull is true and p.stock > 0 or :stockFull is false)" +
             " and (:categoryId is null or p.thirdSub = :categoryId or p.secondSub = :categoryId or p.firstSub = :categoryId)" +
@@ -28,6 +29,7 @@ interface ProductsRepository: JpaRepository<Product, String> {
     ): Int
 
     @Query("From Product p where ((:brand) is null or p.brand in (:brand))" +
+            " and (p.archive = false or p.archive is null)" +
             " and (:firstPrice is null or p.price between :firstPrice and :secondPrice)" +
             " and (:stockEmpty is null or :stockEmpty is true and p.stock = 0 or :stockEmpty is false)" +
             " and (:stockFull is null or :stockFull is true and p.stock > 0 or :stockFull is false)" +
@@ -48,6 +50,12 @@ interface ProductsRepository: JpaRepository<Product, String> {
 
     @Query("select p From Product p where :category = p.firstSub or :category = p.secondSub or :category = p.thirdSub")
     fun findAllByCategories(category: String): List<Product>
+
+    @Query("select p From Product p where :category = p.secondSub")
+    fun findAllBySecondCategory(category: String): List<Product>
+
+    @Query("select p From Product p where :category = p.thirdSub")
+    fun findAllByThirdCategory(category: String): List<Product>
 
     @Query("select p from Product p where :productId <> p.id  order by random()")
     fun findProductsByRandom(pageable: Pageable, productId: String): Page<Product>

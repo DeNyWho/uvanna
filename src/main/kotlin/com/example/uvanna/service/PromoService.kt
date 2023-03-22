@@ -1,14 +1,17 @@
 package com.example.uvanna.service
 
+import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.Promo
 import com.example.uvanna.model.request.promo.PromoProductRequest
 import com.example.uvanna.model.response.PagingResponse
 import com.example.uvanna.model.response.ProductsLightResponse
+import com.example.uvanna.model.response.PromoResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.products.ProductsRepository
 import com.example.uvanna.repository.promo.PromoRepository
 import com.example.uvanna.repository.promo.PromoRepositoryImpl
 import com.example.uvanna.util.CheckUtil
+import com.example.uvanna.util.toPage
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -100,8 +103,9 @@ class PromoService: PromoRepositoryImpl {
                     val product = productsRepository.findById(it.product).get()
                     product.percent = it.percent
                     product.sellPrice = if (product.price * (it.percent /100) == 0 ) null else product.price * (it.percent /100)
+                    productsRepository.deleteById(it.product)
                     productsRepository.save(product)
-                    promo.addPromoProducts(productsRepository.findById(it.product).get())
+                    promo.addPromoProducts(it.product)
                 }
 
                 promoRepository.save(promo)
@@ -179,10 +183,28 @@ class PromoService: PromoRepositoryImpl {
         }
     }
 
-    override fun getPromo(id: String): ServiceResponse<Promo>{
+    override fun getPromo(id: String): ServiceResponse<PromoResponse>{
         return try {
+            val promo = promoRepository.findById(id).get()
+
+            val products = mutableListOf<Product>()
+
+            promo.productsPromo.forEach {
+                products.add(productsRepository.findById(it).get())
+            }
+
+            val finalPromo = PromoResponse(
+                id = promo.id,
+                title = promo.title,
+                description = promo.description,
+                dateCreated = promo.dateCreated,
+                dateExpired = promo.dateExpired,
+                imageUrl = promo.imageUrl,
+                productPromo = products
+            )
+
             ServiceResponse(
-                data = listOf(promoRepository.findById(id).get()),
+                data = listOf(finalPromo),
                 message = "Success",
                 status = HttpStatus.OK
             )
@@ -263,13 +285,22 @@ class PromoService: PromoRepositoryImpl {
             try {
                 val promo = promoRepository.findById(id).get()
                 return try {
+                    promo.productsPromo.forEach {
+                        val product = productsRepository.findById(it).get()
+                        product.percent = null
+                        product.sellPrice = null
+                        productsRepository.deleteById(product.id)
+                        productsRepository.save(product)
+                    }
                     promo.deleteAllPromoProducts()
 
                     productsIds.forEach {
                         val product = productsRepository.findById(it.product).get()
                         product.percent = it.percent
                         product.sellPrice = if(product.price - (product.price * (it.percent.toDouble() / 100.00)).toInt() == 0) null else product.price - (product.price * (it.percent.toDouble() / 100.00)).toInt()
-                        promo.addPromoProducts(productsRepository.findById(it.product).get())
+                        productsRepository.deleteById(it.product)
+                        productsRepository.save(product)
+                        promo.addPromoProducts(it.product)
                     }
                     promoRepository.deleteById(id)
                     promoRepository.save(promo)
@@ -311,6 +342,14 @@ class PromoService: PromoRepositoryImpl {
                 val temp = promoRepository.findById(id).get()
                 fileService.deleteByUrl(temp.imageUrl)
 
+                temp.productsPromo.forEach {
+                    val product = productsRepository.findById(it).get()
+                    product.percent = null
+                    product.sellPrice = null
+                    productsRepository.deleteById(product.id)
+                    productsRepository.save(product)
+                }
+
                 temp.deleteAllPromoProducts()
 
                 promoRepository.deleteById(id)
@@ -339,8 +378,14 @@ class PromoService: PromoRepositoryImpl {
     override fun getProductPromo(page: Int, countCard: Int, id: String): PagingResponse<ProductsLightResponse> {
         return try {
             val pageable: Pageable = PageRequest.of(page, countCard)
-            val statePage = promoRepository.getProducts(id, pageable)
+            val promo = promoRepository.findById(id).get()
+            val products = mutableListOf<Product>()
+            promo.productsPromo.forEach {
+                products.add(productsRepository.findById(it).get())
+            }
             val light = mutableListOf<ProductsLightResponse>()
+
+            val statePage = products.toPage(pageable)
 
             statePage.content.forEach {
                 light.add(

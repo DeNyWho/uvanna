@@ -5,6 +5,8 @@ package com.example.uvanna.jpa
 import com.example.uvanna.util.LocalDateTimeSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import org.hibernate.annotations.LazyCollection
+import org.hibernate.annotations.LazyCollectionOption
 import java.time.LocalDateTime
 import java.util.*
 import javax.persistence.*
@@ -15,16 +17,17 @@ import javax.persistence.*
 data class Product(
     @Id
     var id: String = UUID.randomUUID().toString(),
-    @ElementCollection
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @ElementCollection(fetch = FetchType.EAGER)
     var images: List<String> = mutableListOf(),
     val updated: LocalDateTime = LocalDateTime.now(),
     val title: String = "",
     @OneToMany(cascade = [CascadeType.ALL])
     var characteristic: List<Characteristic> = mutableListOf(),
     val brand: String = "",
-    val firstSub: String = "",
-    val secondSub: String = "",
-    val thirdSub: String = "",
+    var firstSub: String = "",
+    var secondSub: String = "",
+    var thirdSub: String = "",
     val price: Int = 0,
     @Column(nullable = true)
     var sellPrice: Int? = null,

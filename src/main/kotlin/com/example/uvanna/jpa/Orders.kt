@@ -30,7 +30,7 @@ data class Orders(
         cascade = [CascadeType.DETACH, CascadeType.PERSIST, CascadeType.REFRESH]
     )
     @Column(nullable = true)
-    val products: MutableSet<OrdersProducts> = mutableSetOf<OrdersProducts>(),
+    var products: MutableSet<OrdersProducts> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
         cascade = [CascadeType.DETACH, CascadeType.PERSIST, CascadeType.REFRESH]
@@ -51,6 +51,11 @@ data class Orders(
 ) {
     fun addProducts(product: OrdersProducts): Orders {
         products.add(product)
+        return this
+    }
+
+    fun removeAllProducts(): Orders {
+        products.clear()
         return this
     }
 

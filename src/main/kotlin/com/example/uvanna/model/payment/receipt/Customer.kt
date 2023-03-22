@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 data class Customer(
     @SerialName("email")
     val email: String = "",
-    @SerialName("phone")
-    val phone: String = "",
+    @SerialName("full_name")
+    val fullName: String = "",
+//    @SerialName("phone")
+//    val phone: String = "",
 )

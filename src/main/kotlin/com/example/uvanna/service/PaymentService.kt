@@ -104,8 +104,8 @@ class PaymentService: PaymentRepositoryImpl {
                 items.add(
                     Items(
                         name = product.title,
-                        price = product.price,
-                        amount = product.price * it.count,
+                        price = "${product.price}00".toInt(),
+                        amount = if(product.sellPrice == null) "${product.price * it.count}00".toInt() else "${product.sellPrice!! * it.count}00".toInt(),
                         quantity = it.count
                     )
                 )

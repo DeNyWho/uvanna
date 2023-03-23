@@ -101,8 +101,8 @@ class PromoService: PromoRepositoryImpl {
 
                 products.forEach {
                     val product = productsRepository.findById(it.product).get()
-                    product.percent = it.percent
-                    product.sellPrice = if (product.price * (it.percent /100) == 0 ) null else product.price * (it.percent /100)
+                    product.percent = null
+                    product.sellPrice = it.price
                     productsRepository.deleteById(it.product)
                     productsRepository.save(product)
                     promo.addPromoProducts(it.product)
@@ -296,8 +296,8 @@ class PromoService: PromoRepositoryImpl {
 
                     productsIds.forEach {
                         val product = productsRepository.findById(it.product).get()
-                        product.percent = it.percent
-                        product.sellPrice = if(product.price - (product.price * (it.percent.toDouble() / 100.00)).toInt() == 0) null else product.price - (product.price * (it.percent.toDouble() / 100.00)).toInt()
+                        product.percent = null
+                        product.sellPrice = it.price
                         productsRepository.deleteById(it.product)
                         productsRepository.save(product)
                         promo.addPromoProducts(it.product)

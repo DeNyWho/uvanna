@@ -711,7 +711,7 @@ class ProductService: ProductsRepositoryImpl {
                 thirdSub = temp.thirdSub,
                 price = temp.price,
                 sellPrice = temp.sellPrice,
-                stock = temp.stock + stock,
+                stock = stock,
                 percent = temp.percent,
                 archive = temp.archive
             )

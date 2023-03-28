@@ -10,6 +10,7 @@ import com.example.uvanna.model.orders.ServiceRequest
 import com.example.uvanna.model.payment.*
 import com.example.uvanna.model.payment.receipt.Customer
 import com.example.uvanna.model.payment.receipt.Items
+import com.example.uvanna.model.request.credit.CreditRequest
 import com.example.uvanna.model.request.payment.ReceiptRequest
 import com.example.uvanna.model.response.*
 import com.example.uvanna.repository.orders.OrdersProductsRepository
@@ -29,7 +30,9 @@ import io.ktor.http.*
 import io.ktor.http.ContentType.Application.Json
 import io.ktor.serialization.kotlinx.cbor.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.Credentials
 import org.springframework.beans.factory.annotation.Autowired
@@ -47,6 +50,7 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.annotation.Resource
 
@@ -74,11 +78,14 @@ class OrderService: OrdersRepositoryImpl {
     @Value("\${TerminalPassword}")
     lateinit var terminalPassword: String
 
-    @Value("\${payment_key}")
-    lateinit var paymentKey: String
+    @Value("\${shopIDCredit}")
+    lateinit var shopIDCredit: String
 
-    @Value("\${payment_shop}")
-    lateinit var paymentShop: String
+    @Value("\${showCaseIDCredit}")
+    lateinit var showCaseIDCredit: String
+
+    @Value("\${shopPasswordCredit}")
+    lateinit var shopPasswordCredit: String
 
     @Resource
     private lateinit var checkUtil: CheckUtil
@@ -284,16 +291,9 @@ class OrderService: OrdersRepositoryImpl {
         }
     }
 
-    var c: OrderConverterNeedPaid? = OrderConverterNeedPaid(
-        id = "",
-        status = "",
-        amount = Amount(),
-        recipient = Recipient(),
-        created_at = "",
-        paid = false,
-        refundable = false,
-        confirmation = ConfirmationRedirect()
-    )
+    var c: CheckStatePaymentResponse = CheckStatePaymentResponse()
+
+    var cr: CreditInfoResponse = CreditInfoResponse()
 
     var l: OrderConverterPaid? = OrderConverterPaid(
         id = "",
@@ -495,6 +495,7 @@ class OrderService: OrdersRepositoryImpl {
     override fun getOrders(id: String): Any {
         return try {
             val order = ordersRepository.findByCode(id).get()
+            checkPaymentAndSentEmail(order)
             try {
                 val products = mutableListOf<ProductsWithCount>()
 
@@ -536,297 +537,6 @@ class OrderService: OrdersRepositoryImpl {
                     ),
                     products = products
                 )
-//                return if (order.typePayment == "beznal") {
-//                    val client = HttpClient {
-//                        expectSuccess = false
-//
-//                        defaultRequest {
-//                            contentType(Json)
-//                        }
-//                        install(ContentNegotiation) {
-//                            json(Json {
-//                                prettyPrint = true
-//                                isLenient = true
-//                                ignoreUnknownKeys = true
-//                            })
-//                        }
-//                        install(Logging) {
-//                            logger = Logger.DEFAULT
-//                            level = LogLevel.ALL
-//                        }
-//                    }
-//
-//                    val products = mutableListOf<ProductsWithCount>()
-//
-//                    order.products.forEach {
-//                        val temp = productsRepository.findById(it.productID).get()
-//                        products.add(
-//                            ProductsWithCount(
-//                                product = temp,
-//                                count = it.count
-//                            )
-//                        )
-//                    }
-//
-//                    runBlocking {
-//                        try {
-//                            val f = client.get {
-//                                headers {
-//                                    contentType(Json)
-//                                    append("Idempotence-Key", UUID.randomUUID().toString())
-//                                    append(HttpHeaders.Authorization, Credentials.basic(paymentShop, paymentKey))
-//                                }
-//                                url {
-//                                    protocol = URLProtocol.HTTPS
-//                                    host = "api.yookassa.ru/v3/payments/${order.paymentID}"
-//                                }
-//                            }.body<OrderConverterNeedPaid>()
-//                            c = f
-//                            l = null
-//                        } catch (e: Exception) {
-//                            c = null
-//                            try {
-//                                val request = client.get {
-//                                    headers {
-//                                        contentType(Json)
-//                                        append("Idempotence-Key", UUID.randomUUID().toString())
-//                                        append(HttpHeaders.Authorization, Credentials.basic(paymentShop, paymentKey))
-//                                    }
-//                                    url {
-//                                        protocol = URLProtocol.HTTPS
-//                                        host = "api.yookassa.ru/v3/payments/${order.paymentID}"
-//                                    }
-//                                }.body<OrderConverterPaid>()
-//                                l = request
-//                            } catch (e: Exception) {
-//                                println("Error = ${e.message}")
-//                            }
-//                        }
-//                    }
-//
-//                    if (c != null) {
-//                        ordersRepository.deleteById(order.id)
-//                        ordersRepository.save(
-//                            Orders(
-//                                id = order.id,
-//                                city = order.city,
-//                                streetFull = order.streetFull,
-//                                fullName = order.fullName,
-//                                phone = order.phone,
-//                                email = order.email,
-//                                typePayment = order.typePayment,
-//                                typeDelivery = order.typeDelivery,
-//                                code = order.code,
-//                                price = order.price,
-//                                paymentID = order.paymentID,
-//                                paymentSuccess = c!!.paid.toString(),
-//                                dateCreated = order.dateCreated,
-//                                products = order.products,
-//                                status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
-//                                    when (c!!.status) {
-//                                        "succeeded" -> "Заказ успешно оплачен"
-//                                        "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-//                                        "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-//                                        else -> "Заказ требует оплаты"
-//                                    }
-//                                } else {
-//                                    order.status
-//                                },
-//                                servicesPdf = order.servicesPdf,
-//                                orderFiles = order.orderFiles,
-//                                updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
-//                                    Date.from(
-//                                        Date().toInstant().atZone(
-//                                            ZoneId.of("Europe/Moscow")
-//                                        ).toInstant()
-//                                    )
-//                                ),
-//                                deleteTime = if (c!!.status == "canceled") {
-//                                    if (order.deleteTime == null)
-//                                        LocalDate.now().plusDays(7) else order.deleteTime
-//                                } else order.deleteTime
-//                            )
-//                        )
-//
-//                        OrderFullResponsePaid(
-//                            order = Orders(
-//                                id = order.id,
-//                                city = order.city,
-//                                streetFull = order.streetFull,
-//                                fullName = order.fullName,
-//                                phone = order.phone,
-//                                email = order.email,
-//                                typePayment = order.typePayment,
-//                                typeDelivery = order.typeDelivery,
-//                                code = order.code,
-//                                price = order.price,
-//                                paymentID = order.paymentID,
-//                                paymentSuccess = c!!.paid.toString(),
-//                                products = order.products,
-//                                dateCreated = order.dateCreated,
-//                                status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
-//                                    when (c!!.status) {
-//                                        "succeeded" -> "Заказ успешно оплачен"
-//                                        "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-//                                        "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-//                                        else -> "Заказ требует оплаты"
-//                                    }
-//                                } else {
-//                                    order.status
-//                                },
-//                                servicesPdf = order.servicesPdf,
-//                                orderFiles = order.orderFiles,
-//                                updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
-//                                    Date.from(
-//                                        Date().toInstant().atZone(
-//                                            ZoneId.of("Europe/Moscow")
-//                                        ).toInstant()
-//                                    )
-//                                ).toString(),
-//                                deleteTime = if (c!!.status == "canceled") {
-//                                    if (order.deleteTime == null)
-//                                        LocalDate.now().plusDays(7) else order.deleteTime
-//                                } else order.deleteTime
-//                            ),
-//                            orderConverterNeedPaid = c!!,
-//                            products = products
-//                        )
-//                    } else if (l != null) {
-//                        ordersRepository.deleteById(order.id)
-//                        ordersRepository.save(
-//                            Orders(
-//                                id = order.id,
-//                                city = order.city,
-//                                streetFull = order.streetFull,
-//                                fullName = order.fullName,
-//                                phone = order.phone,
-//                                email = order.email,
-//                                price = order.price,
-//                                typePayment = order.typePayment,
-//                                typeDelivery = order.typeDelivery,
-//                                code = order.code,
-//                                paymentID = order.paymentID,
-//                                paymentSuccess = l!!.paid.toString(),
-//                                dateCreated = order.dateCreated,
-//                                products = order.products,
-//                                status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
-//                                    when (l!!.status) {
-//                                        "succeeded" -> "Заказ успешно оплачен"
-//                                        "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-//                                        "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-//                                        else -> "Заказ требует оплаты"
-//                                    }
-//                                } else {
-//                                    order.status
-//                                },
-//                                servicesPdf = order.servicesPdf,
-//                                orderFiles = order.orderFiles,
-//                                updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
-//                                    Date.from(
-//                                        Date().toInstant().atZone(
-//                                            ZoneId.of("Europe/Moscow")
-//                                        ).toInstant()
-//                                    )
-//                                ).toString(),
-//                                deleteTime = if (l!!.status == "canceled") {
-//                                    if (order.deleteTime == null)
-//                                        LocalDate.now().plusDays(7) else order.deleteTime
-//                                } else order.deleteTime
-//                            )
-//                        )
-//
-//                        OrderFullResponseNoPaid(
-//                            order = Orders(
-//                                id = order.id,
-//                                city = order.city,
-//                                streetFull = order.streetFull,
-//                                fullName = order.fullName,
-//                                phone = order.phone,
-//                                email = order.email,
-//                                typePayment = order.typePayment,
-//                                typeDelivery = order.typeDelivery,
-//                                code = order.code,
-//                                price = order.price,
-//                                paymentID = order.paymentID,
-//                                paymentSuccess = l!!.paid.toString(),
-//                                products = order.products,
-//                                dateCreated = order.dateCreated,
-//                                status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
-//                                    when (l!!.status) {
-//                                        "succeeded" -> "Заказ успешно оплачен"
-//                                        "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-//                                        "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-//                                        else -> "Заказ требует оплаты"
-//                                    }
-//                                } else {
-//                                    order.status
-//                                },
-//                                servicesPdf = order.servicesPdf,
-//                                orderFiles = order.orderFiles,
-//                                updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
-//                                    Date.from(
-//                                        Date().toInstant().atZone(
-//                                            ZoneId.of("Europe/Moscow")
-//                                        ).toInstant()
-//                                    )
-//                                ).toString(),
-//                                deleteTime = if (l!!.status == "canceled") {
-//                                    if (order.deleteTime == null)
-//                                        LocalDate.now().plusDays(7) else order.deleteTime
-//                                } else order.deleteTime
-//                            ),
-//                            orderConverterPaid = l!!,
-//                            products = products
-//                        )
-//                    } else {
-//                        ServiceResponse<Any>(
-//                            data = listOf(),
-//                            message = "Something went wrong...",
-//                            status = HttpStatus.NOT_FOUND
-//                        )
-//                    }
-//                } else {
-//                    val products = mutableListOf<ProductsWithCount>()
-//
-//                    order.products.forEach {
-//                        val temp = productsRepository.findById(it.productID).get()
-//                        products.add(
-//                            ProductsWithCount(
-//                                product = temp,
-//                                count = it.count
-//                            )
-//                        )
-//                    }
-//                    OrderSmallResponse(
-//                        order = Orders(
-//                            id = order.id,
-//                            city = order.city,
-//                            streetFull = order.streetFull,
-//                            fullName = order.fullName,
-//                            phone = order.phone,
-//                            price = order.price,
-//                            email = order.email,
-//                            typePayment = order.typePayment,
-//                            typeDelivery = order.typeDelivery,
-//                            code = order.code,
-//                            orderFiles = order.orderFiles,
-//                            dateCreated = order.dateCreated,
-//                            paymentID = order.paymentID,
-//                            paymentSuccess = order.typePayment,
-//                            products = order.products,
-//                            status = order.status,
-//                            servicesPdf = order.servicesPdf,
-//                            updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
-//                                Date.from(
-//                                    Date().toInstant().atZone(
-//                                        ZoneId.of("Europe/Moscow")
-//                                    ).toInstant()
-//                                )
-//                            ).toString()
-//                        ),
-//                        products = products
-//                    )
-//                }
             } catch (e: Exception) {
                 ServiceResponse(
                     data = listOf(e),
@@ -846,300 +556,238 @@ class OrderService: OrdersRepositoryImpl {
     override fun scheduleCheckForMessage() {
         try {
             val orders = ordersRepository.findAll()
-
             orders.forEach { order ->
-                println(order)
-                if (order.deleteTime == null && order.paymentSuccess == "false" || order.emailSend == null || order.emailSend == false) {
-                    if (order.typePayment == "beznal") {
-                        val client = HttpClient {
-                            expectSuccess = false
-
-                            defaultRequest {
-                                contentType(Json)
-                            }
-                            install(ContentNegotiation) {
-                                json(Json {
-                                    prettyPrint = true
-                                    isLenient = true
-                                    ignoreUnknownKeys = true
-                                })
-                            }
-                            install(Logging) {
-                                logger = Logger.DEFAULT
-                                level = LogLevel.ALL
-                            }
-                        }
-                        val tokenList = "${order.price.toInt()}Покупка на сайте Uvanna.store${order.id}${terminalPassword}${terminalKey}"
-                        val digest = MessageDigest.getInstance("SHA-256")
-                        val hash = digest.digest(tokenList.toByteArray(StandardCharsets.UTF_8))
-                        val ffd = hash.joinToString("") { "%02x".format(it) }
-
-                        runBlocking {
-                            try {
-                                val f = client.get {
-                                    headers {
-                                        contentType(Json)
-                                        append("Idempotence-Key", UUID.randomUUID().toString())
-                                        append(HttpHeaders.Authorization, Credentials.basic(paymentShop, paymentKey))
-                                    }
-                                    url {
-                                        protocol = URLProtocol.HTTPS
-                                        host = "api.yookassa.ru/v3/payments/${order.paymentID}"
-                                    }
-                                }.body<OrderConverterNeedPaid>()
-                                c = f
-                                l = null
-                            } catch (e: Exception) {
-                                c = null
-                                try {
-                                    val request = client.get {
-                                        headers {
-                                            contentType(Json)
-                                            append("Idempotence-Key", UUID.randomUUID().toString())
-                                            append(
-                                                HttpHeaders.Authorization,
-                                                Credentials.basic(paymentShop, paymentKey)
-                                            )
-                                        }
-                                        url {
-                                            protocol = URLProtocol.HTTPS
-                                            host = "api.yookassa.ru/v3/payments/${order.paymentID}"
-                                        }
-                                    }.body<OrderConverterPaid>()
-                                    l = request
-                                } catch (e: Exception) {
-                                    println("Error = ${e.message}")
-                                }
-                            }
-                        }
-
-                        if (c != null && c!!.status != "pending" && c!!.status != "waiting_for_capture") {
-                            ordersRepository.deleteById(order.id)
-                            if ((c!!.status == "succeeded" && order.emailSend == false) || (order.emailSend == null && c!!.status == "succeeded")) {
-                                emailService.sendOrderMessage(
-                                    paymentInfo = order,
-                                    title = "Заказ успешно оплачен",
-                                    template = "orderPaid"
-                                )
-
-                                val items = mutableListOf<Items>()
-
-//                                order.products.forEach {
-//                                    val product = productsRepository.findById(it.productID).get()
-//                                    items.add(
-//                                        Items(
-//                                            description = product.title,
-//                                            amount = Amount(
-//                                                value = if (product.sellPrice == null) "${product.price}" else "${product.sellPrice}",
-//                                                currency = "RUB"
-//                                            ),
-//                                            quantity = "${it.count}",
-//                                            vatCode = 1
-//                                        )
-//                                    )
-//                                }
-
-                                runBlocking {
-                                    client.post {
-                                        headers {
-                                            contentType(ContentType.Application.Json)
-                                            append("Idempotence-Key", UUID.randomUUID().toString())
-                                            append(
-                                                HttpHeaders.Authorization,
-                                                Credentials.basic(paymentShop, paymentKey)
-                                            )
-                                        }
-                                        setBody(
-                                            ReceiptRequest(
-                                                customer = Customer(
-                                                    email = order.email,
-//                                                    phone = order.phone,
-                                                ),
-                                                items = items,
-                                                settlements = listOf(
-                                                    Settlements(
-                                                        amount = Amount(
-                                                            value = order.price.toInt().toString(),
-                                                            currency = "RUB"
-                                                        )
-                                                    )
-                                                )
-                                            )
-                                        )
-                                        url {
-                                            protocol = URLProtocol.HTTPS
-                                            host = "api.yookassa.ru/v3/receipts"
-                                        }
-                                    }
-                                }
-                            } else if ((c!!.status == "canceled" && order.emailSend == false) || (order.emailSend == null && c!!.status == "canceled")) {
-                                emailService.sendOrderMessage(
-                                    paymentInfo = order,
-                                    title = "Заказ не был оплачен",
-                                    template = "rejected"
-                                )
-                            }
-                            ordersRepository.save(
-                                Orders(
-                                    id = order.id,
-                                    city = order.city,
-                                    streetFull = order.streetFull,
-                                    fullName = order.fullName,
-                                    phone = order.phone,
-                                    email = order.email,
-                                    typePayment = order.typePayment,
-                                    typeDelivery = order.typeDelivery,
-                                    code = order.code,
-                                    price = order.price,
-                                    paymentID = order.paymentID,
-                                    paymentSuccess = c!!.paid.toString(),
-                                    products = order.products,
-                                    dateCreated = order.dateCreated,
-                                    status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
-                                        when (c!!.status) {
-                                            "succeeded" -> "Заказ успешно оплачен"
-                                            "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-                                            "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-                                            else -> "Заказ требует оплаты"
-                                        }
-                                    } else {
-                                        order.status
-                                    },
-                                    orderFiles = order.orderFiles,
-                                    updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
-                                        Date.from(
-                                            Date().toInstant().atZone(
-                                                ZoneId.of("Europe/Moscow")
-                                            ).toInstant()
-                                        )
-                                    ).toString(),
-                                    deleteTime = if (c!!.status == "canceled") {
-                                        if (order.deleteTime == null)
-                                            LocalDate.now().plusDays(7) else order.deleteTime
-                                    } else order.deleteTime,
-                                    emailSend = true
-                                )
-                            )
-                        }
-
-
-
-                        if (l != null && l!!.status != "pending" && l!!.status != "waiting_for_capture") {
-                            ordersRepository.deleteById(order.id)
-                            if ((l!!.status == "succeeded" && order.emailSend == false) || (l!!.status == "succeeded" && order.emailSend == null)) {
-                                emailService.sendOrderMessage(
-                                    paymentInfo = order,
-                                    title = "Заказ успешно оплачен",
-                                    template = "orderPaid"
-                                )
-                                val items = mutableListOf<Items>()
-
-//                                order.products.forEach {
-//                                    val product = productsRepository.findById(it.productID).get()
-//                                    items.add(
-//                                        Items(
-//                                            description = product.title,
-//                                            amount = Amount(
-//                                                value = if (product.sellPrice == null) "${product.price}" else "${product.sellPrice}",
-//                                                currency = "RUB"
-//                                            ),
-//                                            quantity = "${it.count}",
-//                                            vatCode = 1
-//                                        )
-//                                    )
-//                                }
-
-                                runBlocking {
-                                    client.post {
-                                        headers {
-                                            contentType(ContentType.Application.Json)
-                                            append("Idempotence-Key", UUID.randomUUID().toString())
-                                            append(
-                                                HttpHeaders.Authorization,
-                                                Credentials.basic(paymentShop, paymentKey)
-                                            )
-                                        }
-                                        setBody(
-                                            ReceiptRequest(
-                                                paymentId = "${order.paymentID}",
-                                                type = "payment",
-                                                customer = Customer(
-                                                    email = order.email,
-//                                                    phone = order.phone,
-                                                ),
-                                                items = items,
-                                                settlements = listOf(
-                                                    Settlements(
-                                                        type = "cashless",
-                                                        amount = Amount(
-                                                            value = order.price.toInt().toString(),
-                                                            currency = "RUB"
-                                                        )
-                                                    )
-                                                ),
-                                                send = true
-                                            )
-                                        )
-                                        url {
-                                            protocol = URLProtocol.HTTPS
-                                            host = "api.yookassa.ru/v3/receipts"
-                                        }
-                                    }
-                                }
-                            } else if ((l!!.status == "canceled" && order.emailSend == false) || (order.emailSend == null && l!!.status == "canceled")) {
-                                emailService.sendOrderMessage(
-                                    paymentInfo = order,
-                                    title = "Заказ не был оплачен",
-                                    template = "rejected"
-                                )
-                            }
-                            ordersRepository.save(
-                                Orders(
-                                    id = order.id,
-                                    city = order.city,
-                                    streetFull = order.streetFull,
-                                    fullName = order.fullName,
-                                    phone = order.phone,
-                                    email = order.email,
-                                    typePayment = order.typePayment,
-                                    typeDelivery = order.typeDelivery,
-                                    code = order.code,
-                                    dateCreated = order.dateCreated,
-                                    price = order.price,
-                                    paymentID = order.paymentID,
-                                    paymentSuccess = l!!.paid.toString(),
-                                    products = order.products,
-                                    status = if (order.status == "Заказ требует оплаты" || order.status == "Заказ находится на стадии подтверждения платежа") {
-                                        when (l!!.status) {
-                                            "succeeded" -> "Заказ успешно оплачен"
-                                            "canceled" -> "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ)."
-                                            "waiting_for_capture" -> "Заказ находится на стадии подтверждения платежа"
-                                            else -> "Заказ требует оплаты"
-                                        }
-                                    } else {
-                                        order.status
-                                    },
-                                    orderFiles = order.orderFiles,
-                                    updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
-                                        Date.from(
-                                            Date().toInstant().atZone(
-                                                ZoneId.of("Europe/Moscow")
-                                            ).toInstant()
-                                        )
-                                    ).toString(),
-                                    deleteTime = if (l!!.status == "canceled") {
-                                        if (order.deleteTime == null)
-                                            LocalDate.now().plusDays(7) else order.deleteTime
-                                    } else order.deleteTime,
-                                    emailSend = true
-                                )
-                            )
-                        }
-                    }
-                }
+                checkPaymentAndSentEmail(order)
             }
         } catch (e: Exception) {
             println(e)
+        }
+    }
+
+    override fun checkPaymentAndSentEmail(order: Orders) {
+        if (order.deleteTime == null && order.paymentSuccess == "false" || order.emailSend == null || order.emailSend == false) {
+            if (order.typePayment == "beznal") {
+                val client = HttpClient {
+                    expectSuccess = false
+
+                    defaultRequest {
+                        contentType(Json)
+                    }
+                    install(ContentNegotiation) {
+                        json(Json {
+                            prettyPrint = true
+                            isLenient = true
+                            ignoreUnknownKeys = true
+                        })
+                    }
+                    install(Logging) {
+                        logger = Logger.DEFAULT
+                        level = LogLevel.ALL
+                    }
+                }
+                val tokenList = "${order.price.toInt()}Покупка на сайте Uvanna.store${order.id}${terminalPassword}${terminalKey}"
+                val digest = MessageDigest.getInstance("SHA-256")
+                val hash = digest.digest(tokenList.toByteArray(StandardCharsets.UTF_8))
+                val ffd = hash.joinToString("") { "%02x".format(it) }
+
+                runBlocking {
+                    val f = client.post {
+                        headers {
+                            contentType(Json)
+                        }
+                        setBody(
+                            CheckStatePaymentRequest(
+                                terminalKey = terminalKey,
+                                paymentId = order.paymentID!!,
+                                token = ffd
+                            )
+                        )
+                        url {
+                            protocol = URLProtocol.HTTPS
+                            host = "securepay.tinkoff.ru/v2/GetState"
+                        }
+                    }.body<CheckStatePaymentResponse>()
+                    c = f
+                }
+
+                if ((c.status == "CONFIRMED" && order.emailSend == false) || (order.emailSend == null && c.status == "CONFIRMED")) {
+                    emailService.sendOrderMessage(
+                        paymentInfo = order,
+                        title = "Заказ успешно оплачен",
+                        template = "orderPaid"
+                    )
+                    ordersRepository.save(
+                        Orders(
+                            id = order.id,
+                            city = order.city,
+                            streetFull = order.streetFull,
+                            fullName = order.fullName,
+                            phone = order.phone,
+                            email = order.email,
+                            typePayment = order.typePayment,
+                            typeDelivery = order.typeDelivery,
+                            code = order.code,
+                            price = order.price,
+                            paymentID = order.paymentID,
+                            paymentSuccess = true.toString(),
+                            products = order.products,
+                            dateCreated = order.dateCreated,
+                            status = "Заказ успешно оплачен",
+                            orderFiles = order.orderFiles,
+                            updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                                Date.from(
+                                    Date().toInstant().atZone(
+                                        ZoneId.of("Europe/Moscow")
+                                    ).toInstant()
+                                )
+                            ).toString(),
+                            deleteTime = null,
+                            emailSend = true
+                        )
+                    )
+                }
+
+                if ((c.status == "CANCELED" && order.emailSend == false) || (order.emailSend == null && c.status == "CANCELED") || (order.emailSend == null && c.status == "REJECTED") || (c.status == "REJECTED" && order.emailSend == false)) {
+                    emailService.sendOrderMessage(
+                        paymentInfo = order,
+                        title = "Заказ не был оплачен",
+                        template = "rejected"
+                    )
+                    ordersRepository.save(
+                        Orders(
+                            id = order.id,
+                            city = order.city,
+                            streetFull = order.streetFull,
+                            fullName = order.fullName,
+                            phone = order.phone,
+                            email = order.email,
+                            typePayment = order.typePayment,
+                            typeDelivery = order.typeDelivery,
+                            code = order.code,
+                            price = order.price,
+                            paymentID = order.paymentID,
+                            paymentSuccess = false.toString(),
+                            products = order.products,
+                            dateCreated = order.dateCreated,
+                            status = "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ).",
+                            orderFiles = order.orderFiles,
+                            updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                                Date.from(
+                                    Date().toInstant().atZone(
+                                        ZoneId.of("Europe/Moscow")
+                                    ).toInstant()
+                                )
+                            ).toString(),
+                            deleteTime = order.deleteTime ?: LocalDate.now().plusDays(7),
+                            emailSend = true
+                        )
+                    )
+                }
+            }
+            if(order.typePayment == "credit") {
+                val client = HttpClient {
+                    expectSuccess = false
+                    defaultRequest {
+                        contentType(ContentType.Application.Json)
+                    }
+                    install(ContentNegotiation) {
+                        json()
+                    }
+                    install(Logging) {
+                        logger = Logger.DEFAULT
+                        level = LogLevel.ALL
+                    }
+                }
+
+                runBlocking {
+                    val f = client.get {
+                        headers {
+                            contentType(ContentType.Application.Json)
+                        }
+                        basicAuth(
+                            username = showCaseIDCredit,
+                            password = shopPasswordCredit,
+                        )
+                        url {
+                            protocol = URLProtocol.HTTPS
+                            host = "forma.tinkoff.ru/api/partners/v2/orders/${order.paymentID}/info"
+                        }
+                    }.body<CreditInfoResponse>()
+                }
+                if ((cr.status == "signed" && order.emailSend == false) || (order.emailSend == null && cr.status == "signed")) {
+                    emailService.sendOrderMessage(
+                        paymentInfo = order,
+                        title = "Заказ успешно оплачен",
+                        template = "orderPaid"
+                    )
+                    ordersRepository.save(
+                        Orders(
+                            id = order.id,
+                            city = order.city,
+                            streetFull = order.streetFull,
+                            fullName = order.fullName,
+                            phone = order.phone,
+                            email = order.email,
+                            typePayment = order.typePayment,
+                            typeDelivery = order.typeDelivery,
+                            code = order.code,
+                            price = order.price,
+                            paymentID = order.paymentID,
+                            paymentSuccess = true.toString(),
+                            products = order.products,
+                            dateCreated = order.dateCreated,
+                            status = "Заказ успешно оплачен",
+                            orderFiles = order.orderFiles,
+                            updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                                Date.from(
+                                    Date().toInstant().atZone(
+                                        ZoneId.of("Europe/Moscow")
+                                    ).toInstant()
+                                )
+                            ).toString(),
+                            deleteTime = null,
+                            emailSend = true
+                        )
+                    )
+                }
+
+                if ((cr.status == "canceled" && order.emailSend == false) || (order.emailSend == null && cr.status == "canceled") || (order.emailSend == null && cr.status == "rejected") || (cr.status == "rejected" && order.emailSend == false)) {
+                    emailService.sendOrderMessage(
+                        paymentInfo = order,
+                        title = "Заказ не был оплачен",
+                        template = "rejected"
+                    )
+                    ordersRepository.save(
+                        Orders(
+                            id = order.id,
+                            city = order.city,
+                            streetFull = order.streetFull,
+                            fullName = order.fullName,
+                            phone = order.phone,
+                            email = order.email,
+                            typePayment = order.typePayment,
+                            typeDelivery = order.typeDelivery,
+                            code = order.code,
+                            price = order.price,
+                            paymentID = order.paymentID,
+                            paymentSuccess = false.toString(),
+                            products = order.products,
+                            dateCreated = order.dateCreated,
+                            status = "Заказ не был оплачен. Он будет удален через неделю. (Если хотите оплатить этот заказ - сформируйте новый заказ).",
+                            orderFiles = order.orderFiles,
+                            updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                                Date.from(
+                                    Date().toInstant().atZone(
+                                        ZoneId.of("Europe/Moscow")
+                                    ).toInstant()
+                                )
+                            ).toString(),
+                            deleteTime = order.deleteTime ?: LocalDate.now().plusDays(7),
+                            emailSend = true
+                        )
+                    )
+                }
+            }
         }
     }
 

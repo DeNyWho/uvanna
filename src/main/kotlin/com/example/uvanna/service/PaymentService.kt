@@ -2,17 +2,15 @@ package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Orders
 import com.example.uvanna.model.OrdersProducts
-import com.example.uvanna.model.payment.Amount
-import com.example.uvanna.model.payment.Confirmation
-import com.example.uvanna.model.payment.ConfirmationWithToken
-import com.example.uvanna.model.payment.Recipient
-import com.example.uvanna.model.payment.receipt.Customer
 import com.example.uvanna.model.payment.receipt.Items
 import com.example.uvanna.model.payment.receipt.Receipt
+import com.example.uvanna.model.request.credit.CreditItems
+import com.example.uvanna.model.request.credit.CreditRequest
 import com.example.uvanna.model.request.payment.DataRequest
 import com.example.uvanna.model.request.payment.PaymentDataRequest
 import com.example.uvanna.model.request.payment.PaymentRequest
 import com.example.uvanna.model.request.payment.ProductsRequestsing
+import com.example.uvanna.model.response.CreditResponse
 import com.example.uvanna.model.response.PaymentResponse
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.repository.orders.OrdersProductsRepository
@@ -26,12 +24,10 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.http.HttpHeaders.Authorization
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import okhttp3.Credentials
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
@@ -52,6 +48,12 @@ class PaymentService: PaymentRepositoryImpl {
     @Value("\${TerminalPassword}")
     lateinit var terminalPassword: String
 
+    @Value("\${shopIDCredit}")
+    lateinit var shopIDCredit: String
+
+    @Value("\${showCaseIDCredit}")
+    lateinit var showCaseIDCredit: String
+
     @Autowired
     lateinit var productsRepository: ProductsRepository
 
@@ -66,7 +68,9 @@ class PaymentService: PaymentRepositoryImpl {
 
     var c: PaymentResponse = PaymentResponse()
 
-    override fun createNewPayment(ordersProducts: List<ProductsRequestsing>, paymentDataRequest: PaymentDataRequest): Any  {
+    var creditResponse: CreditResponse = CreditResponse()
+
+    override fun createNewPayment(ordersProducts: List<ProductsRequestsing>, paymentDataRequest: PaymentDataRequest): Any {
         if (paymentDataRequest.typePayment == "beznal") {
             val client = HttpClient {
                 expectSuccess = false
@@ -86,7 +90,7 @@ class PaymentService: PaymentRepositoryImpl {
             var price = 0
             ordersProducts.forEach {
                 val product = productsRepository.findById(it.product).get()
-                val temp = if(product.sellPrice != null) product.sellPrice else product.price
+                val temp = if (product.sellPrice != null) product.sellPrice else product.price
                 price = price + (temp!! * it.count)
             }
             var v =
@@ -105,7 +109,7 @@ class PaymentService: PaymentRepositoryImpl {
                     Items(
                         name = product.title,
                         price = "${product.price}00".toInt(),
-                        amount = if(product.sellPrice == null) "${product.price * it.count}00".toInt() else "${product.sellPrice!! * it.count}00".toInt(),
+                        amount = if (product.sellPrice == null) "${product.price * it.count}00".toInt() else "${product.sellPrice!! * it.count}00".toInt(),
                         quantity = it.count
                     )
                 )
@@ -173,7 +177,7 @@ class PaymentService: PaymentRepositoryImpl {
                         streetFull = paymentDataRequest.streetFull,
                         fullName = paymentDataRequest.fullname,
                         phone = paymentDataRequest.phone,
-                        dateCreated = LocalDateTime.parse(z, r ),
+                        dateCreated = LocalDateTime.parse(z, r),
                         email = paymentDataRequest.email,
                         paymentSuccess = false.toString(),
                         price = price.toDouble(),
@@ -199,6 +203,127 @@ class PaymentService: PaymentRepositoryImpl {
             emailService.sendNewOrderMessage(paymentInfo = ordersRepository.findById(id).get())
 
             return c
+        } else if (paymentDataRequest.typePayment == "credit") {
+            val client = HttpClient {
+                expectSuccess = false
+                defaultRequest {
+                    contentType(ContentType.Application.Json)
+                }
+                install(ContentNegotiation) {
+                    json()
+                }
+                install(Logging) {
+                    logger = Logger.DEFAULT
+                    level = LogLevel.ALL
+                }
+            }
+
+            var price = 0
+            ordersProducts.forEach {
+                val product = productsRepository.findById(it.product).get()
+                val temp = if (product.sellPrice != null) product.sellPrice else product.price
+                price = price + (temp!! * it.count)
+            }
+            var v =
+                "${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}-${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}"
+            while (ordersRepository.findByCode(v).isPresent) {
+                v =
+                    "${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}-${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}"
+            }
+            val id = UUID.randomUUID().toString()
+
+            val items = mutableListOf<CreditItems>()
+
+            ordersProducts.forEach {
+                val product = productsRepository.findById(it.product).get()
+                items.add(
+                    CreditItems(
+                        name = product.title,
+                        price = product.price,
+                        quantity = it.count
+                    )
+                )
+            }
+
+
+            runBlocking {
+                val f = client.post {
+                    headers {
+                        contentType(ContentType.Application.Json)
+                    }
+                    setBody(
+                        CreditRequest(
+                            shopId = shopIDCredit,
+                            showcaseId = showCaseIDCredit,
+                            sum = price,
+                            items = items,
+                            successURL = "https://uvanna.store/order/orderCreated?code=$v",
+                            orderID = id
+                        )
+                    )
+                    url {
+                        protocol = URLProtocol.HTTPS
+                        host = "forma.tinkoff.ru/api/partners/v2/orders/create"
+                    }
+                }.body<CreditResponse>()
+
+                creditResponse = f
+
+                val r = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+                val z = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                    Date.from(
+                        Date().toInstant().atZone(
+                            ZoneId.of("Europe/Moscow")
+                        ).toInstant()
+                    )
+                )
+
+                val b = mutableListOf<OrdersProducts>()
+                ordersProducts.forEach {
+                    b.add(
+                        ordersProductsRepository.save(
+                            OrdersProducts(
+                                productID = it.product,
+                                count = it.count,
+                                sellPrice = productsRepository.findById(it.product).get().sellPrice,
+                                price = productsRepository.findById(it.product).get().price
+                            )
+                        )
+                    )
+                }
+
+                withContext(Dispatchers.IO) {
+                    val order = Orders(
+                        id = id,
+                        city = paymentDataRequest.city,
+                        streetFull = paymentDataRequest.streetFull,
+                        fullName = paymentDataRequest.fullname,
+                        phone = paymentDataRequest.phone,
+                        dateCreated = LocalDateTime.parse(z, r),
+                        email = paymentDataRequest.email,
+                        paymentSuccess = false.toString(),
+                        price = price.toDouble(),
+                        products = b.toMutableSet(),
+                        updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
+                            Date.from(
+                                Date().toInstant().atZone(
+                                    ZoneId.of("Europe/Moscow")
+                                ).toInstant()
+                            )
+                        ).toString(),
+                        typeDelivery = paymentDataRequest.typeDelivery,
+                        typePayment = paymentDataRequest.typePayment,
+                        paymentID = creditResponse.id,
+                        code = v,
+                        status = "заказ требует потверждения кредита от банка"
+                    )
+                    ordersRepository.save(order)
+                }
+            }
+
+            emailService.sendNewOrderMessage(paymentInfo = ordersRepository.findById(id).get())
+
+            return creditResponse
         } else {
             var v =
                 "${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}-${(0..9).random()}${(0..9).random()}${(0..9).random()}${(0..9).random()}"
@@ -212,7 +337,7 @@ class PaymentService: PaymentRepositoryImpl {
             var price = 0.0
             ordersProducts.forEach {
                 val product = productsRepository.findById(it.product).get()
-                val temp = if(product.sellPrice != null) product.sellPrice else product.price
+                val temp = if (product.sellPrice != null) product.sellPrice else product.price
                 price = price + (temp!! * it.count)
             }
 
@@ -246,7 +371,7 @@ class PaymentService: PaymentRepositoryImpl {
                 phone = paymentDataRequest.phone,
                 email = paymentDataRequest.email,
                 price = price,
-                dateCreated = LocalDateTime.parse(z, r ),
+                dateCreated = LocalDateTime.parse(z, r),
                 paymentSuccess = false.toString(),
                 updated = SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(
                     Date.from(

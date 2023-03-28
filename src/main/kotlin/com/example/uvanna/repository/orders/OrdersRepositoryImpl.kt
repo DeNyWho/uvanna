@@ -30,4 +30,5 @@ interface OrdersRepositoryImpl {
     fun editServices(services: List<ServiceRequest>, token: String, id: String): ServiceResponse<Orders>?
     fun deleteServices(token: String, id: String): ServiceResponse<Orders>?
     fun editOrder(id: String, order: OrderRequest, token: String): ServiceResponse<Orders>
+    fun checkPaymentAndSentEmail(order: Orders)
 }

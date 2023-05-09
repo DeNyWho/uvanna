@@ -11,4 +11,5 @@ data class PaymentDataRequest(
     val email :String = "",
     val typePayment: String = "",
     val typeDelivery: String = "",
+    val utmMet: String = ""
 )

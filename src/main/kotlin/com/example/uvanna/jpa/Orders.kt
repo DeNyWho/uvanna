@@ -47,7 +47,8 @@ data class Orders(
     val emailSend: Boolean? = null,
     @ElementCollection(fetch = FetchType.EAGER)
     @Column(nullable = true)
-    val orderFiles: MutableSet<String> = mutableSetOf()
+    val orderFiles: MutableSet<String> = mutableSetOf(),
+    val utmMet: String = ""
 ) {
     fun addProducts(product: OrdersProducts): Orders {
         products.add(product)

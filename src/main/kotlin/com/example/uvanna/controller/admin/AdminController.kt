@@ -1,5 +1,6 @@
 package com.example.uvanna.controller.admin
 
+import com.example.uvanna.jpa.Admins
 import com.example.uvanna.model.response.ServiceResponse
 import com.example.uvanna.service.AdminService
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -24,7 +25,7 @@ class AdminController {
         @RequestParam login: String,
         @RequestParam password: String,
         response: HttpServletResponse
-    ): ServiceResponse<String> {
+    ): ServiceResponse<Admins> {
         return try {
             adminService.generateToken(login = login, password = password)
 
@@ -37,7 +38,7 @@ class AdminController {
     fun checkToken(
         @RequestParam token: String,
         response: HttpServletResponse
-    ): ServiceResponse<String>{
+    ): ServiceResponse<Admins>{
         return try {
             adminService.checkToken(token)
 

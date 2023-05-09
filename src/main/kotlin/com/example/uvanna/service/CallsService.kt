@@ -22,6 +22,9 @@ class CallsService {
     @Autowired
     private lateinit var callsRepository: CallsRepository
 
+    @Autowired
+    private lateinit var emailService: EmailService
+
     @Resource
     private lateinit var checkUtil: CheckUtil
 
@@ -38,6 +41,9 @@ class CallsService {
                     phone = call.phone
                 )
             )
+
+            emailService.sendCallMessageUvanna(callsRepository.findById(id).get(), "Новый звонок!")
+
             ServiceResponse(
                 data = listOf(callsRepository.findById(id).get()),
                 message = "Call has been created",

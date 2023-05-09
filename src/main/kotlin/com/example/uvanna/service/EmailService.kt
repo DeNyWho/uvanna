@@ -1,5 +1,6 @@
 package com.example.uvanna.service
 
+import com.example.uvanna.jpa.Calls
 import com.example.uvanna.jpa.Orders
 import com.example.uvanna.repository.email.EmailRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -74,6 +75,18 @@ class EmailService: EmailRepository {
         params["findOrder"] = "https://uvanna.store/order/findOrder?code=${paymentInfo.code}"
 
         sendSimpleMessageUsingTemplate(paymentInfo.email, title, template, params)
+    }
+
+    fun sendOrderMessageUvanna(paymentInfo: Orders, title: String) {
+        sendSimpleMessage("uvannastore@mail.ru", title, "Заказ №${paymentInfo.code} успешно оплачен.")
+    }
+
+    fun sendOrderMessageUvannaNal(paymentInfo: Orders, title: String) {
+        sendSimpleMessage("uvannastore@mail.ru", title, "Заказ №${paymentInfo.code} с наличным расчетом создан.")
+    }
+
+    fun sendCallMessageUvanna(call: Calls, title: String) {
+        sendSimpleMessage("uvannastore@mail.ru", title, "Необходимо позвонить на номер: ${call.phone} Зовут: ${call.name} Дата: ${call.date}")
     }
 
 }

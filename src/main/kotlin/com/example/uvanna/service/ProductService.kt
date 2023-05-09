@@ -25,6 +25,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
+import org.springframework.data.jpa.domain.JpaSort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
@@ -233,22 +234,23 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
-    override fun deleteBrandById(id: String, token: String): ServiceResponse<String> {
+    override fun deleteBrandByTitle(title: String, token: String): ServiceResponse<String> {
         val check = checkUtil.checkToken(token)
 
         return if(check) {
             return try {
-                brandsRepository.deleteById(id)
+                val brand = brandsRepository.findByTitle(title).get()
+                brandsRepository.deleteById(brand.id)
 
                 ServiceResponse(
                     data = listOf(),
-                    message = "Brand with id = $id has been deleted",
+                    message = "Brand with id = ${brand.id} has been deleted",
                     status = HttpStatus.OK
                 )
             } catch (e: Exception) {
                 ServiceResponse(
                     data = listOf(),
-                    message = "Brand with id = $id not found",
+                    message = "Brand with title = $title not found",
                     status = HttpStatus.NOT_FOUND
                 )
             }
@@ -285,18 +287,26 @@ class ProductService: ProductsRepositoryImpl {
             val check = checkUtil.checkToken(token)
             return if(check) {
                 return try {
-                    val item = ProductBrands(
-                        id = UUID.randomUUID().toString(),
-                        title = title
-                    )
+                    if(brandsRepository.findByTitle(title).isPresent) {
+                        ServiceResponse(
+                            data = listOf(brandsRepository.findByTitle(title).get()),
+                            message = "Brand had created before",
+                            status = HttpStatus.OK
+                        )
+                    } else {
+                        val item = ProductBrands(
+                            id = UUID.randomUUID().toString(),
+                            title = title
+                        )
 
-                    brandsRepository.save(item)
+                        brandsRepository.save(item)
 
-                    ServiceResponse(
-                        data = listOf(brandsRepository.findById(item.id).get()),
-                        message = "Brand has been created",
-                        status = HttpStatus.OK
-                    )
+                        ServiceResponse(
+                            data = listOf(brandsRepository.findById(item.id).get()),
+                            message = "Brand has been created",
+                            status = HttpStatus.OK
+                        )
+                    }
                 } catch (e: Exception) {
                     ServiceResponse(
                         data = null,
@@ -476,12 +486,14 @@ class ProductService: ProductsRepositoryImpl {
                             first.add(s.replace(",",""))
                         }
                     }
-                    else -> first.add(s.replace(",",""))
+                    else -> {
+                        first.add(s.replace(",",""))
+                    }
                 }
             }
             fka = Pair(first = first, second = characteristics.second)
         }
-        return try {
+//        return try {
             val sort = when (filter) {
                 "expensive" -> Sort.by(
                     Sort.Order(Sort.Direction.DESC, "price"),
@@ -494,6 +506,8 @@ class ProductService: ProductsRepositoryImpl {
                 "new" -> Sort.by(
                     Sort.Order(Sort.Direction.DESC, "updated")
                 )
+
+                "random" -> JpaSort.unsafe(Sort.Direction.ASC, "RANDOM()")
 
                 "string" -> null
 
@@ -515,6 +529,17 @@ class ProductService: ProductsRepositoryImpl {
             } else {
                 0
             }
+            val prod = productsRepository.findAllBy(
+                pageable = pageable,
+                brand = brand?.brand,
+                firstPrice = smallPrice,
+                secondPrice = highPrice,
+                stockEmpty = stockEmpty,
+                stockFull = stockFull,
+                categoryId = categoryId,
+                isSell = isSellByPromo,
+                searchQuery = searchQuery
+            )
             val statePage: Page<Product> = if(characteristics.first == null){
                 productsRepository.findAllBy(
                     pageable = pageable,
@@ -528,9 +553,9 @@ class ProductService: ProductsRepositoryImpl {
                     searchQuery = searchQuery
                 )
             } else {
-                pageable = if (sort != null) PageRequest.of(page, 32765, sort) else PageRequest.of(page, 32765)
+                val w = if (sort != null) PageRequest.of(0, 32765, sort) else PageRequest.of(0, 32765)
                 val products = productsRepository.findAllBy(
-                    pageable = pageable,
+                    pageable = w,
                     brand = brand?.brand,
                     firstPrice = smallPrice,
                     secondPrice = highPrice,
@@ -600,14 +625,14 @@ class ProductService: ProductsRepositoryImpl {
                 message = "Success",
                 status = HttpStatus.OK
             )
-        } catch (e: Exception) {
-            PagingResponse(
-                data = null,
-                message = e.message.toString(),
-                status = HttpStatus.BAD_REQUEST,
-                maxPrice = null
-            )
-        }
+//        } catch (e: Exception) {
+//            PagingResponse(
+//                data = null,
+//                message = e.message.toString(),
+//                status = HttpStatus.BAD_REQUEST,
+//                maxPrice = null
+//            )
+//        }
     }
 
     override fun getProductRandom(
@@ -903,8 +928,6 @@ class ProductService: ProductsRepositoryImpl {
                     product.characteristic.forEach { characteristic ->
                         if(characteristic.title.replace(",","") == categoryCharacteristic.replace(",","")) {
                             tempFilters.add(characteristic.data)
-                            println(characteristic.title)
-                            println(characteristic.data)
                         }
                     }
                 }

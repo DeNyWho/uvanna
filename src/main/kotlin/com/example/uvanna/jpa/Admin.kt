@@ -11,6 +11,6 @@ data class Admins(
     var id: String = "",
     val login: String = "",
     val password: String = "",
-    val token: String = ""
-
+    val token: String = "",
+    val type: String = "Full"
 )

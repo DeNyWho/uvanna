@@ -22,11 +22,11 @@ class AdminService {
     lateinit var adminPassword: String
 
 
-    fun checkToken(token: String): ServiceResponse<String> {
+    fun checkToken(token: String): ServiceResponse<Admins> {
         val pgToken = adminRepository.findAdminTokenByToken(token)
         return if (token == pgToken?.token) {
             ServiceResponse(
-                data = listOf(token),
+                data = listOf(pgToken),
                 message = "Success",
                 status = HttpStatus.OK
             )
@@ -39,23 +39,24 @@ class AdminService {
         }
     }
 
-    fun generateToken(login: String, password: String): ServiceResponse<String> {
+    fun generateToken(login: String, password: String): ServiceResponse<Admins> {
         try {
             val admin = adminRepository.findAdminByLoginAndPassword(login = login, password = password)
 
             adminRepository.deleteById(admin!!.id)
             val token = UUID.randomUUID().toString()
-            adminRepository.save(
+            val adminFinal = adminRepository.save(
                 Admins(
                     id = admin.id,
                     password = admin.password,
                     login = admin.login,
-                    token = token
+                    token = token,
+                    type = admin.type
                 )
             )
 
             return ServiceResponse(
-                data = listOf(token),
+                data = listOf(adminFinal),
                 message = "Success",
                 status = HttpStatus.OK
             )

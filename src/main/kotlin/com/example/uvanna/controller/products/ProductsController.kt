@@ -210,14 +210,14 @@ class ProductsController {
         }
     }
 
-    @DeleteMapping("brands/{id}/delete")
-    fun deleteBrandById(
-        @PathVariable id: String,
+    @DeleteMapping("brands/{title}/delete")
+    fun deleteBrandByTitle(
+        @PathVariable title: String,
         @RequestHeader (value = "Authorization") token: String,
         response: HttpServletResponse
     ): ServiceResponse<String> {
         return try {
-            productService.deleteBrandById(id = id, token = token)
+            productService.deleteBrandByTitle(title = title, token = token)
         } catch (e: ChangeSetPersister.NotFoundException) {
             ServiceResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }
@@ -283,7 +283,7 @@ class ProductsController {
         stockEmpty: Boolean?,
         stockFull: Boolean?,
         isSell: Boolean?,
-        @Parameter(description = "Filter = expensive | cheap | new | old") filter: String?,
+        @Parameter(description = "Filter = expensive | cheap | new | old | random") filter: String?,
         categoryId: String?,
         productId: String?,
         searchQuery: String?,
@@ -304,7 +304,11 @@ class ProductsController {
                 categoryId = categoryId,
                 isSellByPromo = isSell,
                 searchQuery = searchQuery,
-                characteristics = Pair(first = charsTitle, second = charsData)
+                characteristics = Pair(first = if(charsTitle != null) {
+                    if(charsTitle.size > charsData?.size!!) {
+                        listOf(charsTitle.joinToString(", "))
+                    } else charsTitle
+                } else null, second = charsData)
             )
         } catch (e: ChangeSetPersister.NotFoundException) {
             PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)

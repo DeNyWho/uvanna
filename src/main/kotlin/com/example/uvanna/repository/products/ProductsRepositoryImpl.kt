@@ -61,7 +61,7 @@ interface ProductsRepositoryImpl {
     fun getProductsIds(): ServiceResponse<String>
     fun createBrand(title: String, token: String): ServiceResponse<ProductBrands>?
     fun getAllBrands(): ServiceResponse<ProductBrands>?
-    fun deleteBrandById(id: String, token: String): ServiceResponse<String>
+    fun deleteBrandByTitle(title: String, token: String): ServiceResponse<String>
     fun addTemplateCharact(id: String, token: String, charact: List<String>): ServiceResponse<TemplateCharact>
     fun deleteTemplateCharact(id: String, token: String): ServiceResponse<TemplateCharact>
     fun editTemplateCharact(id: String, token: String, charact: List<String>): ServiceResponse<TemplateCharact>

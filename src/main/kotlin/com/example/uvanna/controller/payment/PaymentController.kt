@@ -31,6 +31,7 @@ class PaymentController {
         email: String,
         typePayment: String,
         typeDelivery: String,
+        utmMet: String,
         response: HttpServletResponse
     ): ServiceResponse<Any> {
         return try {
@@ -42,6 +43,7 @@ class PaymentController {
                 email = email,
                 typePayment = typePayment,
                 typeDelivery = typeDelivery,
+                utmMet = utmMet
             )
             ServiceResponse(
                 data = listOf(paymentService.createNewPayment(paymentProductRequest, payment)),

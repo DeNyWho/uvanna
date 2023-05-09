@@ -42,10 +42,10 @@ import java.util.*
 @Service
 class PaymentService: PaymentRepositoryImpl {
 
-    @Value("\${TerminalKey}")
+    @Value("\${terminalKey}")
     lateinit var terminalKey: String
 
-    @Value("\${TerminalPassword}")
+    @Value("\${terminalPassword}")
     lateinit var terminalPassword: String
 
     @Value("\${shopIDCredit}")
@@ -193,7 +193,8 @@ class PaymentService: PaymentRepositoryImpl {
                         typePayment = paymentDataRequest.typePayment,
                         paymentID = c.paymentId,
                         code = v,
-                        status = "заказ требует оплаты"
+                        status = "заказ требует оплаты",
+                        utmMet = paymentDataRequest.utmMet
                     )
 
                     ordersRepository.save(order)
@@ -315,7 +316,8 @@ class PaymentService: PaymentRepositoryImpl {
                         typePayment = paymentDataRequest.typePayment,
                         paymentID = creditResponse.id,
                         code = v,
-                        status = "заказ требует потверждения кредита от банка"
+                        status = "заказ требует подтверждение кредита от банка",
+                        utmMet = paymentDataRequest.utmMet
                     )
                     ordersRepository.save(order)
                 }
@@ -385,12 +387,14 @@ class PaymentService: PaymentRepositoryImpl {
                 typePayment = paymentDataRequest.typePayment,
                 paymentID = c.paymentId,
                 code = v,
-                status = "Заказ сформирован"
+                status = "Заказ сформирован",
+                utmMet = paymentDataRequest.utmMet
             )
 
             ordersRepository.save(vxc)
 
             emailService.sendNewOrderMessage(paymentInfo = ordersRepository.findById(vxc.id).get())
+            emailService.sendOrderMessageUvannaNal(paymentInfo = ordersRepository.findById(vxc.id).get(), title = "Новый заказ с №${vxc.code} оплата: Наличные")
 
             return ordersRepository.findById(id)
         }

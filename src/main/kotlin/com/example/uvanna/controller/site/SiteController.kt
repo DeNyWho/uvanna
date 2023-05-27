@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
+import javax.servlet.http.Cookie
 import javax.servlet.http.HttpServletResponse
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
@@ -26,6 +27,27 @@ class SiteController {
 
     @Autowired
     lateinit var siteService: SiteService
+
+    @GetMapping("cookie/test")
+    fun cookieTest(response: HttpServletResponse){
+
+        val cookieRefresh = Cookie("refreshToken", "WAFL")
+        cookieRefresh.secure = true
+        cookieRefresh.path = "/"
+        cookieRefresh.isHttpOnly = true
+        cookieRefresh.domain = "uvanna.store"
+        cookieRefresh.maxAge = 7 * 24 * 60 * 60
+
+        val cookieAccess = Cookie("accessToken", "WAFL")
+        cookieAccess.secure = true
+        cookieAccess.domain = "uvanna.store"
+        cookieAccess.path = "/"
+        cookieAccess.isHttpOnly = true
+        cookieAccess.maxAge = 7 * 24 * 60 * 60
+
+        response.addCookie(cookieRefresh)
+        response.addCookie(cookieAccess)
+    }
 
 
     @PostMapping("banner/create", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])

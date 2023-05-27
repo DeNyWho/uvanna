@@ -31,7 +31,7 @@ class PaymentController {
         email: String,
         typePayment: String,
         typeDelivery: String,
-        utmMet: String,
+        utmMet: String?,
         response: HttpServletResponse
     ): ServiceResponse<Any> {
         return try {

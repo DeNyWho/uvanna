@@ -289,6 +289,7 @@ class ProductsController {
         searchQuery: String?,
         @RequestParam charsTitle: List<String>?,
         @RequestParam charsData: List<String>?,
+        popularity: Boolean?,
         response: HttpServletResponse
     ): PagingResponse<ProductsLightResponse>? {
         return try {
@@ -308,7 +309,8 @@ class ProductsController {
                     if(charsTitle.size > charsData?.size!!) {
                         listOf(charsTitle.joinToString(", "))
                     } else charsTitle
-                } else null, second = charsData)
+                } else null, second = charsData),
+                popularity = popularity
             )
         } catch (e: ChangeSetPersister.NotFoundException) {
             PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)

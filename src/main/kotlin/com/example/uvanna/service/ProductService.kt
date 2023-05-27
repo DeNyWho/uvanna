@@ -5,6 +5,8 @@ import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.jpa.TemplateCharact
 import com.example.uvanna.model.PercentageList
+import com.example.uvanna.model.moysklad.MoySkladParseStatus
+import com.example.uvanna.model.moysklad.MoySkladResult
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.product.Charss
 import com.example.uvanna.model.product.Filters
@@ -19,7 +21,22 @@ import com.example.uvanna.repository.products.ProductsRepositoryImpl
 import com.example.uvanna.repository.products.TemplateCharactRepository
 import com.example.uvanna.util.CheckUtil
 import com.example.uvanna.util.toPage
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.auth.providers.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -39,7 +56,7 @@ import javax.annotation.Resource
 
 
 @Service
-class ProductService: ProductsRepositoryImpl {
+class ProductService : ProductsRepositoryImpl {
 
     @Autowired
     lateinit var templateCharactRepository: TemplateCharactRepository
@@ -77,7 +94,7 @@ class ProductService: ProductsRepositoryImpl {
     ): ServiceResponse<Product>? {
         return try {
             val check = checkUtil.checkToken(token)
-            return if(check) {
+            return if (check) {
                 return try {
                     val charact = mutableListOf<Characteristic>()
                     characteristic.forEachIndexed { index, s ->
@@ -108,7 +125,7 @@ class ProductService: ProductsRepositoryImpl {
                         id = id,
                         images = imagesUrl,
                         title = product.title,
-                        updated = LocalDateTime.parse(z, v ),
+                        updated = LocalDateTime.parse(z, v),
                         characteristic = charact,
                         firstSub = product.firstSub,
                         secondSub = product.secondSub,
@@ -117,7 +134,8 @@ class ProductService: ProductsRepositoryImpl {
                         brand = product.brand,
                         sellPrice = product.sellPrice,
                         price = product.price,
-                        archive = product.archive
+                        archive = product.archive,
+                        popularity = product.popularity
                     )
 
                     productsRepository.deleteById(id)
@@ -141,7 +159,7 @@ class ProductService: ProductsRepositoryImpl {
                     status = HttpStatus.UNAUTHORIZED
                 )
             }
-        } catch (e: Exception){
+        } catch (e: Exception) {
             ServiceResponse(
                 data = null,
                 message = "Something went wrong: ${e.message}",
@@ -149,8 +167,6 @@ class ProductService: ProductsRepositoryImpl {
             )
         }
     }
-
-
 
 
     override fun addProduct(
@@ -162,7 +178,7 @@ class ProductService: ProductsRepositoryImpl {
     ): ServiceResponse<Product>? {
         return try {
             val check = checkUtil.checkToken(token)
-            return if(check) {
+            return if (check) {
                 return try {
                     val charact = mutableListOf<Characteristic>()
                     characteristic.forEachIndexed { index, s ->
@@ -192,7 +208,7 @@ class ProductService: ProductsRepositoryImpl {
                         id = UUID.randomUUID().toString(),
                         images = imagesUrl,
                         title = product.title,
-                        updated = LocalDateTime.parse(z, v ),
+                        updated = LocalDateTime.parse(z, v),
                         characteristic = charact,
                         firstSub = product.firstSub,
                         secondSub = product.secondSub,
@@ -201,7 +217,8 @@ class ProductService: ProductsRepositoryImpl {
                         brand = product.brand,
                         price = product.price,
                         sellPrice = null,
-                        archive = product.archive
+                        archive = product.archive,
+                        popularity = product.popularity
                     )
 
                     productsRepository.save(item)
@@ -225,7 +242,7 @@ class ProductService: ProductsRepositoryImpl {
                 )
             }
 
-        } catch (e: Exception){
+        } catch (e: Exception) {
             ServiceResponse(
                 data = null,
                 message = "Something went wrong: ${e.message}",
@@ -237,7 +254,7 @@ class ProductService: ProductsRepositoryImpl {
     override fun deleteBrandByTitle(title: String, token: String): ServiceResponse<String> {
         val check = checkUtil.checkToken(token)
 
-        return if(check) {
+        return if (check) {
             return try {
                 val brand = brandsRepository.findByTitle(title).get()
                 brandsRepository.deleteById(brand.id)
@@ -282,12 +299,158 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
+    @Value("\${moysklad.username}")
+    private lateinit var usernameMoySk: String
+
+    @Value("\${moysklad.password}")
+    private lateinit var passwordMoySk: String
+
+    override fun checkProducts() {
+        val client = HttpClient {
+            install(Auth) {
+                basic {
+                    credentials {
+                        BasicAuthCredentials(username = usernameMoySk, password = passwordMoySk)
+                    }
+                }
+            }
+            install(Logging) {
+                logger = Logger.DEFAULT
+                level = LogLevel.ALL
+            }
+        }
+        val clientSec = HttpClient {
+            install(Auth) {
+                basic {
+                    credentials {
+                        BasicAuthCredentials(username = usernameMoySk, password = passwordMoySk)
+                    }
+                }
+            }
+            install(Logging) {
+                logger = Logger.DEFAULT
+                level = LogLevel.ALL
+            }
+        }
+
+        try {
+            val response = runBlocking {
+                client.get {
+                    method = HttpMethod.Get
+                    basicAuth(username = usernameMoySk, password = passwordMoySk)
+                    url {
+                        protocol = URLProtocol.HTTPS
+                        host = "online.moysklad.ru"
+                        encodedPath = "/api/remap/1.2/entity/assortment"
+                        parameters.append("async", "true")
+                    }
+                }
+            }
+
+            val locationHeader = response.headers["Location"]
+            val contentLocationHeader = response.headers["Content-Location"]
+            MoySkladParseStatus
+            println("Location Header: $locationHeader")
+            println("Content-Location Header: $contentLocationHeader")
+            val contentLocationHeaderUrl = URLBuilder().apply {
+                takeFrom(contentLocationHeader!!)
+            }
+            var status = "CANCEL"
+            var resultUrl = ""
+            while (status != "DONE") {
+                try {
+                    val responseString = runBlocking {
+                        val res = clientSec.get {
+                            headers {
+                                contentType(ContentType.Application.Json)
+                            }
+                            basicAuth(username = usernameMoySk, password = passwordMoySk)
+                            url(contentLocationHeaderUrl.build())
+                        }
+                        res.bodyAsText()
+                    }
+
+                    val decoding = Json {
+                        ignoreUnknownKeys = true
+                    }.decodeFromString<MoySkladParseStatus>(responseString)
+
+                    status = decoding.state
+                    resultUrl = decoding.resultUrl!!
+                    Thread.sleep(2000)
+                } catch (e: Exception) {
+                    e.message
+                }
+            }
+
+            val contentResultUrl = URLBuilder().apply {
+                takeFrom(resultUrl)
+            }
+
+            val responseString = runBlocking {
+                val res = clientSec.get {
+                    headers {
+                        contentType(ContentType.Application.Json)
+                    }
+                    basicAuth(username = usernameMoySk, password = passwordMoySk)
+                    url(contentResultUrl.build())
+                }
+                res.bodyAsText()
+            }
+
+            val decoding = Json {
+                ignoreUnknownKeys = true
+            }.decodeFromString<MoySkladResult>(responseString)
+
+            decoding.rows.forEach Rows@ { row ->
+                try {
+                    val product = productsRepository.findByTitle(row.name)
+                    if(product.isPresent) {
+                        val temp = product.get()
+                        var price = 0
+                        row.salePrices.forEach { pricing ->
+                            if(pricing.priceType.name == "Цена продажи")
+                                price = (pricing.value / 100).toInt()
+                        }
+
+                        val productFull = Product(
+                            id = temp.id,
+                            images = temp.images,
+                            updated = temp.updated,
+                            title = temp.title,
+                            characteristic = temp.characteristic,
+                            brand = temp.brand,
+                            firstSub = temp.firstSub,
+                            secondSub = temp.secondSub,
+                            thirdSub = temp.thirdSub,
+                            price = price,
+                            sellPrice = temp.sellPrice,
+                            stock = row.quantity.toInt(),
+                            percent = temp.percent,
+                            archive = temp.archive,
+                            popularity = temp.popularity
+                        )
+                        productsRepository.deleteById(temp.id)
+                        println(temp.title)
+                        productsRepository.save(productFull)
+                    }
+                } catch (e: Exception) {
+                    return@Rows
+                }
+            }
+
+        } catch (exception: Exception) {
+            println(exception)
+        }
+
+        client.close()
+    }
+
     override fun createBrand(title: String, token: String): ServiceResponse<ProductBrands>? {
         return try {
             val check = checkUtil.checkToken(token)
-            return if(check) {
+            return if (check) {
                 return try {
-                    if(brandsRepository.findByTitle(title).isPresent) {
+                    if (brandsRepository.findByTitle(title).isPresent) {
                         ServiceResponse(
                             data = listOf(brandsRepository.findByTitle(title).get()),
                             message = "Brand had created before",
@@ -322,7 +485,7 @@ class ProductService: ProductsRepositoryImpl {
                 )
             }
 
-        } catch (e: Exception){
+        } catch (e: Exception) {
             ServiceResponse(
                 data = null,
                 message = "Something went wrong: ${e.message}",
@@ -338,7 +501,7 @@ class ProductService: ProductsRepositoryImpl {
                 message = "Success",
                 status = HttpStatus.OK
             )
-        } catch (e: Exception){
+        } catch (e: Exception) {
             ServiceResponse(
                 data = null,
                 message = e.message.toString(),
@@ -392,7 +555,7 @@ class ProductService: ProductsRepositoryImpl {
                 message = "Success",
                 status = HttpStatus.OK
             )
-        } catch (e: Exception){
+        } catch (e: Exception) {
             ServiceResponse(
                 data = null,
                 message = e.message.toString(),
@@ -408,7 +571,7 @@ class ProductService: ProductsRepositoryImpl {
                 message = "Success",
                 status = HttpStatus.OK
             )
-        } catch (e: Exception){
+        } catch (e: Exception) {
             ServiceResponse(
                 data = null,
                 message = e.message.toString(),
@@ -424,7 +587,7 @@ class ProductService: ProductsRepositoryImpl {
     ): ServiceResponse<ProductLighterResponse>? {
         return try {
             val light = mutableListOf<ProductLighterResponse>()
-            val pageable: Pageable =PageRequest.of(pageNum, pageSize)
+            val pageable: Pageable = PageRequest.of(pageNum, pageSize)
 
             productsRepository.findByTitleSearch(pageable, searchQuery).forEach {
                 light.add(
@@ -434,7 +597,8 @@ class ProductService: ProductsRepositoryImpl {
                         imageUrls = it.images,
                         price = it.price,
                         sellPrice = it.sellPrice,
-                        archive = it.archive
+                        archive = it.archive,
+                        popularity = it.popularity
                     )
                 )
             }
@@ -464,10 +628,11 @@ class ProductService: ProductsRepositoryImpl {
         stockFull: Boolean?,
         isSellByPromo: Boolean?,
         searchQuery: String?,
-        characteristics: Pair<List<String>?, List<String>?>
+        characteristics: Pair<List<String>?, List<String>?>,
+        popularity: Boolean?
     ): PagingResponse<ProductsLightResponse>? {
         var fka = Pair<List<String>?, List<String>?>(first = null, second = null)
-        if(characteristics.first != null) {
+        if (characteristics.first != null) {
             val first = mutableListOf<String>()
             characteristics.first!!.forEachIndexed { index, s ->
                 val t = "${s[s.length - 2]}${s.last()}"
@@ -476,24 +641,26 @@ class ProductService: ProductsRepositoryImpl {
                         try {
                             first[index - 1] = "${first[index - 1]} см"
                         } catch (e: Exception) {
-                            first.add(s.replace(",",""))
+                            first.add(s.replace(",", ""))
                         }
                     }
+
                     t == "мм" && s.length < 4 -> {
                         try {
                             first[index - 1] = "${first[index - 1]} мм"
                         } catch (e: Exception) {
-                            first.add(s.replace(",",""))
+                            first.add(s.replace(",", ""))
                         }
                     }
+
                     else -> {
-                        first.add(s.replace(",",""))
+                        first.add(s.replace(",", ""))
                     }
                 }
             }
             fka = Pair(first = first, second = characteristics.second)
         }
-//        return try {
+        return try {
             val sort = when (filter) {
                 "expensive" -> Sort.by(
                     Sort.Order(Sort.Direction.DESC, "price"),
@@ -517,14 +684,15 @@ class ProductService: ProductsRepositoryImpl {
             var pageable: Pageable =
                 if (sort != null) PageRequest.of(page, countCard, sort) else PageRequest.of(page, countCard)
 
-            var maxPricePage = if(characteristics.first == null) {
+            var maxPricePage = if (characteristics.first == null) {
                 productsRepository.getMaxPrice(
                     brand = brand?.brand,
                     stockEmpty = stockEmpty,
                     stockFull = stockFull,
                     categoryId = categoryId,
                     isSell = isSellByPromo,
-                    searchQuery = searchQuery
+                    searchQuery = searchQuery,
+                    popularity = popularity
                 )
             } else {
                 0
@@ -538,9 +706,10 @@ class ProductService: ProductsRepositoryImpl {
                 stockFull = stockFull,
                 categoryId = categoryId,
                 isSell = isSellByPromo,
-                searchQuery = searchQuery
+                searchQuery = searchQuery,
+                popularity = popularity
             )
-            val statePage: Page<Product> = if(characteristics.first == null){
+            val statePage: Page<Product> = if (characteristics.first == null) {
                 productsRepository.findAllBy(
                     pageable = pageable,
                     brand = brand?.brand,
@@ -550,7 +719,8 @@ class ProductService: ProductsRepositoryImpl {
                     stockFull = stockFull,
                     categoryId = categoryId,
                     isSell = isSellByPromo,
-                    searchQuery = searchQuery
+                    searchQuery = searchQuery,
+                    popularity = popularity
                 )
             } else {
                 val w = if (sort != null) PageRequest.of(0, 32765, sort) else PageRequest.of(0, 32765)
@@ -563,7 +733,8 @@ class ProductService: ProductsRepositoryImpl {
                     stockFull = stockFull,
                     categoryId = categoryId,
                     isSell = isSellByPromo,
-                    searchQuery = searchQuery
+                    searchQuery = searchQuery,
+                    popularity = popularity
                 ).content
                 val tc = mutableListOf<Charss>()
                 fka.first!!.forEachIndexed { index, it ->
@@ -593,7 +764,7 @@ class ProductService: ProductsRepositoryImpl {
                 }
                 maxPercent.sortBy { it.size }
                 maxPercent.forEach {
-                    if(tc.size == it.size){
+                    if (tc.size == it.size) {
                         p.add(products[it.index])
                     }
                 }
@@ -612,7 +783,8 @@ class ProductService: ProductsRepositoryImpl {
                         price = it.price,
                         stock = it.stock,
                         sellPrice = it.sellPrice,
-                        archive = it.archive
+                        archive = it.archive,
+                        popularity = it.popularity
                     )
                 )
             }
@@ -625,14 +797,14 @@ class ProductService: ProductsRepositoryImpl {
                 message = "Success",
                 status = HttpStatus.OK
             )
-//        } catch (e: Exception) {
-//            PagingResponse(
-//                data = null,
-//                message = e.message.toString(),
-//                status = HttpStatus.BAD_REQUEST,
-//                maxPrice = null
-//            )
-//        }
+        } catch (e: Exception) {
+            PagingResponse(
+                data = null,
+                message = e.message.toString(),
+                status = HttpStatus.BAD_REQUEST,
+                maxPrice = null
+            )
+        }
     }
 
     override fun getProductRandom(
@@ -673,7 +845,8 @@ class ProductService: ProductsRepositoryImpl {
                         price = it.price,
                         stock = it.stock,
                         sellPrice = it.sellPrice,
-                        archive = it.archive
+                        archive = it.archive,
+                        popularity = it.popularity
                     )
                 )
             }
@@ -693,10 +866,10 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
-    override fun deleteProduct(token: String, id: String): ServiceResponse<String>{
+    override fun deleteProduct(token: String, id: String): ServiceResponse<String> {
         val check = checkUtil.checkToken(token)
 
-        return if(check) {
+        return if (check) {
             return try {
                 productsRepository.deleteById(id)
                 ServiceResponse(
@@ -738,7 +911,8 @@ class ProductService: ProductsRepositoryImpl {
                 sellPrice = temp.sellPrice,
                 stock = stock,
                 percent = temp.percent,
-                archive = temp.archive
+                archive = temp.archive,
+                popularity = temp.popularity
             )
 
             productsRepository.deleteById(id)
@@ -750,7 +924,7 @@ class ProductService: ProductsRepositoryImpl {
                 message = "Success",
                 status = HttpStatus.OK
             )
-        } catch (e: Exception){
+        } catch (e: Exception) {
             ServiceResponse(
                 data = null,
                 message = e.message.toString(),
@@ -780,7 +954,8 @@ class ProductService: ProductsRepositoryImpl {
                 sellPrice = temp.sellPrice,
                 stock = temp.stock,
                 percent = temp.percent,
-                archive = archive
+                archive = archive,
+                popularity = temp.popularity
             )
 
             productsRepository.deleteById(id)
@@ -792,7 +967,7 @@ class ProductService: ProductsRepositoryImpl {
                 message = "Success",
                 status = HttpStatus.OK
             )
-        } catch (e: Exception){
+        } catch (e: Exception) {
             ServiceResponse(
                 data = null,
                 message = e.message.toString(),
@@ -801,10 +976,14 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
-    override fun addTemplateCharact(id: String, token: String, charact: List<String>): ServiceResponse<TemplateCharact> {
+    override fun addTemplateCharact(
+        id: String,
+        token: String,
+        charact: List<String>
+    ): ServiceResponse<TemplateCharact> {
         val check = checkUtil.checkToken(token)
 
-        return if(check) {
+        return if (check) {
             return try {
                 val item = TemplateCharact(
                     categoryId = id,
@@ -834,7 +1013,11 @@ class ProductService: ProductsRepositoryImpl {
         }
     }
 
-    override fun editTemplateCharact(id: String, token: String, charact: List<String>): ServiceResponse<TemplateCharact> {
+    override fun editTemplateCharact(
+        id: String,
+        token: String,
+        charact: List<String>
+    ): ServiceResponse<TemplateCharact> {
         val check = checkUtil.checkToken(token)
 
         return if (check) {
@@ -870,7 +1053,7 @@ class ProductService: ProductsRepositoryImpl {
     override fun deleteTemplateCharact(id: String, token: String): ServiceResponse<TemplateCharact> {
         val check = checkUtil.checkToken(token)
 
-        return if(check) {
+        return if (check) {
             return try {
                 templateCharactRepository.deleteById(id)
                 ServiceResponse(
@@ -926,7 +1109,7 @@ class ProductService: ProductsRepositoryImpl {
                 products.forEach { product ->
                     println("WWW ${product.id}")
                     product.characteristic.forEach { characteristic ->
-                        if(characteristic.title.replace(",","") == categoryCharacteristic.replace(",","")) {
+                        if (characteristic.title.replace(",", "") == categoryCharacteristic.replace(",", "")) {
                             tempFilters.add(characteristic.data)
                         }
                     }

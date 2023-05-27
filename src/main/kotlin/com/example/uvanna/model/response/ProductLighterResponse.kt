@@ -7,4 +7,5 @@ data class ProductLighterResponse(
     val price: Int,
     val sellPrice: Int?,
     val archive: Boolean?,
+    val popularity: Boolean? = null,
 )

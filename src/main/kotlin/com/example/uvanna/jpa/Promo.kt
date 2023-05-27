@@ -16,7 +16,9 @@ data class Promo(
     val dateExpired: LocalDate? = null,
     @ElementCollection
     @Column(nullable = true)
-    var productsPromo: MutableSet<String> = mutableSetOf()
+    var productsPromo: MutableSet<String> = mutableSetOf(),
+    @Column(nullable = true)
+    var isEnd: Boolean? = null
 ) {
     fun deleteAllPromoProducts(): Promo {
         productsPromo.clear()

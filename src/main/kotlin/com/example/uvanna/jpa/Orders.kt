@@ -48,7 +48,8 @@ data class Orders(
     @ElementCollection(fetch = FetchType.EAGER)
     @Column(nullable = true)
     val orderFiles: MutableSet<String> = mutableSetOf(),
-    val utmMet: String = ""
+    @Column(nullable = true)
+    val utmMet: String? = null
 ) {
     fun addProducts(product: OrdersProducts): Orders {
         products.add(product)

@@ -81,6 +81,9 @@ interface ProductsRepositoryImpl {
         stockFull: Boolean?,
         isSellByPromo: Boolean?,
         searchQuery: String?,
-        characteristics: Pair<List<String>?, List<String>?>
+        characteristics: Pair<List<String>?, List<String>?>,
+        popularity: Boolean?
     ): PagingResponse<ProductsLightResponse>?
+
+    fun checkProducts()
 }

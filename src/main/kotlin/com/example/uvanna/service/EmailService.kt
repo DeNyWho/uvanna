@@ -2,6 +2,7 @@ package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Calls
 import com.example.uvanna.jpa.Orders
+import com.example.uvanna.jpa.Promo
 import com.example.uvanna.repository.email.EmailRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -78,15 +79,19 @@ class EmailService: EmailRepository {
     }
 
     fun sendOrderMessageUvanna(paymentInfo: Orders, title: String) {
-        sendSimpleMessage("uvannastore@mail.ru", title, "Заказ №${paymentInfo.code} успешно оплачен.")
+        sendSimpleMessage("uvanna.store@mail.ru", title, "Заказ №${paymentInfo.code} успешно оплачен.")
     }
 
     fun sendOrderMessageUvannaNal(paymentInfo: Orders, title: String) {
-        sendSimpleMessage("uvannastore@mail.ru", title, "Заказ №${paymentInfo.code} с наличным расчетом создан.")
+        sendSimpleMessage("uvanna.store@mail.ru", title, "Заказ №${paymentInfo.code} с наличным расчетом создан.")
     }
 
     fun sendCallMessageUvanna(call: Calls, title: String) {
-        sendSimpleMessage("uvannastore@mail.ru", title, "Необходимо позвонить на номер: ${call.phone} Зовут: ${call.name} Дата: ${call.date}")
+        sendSimpleMessage("uvanna.store@mail.ru", title, "Необходимо позвонить на номер: ${call.phone} Зовут: ${call.name} Дата: ${call.date}")
+    }
+
+    fun sendPromoScheduleMessageUvannaThree(promo: Promo, title: String) {
+        sendSimpleMessage("uvanna.store@mail.ru", title, "Акция с названием ${promo.title} и датой окончания ${promo.dateExpired} в скором времени будет удалена, если хотите продлить - обновите сроки акции.")
     }
 
 }

@@ -7,5 +7,6 @@ data class ProductsLightResponse(
     val price: Int,
     val stock: Int,
     val sellPrice: Int?,
-    val archive: Boolean?
+    val archive: Boolean?,
+    val popularity: Boolean?,
 )

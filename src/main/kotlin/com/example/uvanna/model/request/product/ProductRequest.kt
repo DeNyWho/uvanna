@@ -12,4 +12,5 @@ data class ProductRequest(
     var charactTitle: List<String> = listOf(),
     var charactData: List<String> = listOf(),
     val archive: Boolean = false,
+    val popularity: Boolean = false
 )

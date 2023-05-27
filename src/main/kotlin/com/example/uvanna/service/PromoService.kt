@@ -34,6 +34,9 @@ class PromoService: PromoRepositoryImpl {
     lateinit var productsRepository: ProductsRepository
 
     @Autowired
+    lateinit var emailService: EmailService
+
+    @Autowired
     lateinit var fileService: FileService
 
     @Resource
@@ -241,7 +244,7 @@ class PromoService: PromoRepositoryImpl {
         }
     }
 
-    override fun getPromos(pageSize: Int, pageNum: Int): PagingResponse<Promo> {
+    override fun getPromos(pageSize: Int, pageNum: Int, withEnd: Boolean): PagingResponse<Promo> {
         return try {
             val sort = Sort.by(
                 Sort.Order(Sort.Direction.ASC, "dateExpired"),
@@ -250,7 +253,8 @@ class PromoService: PromoRepositoryImpl {
             val statePage: Page<Promo> = promoRepository.findAll(pageable)
 
             val light = mutableListOf<Promo>()
-            statePage.content.forEach {
+            statePage.content.forEach PromoLoop@ {
+                if(withEnd && it.isEnd == true) return@PromoLoop
                 light.add(
                     Promo(
                         id = it.id,
@@ -396,7 +400,8 @@ class PromoService: PromoRepositoryImpl {
                         price = it.price,
                         stock = it.stock,
                         sellPrice = it.sellPrice,
-                        archive = it.archive
+                        archive = it.archive,
+                        popularity = it.popularity
                     )
                 )
             }
@@ -418,10 +423,18 @@ class PromoService: PromoRepositoryImpl {
 
     override fun scheduleCheckForDelete() {
         val promos = promoRepository.findAll()
-
-        promos.forEach {
-            if(it.dateExpired == LocalDate.now()) {
-                promoRepository.deleteById(it.id)
+        promos.forEach { promo ->
+            if(promo.dateExpired == LocalDate.now()) {
+                promo.productsPromo.forEach { productId ->
+                    val product = productsRepository.findById(productId).get()
+                    product.sellPrice = null
+                    product.percent = null
+                    productsRepository.save(product)
+                }
+                promo.isEnd = true
+            }
+            if(promo.dateExpired?.minusDays(3) == LocalDate.now()) {
+                emailService.sendPromoScheduleMessageUvannaThree(promo = promoRepository.findById(promo.id).get(), title = "Акция подходит к концу.")
             }
         }
     }

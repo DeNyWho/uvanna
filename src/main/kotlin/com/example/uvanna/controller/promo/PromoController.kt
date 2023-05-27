@@ -90,15 +90,15 @@ class PromoController {
         }
     }
 
-
     @GetMapping("/all")
     fun getPromos(
         @RequestParam(defaultValue = "0") pageNum: @Min(0) @Max(500) Int,
         @RequestParam(defaultValue = "48") pageSize: @Min(1) @Max(500) Int,
+        withEnd: Boolean = false,
         response: HttpServletResponse
     ): PagingResponse<Promo> {
         return try {
-            promoService.getPromos(pageNum = pageNum, pageSize = pageSize)
+            promoService.getPromos(pageNum = pageNum, pageSize = pageSize, withEnd = withEnd)
         } catch (e: ChangeSetPersister.NotFoundException) {
             PagingResponse(status = HttpStatus.NOT_FOUND, message = e.message!!)
         }

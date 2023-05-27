@@ -502,7 +502,7 @@ class OrderService: OrdersRepositoryImpl {
                         )
                     )
                 }
-                OrderSmallResponse(
+                return OrderSmallResponse(
                     order = Orders(
                         id = order.id,
                         city = order.city,
@@ -575,10 +575,6 @@ class OrderService: OrdersRepositoryImpl {
                                 isLenient = true
                                 ignoreUnknownKeys = true
                             })
-                        }
-                        install(Logging) {
-                            logger = Logger.DEFAULT
-                            level = LogLevel.ALL
                         }
                     }
                     val tokenList = "${terminalPassword}${order.paymentID}${terminalKey}"
@@ -824,8 +820,11 @@ class OrderService: OrdersRepositoryImpl {
             headerRow.createCell(12).setCellValue("Updated")
             headerRow.createCell(13).setCellValue("Date Created")
             headerRow.createCell(14).setCellValue("Delete Time")
-            headerRow.createCell(15).setCellValue("UTM Met")
-
+            headerRow.createCell(15).setCellValue("Utm Source")
+            headerRow.createCell(16).setCellValue("Utm Medium")
+            headerRow.createCell(17).setCellValue("Utm Campaign")
+            headerRow.createCell(18).setCellValue("Utm Content")
+            headerRow.createCell(19).setCellValue("Utm Term")
             var rowNum = 1
             for (order in orders) {
                 val row = sheet.createRow(rowNum++)
@@ -844,7 +843,21 @@ class OrderService: OrdersRepositoryImpl {
                 row.createCell(12).setCellValue(order.updated)
                 row.createCell(13).setCellValue(order.dateCreated.toString())
                 row.createCell(14).setCellValue(order.deleteTime?.toString() ?: "")
-                row.createCell(15).setCellValue(order.utmMet)
+                if (order.utmMet != null && order.utmMet.length > 4) {
+                    val keyValuePairs = order.utmMet.split("&")
+
+                    val paramMap = mutableMapOf<String, String>()
+                    for (pair in keyValuePairs) {
+                        val (key, value) = pair.split("=")
+                        paramMap[key] = value
+                    }
+
+                    row.createCell(15).setCellValue(paramMap["utm_source"])
+                    row.createCell(16).setCellValue(paramMap["utm_medium"])
+                    row.createCell(17).setCellValue(paramMap["utm_campaign"])
+                    row.createCell(18).setCellValue(paramMap["utm_content"])
+                    row.createCell(19).setCellValue(paramMap["utm_term"])
+                }
             }
 
             val outputStream = ByteArrayOutputStream()

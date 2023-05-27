@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
 interface ProductsRepository: JpaRepository<Product, String> {
@@ -18,13 +19,16 @@ interface ProductsRepository: JpaRepository<Product, String> {
             " and (:stockFull is null or :stockFull is true and p.stock > 0 or :stockFull is false)" +
             " and (:categoryId is null or p.thirdSub = :categoryId or p.secondSub = :categoryId or p.firstSub = :categoryId)" +
             " and (:isSell is null or p.sellPrice is not null or p.sellPrice > 0)" +
-            " and (:searchQuery is null or upper(p.title) like concat('%', upper(:searchQuery), '%'))")
+            " and (:searchQuery is null or upper(p.title) like concat('%', upper(:searchQuery), '%'))" +
+            "and (:popularity is null or p.popularity = :popularity)"
+    )
     fun getMaxPrice(
         brand: List<String?>?,
         stockEmpty: Boolean?,
         stockFull: Boolean?,
         categoryId: String?,
         isSell: Boolean?,
+        popularity: Boolean?,
         @Param("searchQuery") searchQuery: String?
     ): Int
 
@@ -35,7 +39,9 @@ interface ProductsRepository: JpaRepository<Product, String> {
             " and (:stockFull is null or :stockFull is true and p.stock > 0 or :stockFull is false)" +
             " and (:categoryId is null or p.thirdSub = :categoryId or p.secondSub = :categoryId or p.firstSub = :categoryId)" +
             " and (:isSell is null or p.sellPrice is not null or p.sellPrice > 0)" +
-            " and (:searchQuery is null or upper(p.title) like concat('%', upper(:searchQuery), '%'))")
+            " and (:searchQuery is null or upper(p.title) like concat('%', upper(:searchQuery), '%'))" +
+            " and (:popularity is null or p.popularity = :popularity)"
+    )
     fun findAllBy(
         pageable: Pageable,
         brand: List<String?>?,
@@ -45,8 +51,11 @@ interface ProductsRepository: JpaRepository<Product, String> {
         stockFull: Boolean?,
         categoryId: String?,
         isSell: Boolean?,
+        popularity: Boolean?,
         @Param("searchQuery") searchQuery: String?
     ): Page<Product>
+
+    fun findByTitle(title: String): Optional<Product>
 
     @Query("select p From Product p where :category = p.firstSub or :category = p.secondSub or :category = p.thirdSub")
     fun findAllByCategories(category: String): List<Product>

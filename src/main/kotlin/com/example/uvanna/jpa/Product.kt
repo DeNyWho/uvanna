@@ -28,12 +28,14 @@ data class Product(
     var firstSub: String = "",
     var secondSub: String = "",
     var thirdSub: String = "",
-    val price: Int = 0,
+    var price: Int = 0,
     @Column(nullable = true)
     var sellPrice: Int? = null,
-    val stock: Int = 0,
+    var stock: Int = 0,
     @Column(nullable = true)
     var percent: Int? = null,
     @Column(nullable = true)
-    var archive: Boolean? = false
+    var archive: Boolean? = false,
+    @Column(nullable = true)
+    val popularity: Boolean? = null
 )

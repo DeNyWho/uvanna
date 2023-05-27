@@ -12,7 +12,7 @@ interface PromoRepositoryImpl {
 
     fun getPromo(id: String): ServiceResponse<PromoResponse>
 
-    fun getPromos(pageSize: Int, pageNum: Int): PagingResponse<Promo>
+    fun getPromos(pageSize: Int, pageNum: Int, withEnd: Boolean): PagingResponse<Promo>
 
     fun deletePromo(id: String, token: String): ServiceResponse<String>
 

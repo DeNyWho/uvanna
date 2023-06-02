@@ -1,4 +1,4 @@
-package com.example.uvanna.model.moysklad
+package com.example.uvanna.model.moysklad.product
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

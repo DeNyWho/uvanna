@@ -5,8 +5,8 @@ import com.example.uvanna.jpa.Product
 import com.example.uvanna.jpa.ProductBrands
 import com.example.uvanna.jpa.TemplateCharact
 import com.example.uvanna.model.PercentageList
-import com.example.uvanna.model.moysklad.MoySkladParseStatus
-import com.example.uvanna.model.moysklad.MoySkladResult
+import com.example.uvanna.model.moysklad.product.MoySkladParseStatus
+import com.example.uvanna.model.moysklad.product.MoySkladResult
 import com.example.uvanna.model.product.Brands
 import com.example.uvanna.model.product.Charss
 import com.example.uvanna.model.product.Filters
@@ -413,7 +413,7 @@ class ProductService : ProductsRepositoryImpl {
                         }
 
                         val productFull = Product(
-                            id = temp.id,
+                            id = row.id,
                             images = temp.images,
                             updated = temp.updated,
                             title = temp.title,
@@ -434,6 +434,7 @@ class ProductService : ProductsRepositoryImpl {
                         productsRepository.save(productFull)
                     }
                 } catch (e: Exception) {
+                    println(e.message)
                     return@Rows
                 }
             }

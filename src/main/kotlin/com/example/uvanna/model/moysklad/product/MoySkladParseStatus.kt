@@ -1,5 +1,6 @@
-package com.example.uvanna.model.moysklad
+package com.example.uvanna.model.moysklad.product
 
+import com.example.uvanna.model.moysklad.product.MoySkladMeta
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

@@ -1,6 +1,7 @@
 package com.example.uvanna
 
 import com.example.uvanna.service.OrderService
+import com.example.uvanna.service.PaymentService
 import com.example.uvanna.service.ProductService
 import com.example.uvanna.service.PromoService
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,14 +24,23 @@ class ScheduleTasks {
     @Autowired
     private lateinit var productService: ProductService
 
+    @Autowired
+    private lateinit var paymentService: PaymentService
+
     @Scheduled(cron = "0 0 * * * *")
     fun deleteOrderBySchedule() {
         orderService.scheduleCheckForDelete()
     }
 
+//    @Scheduled(fixedRate = 24, timeUnit = TimeUnit.HOURS)
+//    fun checkProducts() {
+//        productService.checkProducts()
+//    }
+
+
     @Scheduled(fixedRate = 24, timeUnit = TimeUnit.HOURS)
-    fun checkProducts() {
-        productService.checkProducts()
+    fun test() {
+        paymentService.test()
     }
 
     @Scheduled(cron = "0 0 * * * *")
@@ -38,10 +48,10 @@ class ScheduleTasks {
         promoService.scheduleCheckForDelete()
     }
 
-    @Scheduled(fixedRate = 60000)
-    fun sendPaymentSuccess() {
-        orderService.scheduleCheckForMessage()
-    }
+//    @Scheduled(fixedRate = 60000)
+//    fun sendPaymentSuccess() {
+//        orderService.scheduleCheckForMessage()
+//    }
 }
 
 @SpringBootApplication

@@ -32,15 +32,9 @@ class ScheduleTasks {
         orderService.scheduleCheckForDelete()
     }
 
-//    @Scheduled(fixedRate = 24, timeUnit = TimeUnit.HOURS)
-//    fun checkProducts() {
-//        productService.checkProducts()
-//    }
-
-
     @Scheduled(fixedRate = 24, timeUnit = TimeUnit.HOURS)
-    fun test() {
-        paymentService.test()
+    fun checkProducts() {
+        productService.checkProducts()
     }
 
     @Scheduled(cron = "0 0 * * * *")

@@ -2,7 +2,7 @@ package com.example.uvanna.service
 
 import com.example.uvanna.jpa.Orders
 import com.example.uvanna.model.OrdersProducts
-import com.example.uvanna.model.moysklad.counter_party_data.CounterPartyData
+import com.example.uvanna.model.moysklad.counter_party_data.*
 import com.example.uvanna.model.payment.receipt.Items
 import com.example.uvanna.model.payment.receipt.Receipt
 import com.example.uvanna.model.request.credit.CreditItems
@@ -18,6 +18,7 @@ import com.example.uvanna.repository.orders.OrdersProductsRepository
 import com.example.uvanna.repository.orders.OrdersRepository
 import com.example.uvanna.repository.payment.PaymentRepositoryImpl
 import com.example.uvanna.repository.products.ProductsRepository
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.gson.Gson
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -33,6 +34,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -92,7 +94,7 @@ class PaymentService : PaymentRepositoryImpl {
     @Value("\${moysklad.password}")
     private lateinit var passwordMoySk: String
 
-    fun test() {
+    fun moyskladCreateOrder(counterParty: CounterPartyData, order: Orders) {
         val gson = Gson()
         val client = WebClient.builder()
             .baseUrl("https://online.moysklad.ru/api/remap/1.2")
@@ -103,21 +105,27 @@ class PaymentService : PaymentRepositoryImpl {
             }
             .build()
 
-        val counterpartyData = CounterPartyData(
-            name = "test",
-            actualAddress = "test",
-            phone = "test",
-            email = "test"
-        )
-        val b = runBlocking {
-            val response = client.post()
-                .uri("/entity/counterparty")
-                .body(BodyInserters.fromValue(counterpartyData))
-                .awaitExchange()
-            val r = response.awaitBodyOrNull<String>()
-            val parsedJson = gson.fromJson(r, Map::class.java)
-            parsedJson["id"].toString()
+
+        val a = runBlocking {
+            client.get()
+                .uri("/entity/counterparty?search=${counterParty.phone}")
+                .retrieve()
+                .bodyToMono(CounterpartyResponse::class.java)
+                .awaitSingle()
         }
+
+        val b = if(a.rows.isEmpty()) {
+            runBlocking {
+                val response = client.post()
+                    .uri("/entity/counterparty")
+                    .body(BodyInserters.fromValue(counterParty))
+                    .awaitExchange()
+                val r = response.awaitBodyOrNull<String>()
+                val parsedJson = gson.fromJson(r, Map::class.java)
+                parsedJson["id"].toString()
+            }
+        } else a.rows[0].id
+
         val requestBody = """
         {
             "organization": {
@@ -129,7 +137,7 @@ class PaymentService : PaymentRepositoryImpl {
             },
             "agent": {
                 "meta": {
-                    "href": "https://online.moysklad.ru/api/remap/1.2/entity/counterparty/3c3c9b16-00aa-11ee-0a80-046f0001ec7f",
+                    "href": "https://online.moysklad.ru/api/remap/1.2/entity/counterparty/$b",
                     "type": "counterparty",
                     "mediaType": "application/json"
                 }
@@ -137,16 +145,45 @@ class PaymentService : PaymentRepositoryImpl {
         }
     """.trimIndent()
 
-        val response = client.post()
-            .uri("/entity/customerorder")
-            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .body(BodyInserters.fromValue(requestBody))
-            .retrieve()
-            .bodyToMono(String::class.java)
-            .block()
+        val orderMoySklad =  runBlocking {
+            val response = client.post()
+                .uri("/entity/customerorder")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .body(BodyInserters.fromValue(requestBody))
+                .awaitExchange()
+            val r = response.awaitBodyOrNull<String>()
+            val parsedJson = gson.fromJson(r, Map::class.java)
+            parsedJson["id"].toString()
+        }
 
-        println(response)
+        val orderPositions = mutableListOf<orderPositionsMoySklad>()
 
+        order.products.forEach { product ->
+            orderPositions.add(
+                orderPositionsMoySklad(
+                    quantity = product.count,
+                    price = if(product.sellPrice != null) "${product.sellPrice}00.0".toDouble() else "${product.price}00.0".toDouble(),
+                    discount = 0.0,
+                    assortment = AssortmentSklad(
+                        meta = metaProductSklad(
+                            href = "https://online.moysklad.ru/api/remap/1.2/entity/product/6eedd819-fcc1-11ed-0a80-094f00202e8d",
+                            type = "product",
+                            mediaType = "application/json"
+                        ),
+                        reserve = product.count
+                    )
+                )
+            )
+        }
+
+        runBlocking {
+            val response = client.post()
+                .uri("/entity/customerorder/$orderMoySklad/positions")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .body(BodyInserters.fromValue(orderPositions))
+                .awaitExchange()
+            val r = response.awaitBodyOrNull<String>()
+        }
     }
 
     override fun createNewPayment(
@@ -252,10 +289,6 @@ class PaymentService : PaymentRepositoryImpl {
                     )
                 }
 
-                ordersProducts.forEach { productOrd ->
-
-                }
-
                 withContext(Dispatchers.IO) {
                     val order = Orders(
                         id = id,
@@ -284,6 +317,15 @@ class PaymentService : PaymentRepositoryImpl {
                     )
 
                     ordersRepository.save(order)
+                    moyskladCreateOrder(
+                        counterParty = CounterPartyData(
+                            name = paymentDataRequest.fullname,
+                            actualAddress = paymentDataRequest.streetFull,
+                            phone = paymentDataRequest.phone,
+                            email = paymentDataRequest.email
+                        ),
+                        order = order
+                    )
                 }
             }
 
@@ -406,6 +448,16 @@ class PaymentService : PaymentRepositoryImpl {
                         utmMet = paymentDataRequest.utmMet
                     )
                     ordersRepository.save(order)
+
+                    moyskladCreateOrder(
+                        counterParty = CounterPartyData(
+                            name = paymentDataRequest.fullname,
+                            actualAddress = paymentDataRequest.streetFull,
+                            phone = paymentDataRequest.phone,
+                            email = paymentDataRequest.email
+                        ),
+                        order = order
+                    )
                 }
             }
 
@@ -451,7 +503,7 @@ class PaymentService : PaymentRepositoryImpl {
                 )
             }
 
-            val vxc = Orders(
+            val order = Orders(
                 id = id,
                 city = paymentDataRequest.city,
                 streetFull = paymentDataRequest.streetFull,
@@ -477,12 +529,22 @@ class PaymentService : PaymentRepositoryImpl {
                 utmMet = paymentDataRequest.utmMet
             )
 
-            ordersRepository.save(vxc)
+            ordersRepository.save(order)
 
-            emailService.sendNewOrderMessage(paymentInfo = ordersRepository.findById(vxc.id).get())
+            emailService.sendNewOrderMessage(paymentInfo = ordersRepository.findById(order.id).get())
             emailService.sendOrderMessageUvannaNal(
-                paymentInfo = ordersRepository.findById(vxc.id).get(),
-                title = "Новый заказ с №${vxc.code} оплата: Наличные"
+                paymentInfo = ordersRepository.findById(order.id).get(),
+                title = "Новый заказ с №${order.code} оплата: Наличные"
+            )
+
+            moyskladCreateOrder(
+                counterParty = CounterPartyData(
+                    name = paymentDataRequest.fullname,
+                    actualAddress = paymentDataRequest.streetFull,
+                    phone = paymentDataRequest.phone,
+                    email = paymentDataRequest.email
+                ),
+                order = order
             )
 
             return ordersRepository.findById(id)

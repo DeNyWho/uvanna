@@ -6,7 +6,7 @@
 ## About
 The Uvanna Store Project is a **commercial** initiative integrated with **Moysklad** and **TinkoffPay**. All images, prices, and product specifications are sourced from **Moysklad**.   
 Scheduled tasks are used for synchronization with the **PostgreSQL** database every 24 hours. Data is loaded from **MoySklad**, and then these data are compared and modified upon saving in **PostgreSQL**. 
-**TinkoffPay** has been utilized to enable payment for goods using cards, as well as the option to make purchases on credit.
+**TinkoffPay** has been utilized to enable payment for goods using cards, as well as the option to make purchases on credit. **Docker** was chosen as the deployment system.
 
 ## Built With 🛠
 - [Kotlin](https://kotlinlang.org/) - is a modern but already mature programming language designed to make developers happier.
